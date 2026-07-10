@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Over+the+Rainbow&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="components/fig-assets.css">
+  <style>
+    html, body { margin: 0; padding: 0; background: rgb(255,255,255); }
+    a { color: rgb(209,32,47); text-decoration: none; }
+    a:hover { color: rgb(170,20,34); }
+
+    /* ===== GLOBAL TEXT RULE =====
+       The design is a fixed-width Figma export where several text layers were
+       authored with white-space:nowrap inside fixed-width boxes. On any narrower
+       render that makes long copy overflow its box and get clipped at the crop
+       edge. This global rule forces every text node inside the page to wrap and
+       break within its box instead of running off — so nothing is ever clipped.
+       Short labels/headings/stat numbers still fit on one line naturally. */
+    #cap-scaler span,
+    #cap-scaler p,
+    #cap-scaler h1,
+    #cap-scaler h2,
+    #cap-scaler h3 {
+      white-space: normal !important;
+      overflow-wrap: normal;
+      word-break: normal;
+      text-wrap: pretty;
+    }
+    /* nav-overlay links must stay on one line (beats the global rule) */
+    #cap-scaler span.cap-nav { white-space: nowrap !important; }
+  </style>
+</helmet>
+<div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
+  <div id="cap-scaler" style="width: 1457px; height: 7821px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
+    <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1544px,8372px"></x-import>
+
+    <!-- Interactive DotGrid canvas over the hero -->
+    <canvas id="cap-dotgrid" width="1457" height="830" style="position: absolute; left: 0; top: 0; width: 1457px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
+
+    <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
+    <div style="position: absolute; left: 0; top: 1958px; width: 1457px; height: 234px; background: rgb(209,32,47); z-index: 4;"></div>
+
+    <!-- 75 Years+ stat on solid red (no staircase behind it) -->
+    <div id="cap-75" style="position: absolute; left: 695px; top: 1360px; z-index: 5;">
+      <div style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">75 Years+</div>
+      <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Leadership Experience</div>
+    </div>
+
+    <!-- New glowing point (matches the 16 Assets point) after 135 Acres -->
+    <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
+
+    <!-- Scroll-linked staircase reveal — left half only, starting under "135 Acres" -->
+    <div id="cap-reveal" style="position: absolute; left: 129px; top: 1966px; width: 728px; height: 450px; z-index: 6; pointer-events: none; overflow: hidden; display: none">
+      <div class="cap-row" style="position: absolute; left: 0; top: 0px;    width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+      <div class="cap-row" style="position: absolute; left: 0; top: 75px;   width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+      <div class="cap-row" style="position: absolute; left: 0; top: 150px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+      <div class="cap-row" style="position: absolute; left: 0; top: 225px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+      <div class="cap-row" style="position: absolute; left: 0; top: 300px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+      <div class="cap-row" style="position: absolute; left: 0; top: 375px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+    </div>
+  </div>
+  <div id="cap-spotlight" style="position: fixed; left: 0; top: 0; width: 460px; height: 460px; margin-left: -230px; margin-top: -230px; z-index: 60; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.12) 40%, transparent 68%); filter: blur(26px); mix-blend-mode: overlay; opacity: 0; transition: opacity .3s ease;"></div>
+</div>
+</x-dc>
+<template id="__bundler_thumbnail" data-bg-color="#D1202F">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#D1202F"/>
+    <g fill="none" stroke="#ffffff" stroke-width="60">
+      <path d="M600 300 a130 130 0 1 0 0 200" transform="translate(-70,0)"/>
+      <path d="M600 300 a130 130 0 1 1 0 200" transform="translate(70,0)"/>
+    </g>
+  </svg>
+</template>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() {
+    const FRAME_W = 1457, FRAME_H = 7821;
+    this._fit = () => {
+      const scaler = document.getElementById('cap-scaler');
+      const vp = document.getElementById('cap-viewport');
+      if (!scaler || !vp) return;
+      const s = vp.clientWidth / FRAME_W;
+      scaler.style.transform = 'scale(' + s + ')';
+      vp.style.height = (FRAME_H * s) + 'px';
+    };
+    this._fit();
+    // re-fit after fonts/images settle and on resize
+    this._t1 = setTimeout(this._fit, 300);
+    this._t2 = setTimeout(this._fit, 1200);
+    window.addEventListener('resize', this._fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(this._fit);
+
+    // ===== STAIRCASE SCROLL REVEAL — DISABLED =====
+    // this._setupReveal();
+
+    // ===== First-page effects: dot grid + spotlight cursor + nav text scramble =====
+    this._setupDotGrid();
+    this._setupSpotlight();
+    this._setupNavScramble();
+  }
+
+  _setupDotGrid() {
+    const canvas = document.getElementById('cap-dotgrid');
+    if (!canvas) { if ((this._dgTries = (this._dgTries || 0) + 1) < 40) setTimeout(() => this._setupDotGrid(), 200); return; }
+    const ctx = canvas.getContext('2d');
+    const W = 1457, H = 830, dotSize = 2.2, gap = 2, cell = dotSize + gap;
+    const baseA = 0.16, activeA = 0.95;
+    const cols = Math.floor((W + gap) / cell), rows = Math.floor((H + gap) / cell);
+    const gridW = cell * cols - gap, gridH = cell * rows - gap;
+    const sx = (W - gridW) / 2 + dotSize / 2, sy = (H - gridH) / 2 + dotSize / 2;
+    const dots = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) dots.push({ cx: sx + x * cell, cy: sy + y * cell, ox: 0, oy: 0, vx: 0, vy: 0 });
+    const P = { x: -9999, y: -9999, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0 };
+    const prox = 90, proxSq = prox * prox, speedTrigger = 120, k = 0.12, damp = 0.72;
+    const sc = () => { const e = document.getElementById('cap-scaler'); const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); return m ? parseFloat(m[1]) : 1; };
+    const onMove = (e) => {
+      const s = sc(), r = canvas.getBoundingClientRect(), now = performance.now(), dt = P.lastT ? now - P.lastT : 16;
+      const nx = (e.clientX - r.left) / s, ny = (e.clientY - r.top) / s;
+      P.vx = (nx - P.lastX) / dt * 1000; P.vy = (ny - P.lastY) / dt * 1000;
+      P.lastX = nx; P.lastY = ny; P.lastT = now; P.x = nx; P.y = ny;
+      const speed = Math.hypot(P.vx, P.vy);
+      if (speed > speedTrigger) for (const d of dots) { const dx = d.cx - nx, dy = d.cy - ny; if (dx * dx + dy * dy < proxSq) { d.vx += dx * 0.02 + P.vx * 0.003; d.vy += dy * 0.02 + P.vy * 0.003; } }
+    };
+    const onClick = (e) => {
+      const s = sc(), r = canvas.getBoundingClientRect(); const cx = (e.clientX - r.left) / s, cy = (e.clientY - r.top) / s, R = 130;
+      for (const d of dots) { const dx = d.cx - cx, dy = d.cy - cy, dist = Math.hypot(dx, dy); if (dist < R) { const f = 1 - dist / R; d.vx += dx * 0.28 * f; d.vy += dy * 0.28 * f; } }
+    };
+    window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('click', onClick);
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      const T = (this._dgT = (this._dgT || 0) + 0.025); // water-flow time
+      for (const d of dots) {
+        d.vx += -k * d.ox; d.vy += -k * d.oy; d.vx *= damp; d.vy *= damp; d.ox += d.vx; d.oy += d.vy;
+        // traveling waves → flowing-water shimmer
+        const wave = Math.sin(d.cx * 0.011 + d.cy * 0.006 + T) + Math.sin(d.cy * 0.018 - T * 1.25);
+        const wx = Math.cos(d.cx * 0.009 + d.cy * 0.004 + T * 0.9) * 2.6;
+        const wy = wave * 2.4;
+        const dx = d.cx - P.x, dy = d.cy - P.y, dsq = dx * dx + dy * dy;
+        let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5)); // brightness ripples with the flow
+        if (dsq <= proxSq) { const t = 1 - Math.sqrt(dsq) / prox; a = baseA + (activeA - baseA) * t; }
+        ctx.beginPath(); ctx.arc(d.cx + d.ox + wx, d.cy + d.oy + wy, dotSize / 2, 0, 6.2832); ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')'; ctx.fill();
+      }
+      this._dgRaf = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  _setupSpotlight() {
+    const sp = document.getElementById('cap-spotlight');
+    if (!sp) return;
+    this._onSpot = (e) => {
+      sp.style.left = e.clientX + 'px';
+      sp.style.top = e.clientY + 'px';
+      sp.style.opacity = '1';
+    };
+    window.addEventListener('mousemove', this._onSpot, { passive: true });
+    window.addEventListener('mouseleave', () => { sp.style.opacity = '0'; });
+  }
+
+  _setupNavScramble() {
+    const labels = ['ABOUT US', 'PROJECTS', 'TEAM', 'CONTACT US'];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*<>/';
+    const spans = [...document.querySelectorAll('#cap-scaler span')].filter((s) => {
+      const t = (s.textContent || '').trim();
+      const r = s.getBoundingClientRect();
+      return labels.includes(t) && r.top < 300;
+    });
+    if (spans.length < 4 && (this._navTries = (this._navTries || 0) + 1) < 40) {
+      setTimeout(() => this._setupNavScramble(), 200);
+      return;
+    }
+    spans.forEach((el) => {
+      const target = (el.textContent || '').trim();
+      let iv = null;
+      el.addEventListener('mouseenter', () => {
+        let frame = 0;
+        clearInterval(iv);
+        iv = setInterval(() => {
+          el.textContent = target.split('').map((c, i) => {
+            if (c === ' ') return ' ';
+            if (i < frame / 2.4) return target[i];
+            return chars[Math.floor(Math.random() * chars.length)];
+          }).join('');
+          frame++;
+          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
+        }, 32);
+      });
+    });
+    spans.forEach((el) => {
+      const target = (el.textContent || '').trim();
+      let iv = null;
+      el.addEventListener('mouseenter', () => {
+        let frame = 0;
+        clearInterval(iv);
+        iv = setInterval(() => {
+          el.textContent = target.split('').map((c, i) => {
+            if (c === ' ') return ' ';
+            if (i < frame / 2.4) return target[i];
+            return chars[Math.floor(Math.random() * chars.length)];
+          }).join('');
+          frame++;
+          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
+        }, 32);
+      });
+    });
+    spans.forEach((el) => {
+      const target = (el.textContent || '').trim();
+      el.style.cursor = 'pointer';
+      let iv = null;
+      el.addEventListener('mouseenter', () => {
+        let frame = 0;
+        clearInterval(iv);
+        iv = setInterval(() => {
+          el.textContent = target.split('').map((c, i) => {
+            if (c === ' ') return ' ';
+            if (i < frame / 2.4) return target[i];
+            return chars[Math.floor(Math.random() * chars.length)];
+          }).join('');
+          frame++;
+          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
+        }, 32);
+      });
+    });
+  }
+
+  _setupJourneyDISABLED() {
+    const j = document.getElementById('cap-journey');
+    if (!j) return;
+    const phases = [...j.querySelectorAll('.cap-phase')];
+    const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+    this._onJourney = () => {
+      const sc = document.getElementById('cap-scaler');
+      const m = (sc.style.transform || '').match(/scale\(([^)]+)\)/);
+      const s = m ? parseFloat(m[1]) : 1;
+      const topPage = 2959 * s, hPage = 753 * s;
+      const vh = window.innerHeight;
+      const prog = clamp((window.scrollY + vh - topPage) / (hPage + vh));
+      const idx = prog < 0.38 ? 0 : prog < 0.68 ? 1 : 2;
+      phases.forEach((p, i) => { p.style.opacity = i === idx ? '1' : '0'; });
+    };
+    this._onJourney();
+    window.addEventListener('scroll', this._onJourney, { passive: true });
+    window.addEventListener('resize', this._onJourney);
+  }
+
+  _setupReveal() {
+    const reveal = document.getElementById('cap-reveal');
+    const stat75 = document.getElementById('cap-75');
+    if (!reveal) return;
+    const rows = [...reveal.querySelectorAll('.cap-row')];
+    const N = rows.length;
+    const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+    this._onRevealScroll = () => {
+      const r = reveal.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // p: 0 when the band's top is a bit below viewport, 1 once it has risen ~80% up
+      const p = clamp((vh * 0.85 - r.top) / (vh * 0.85));
+      // each row reveals over a staggered slice of p → moving staircase edge
+      const span = 0.55;              // width of each row's reveal window
+      const stagger = (1 - span) / (N - 1);
+      rows.forEach((row, i) => {
+        const rp = clamp((p - i * stagger) / span);
+        // white row physically slides to the RIGHT, uncovering red behind it (stops at center)
+        row.style.transform = 'translateX(' + (rp * 100) + '%)';
+      });
+      if (stat75) {
+        const fp = clamp((p - 0.45) / 0.4);
+        stat75.style.opacity = String(fp);
+        stat75.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
+      }
+    };
+    this._onRevealScroll();
+    window.addEventListener('scroll', this._onRevealScroll, { passive: true });
+    window.addEventListener('resize', this._onRevealScroll);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._fit);
+    clearTimeout(this._t1); clearTimeout(this._t2);
+    if (this._onRevealScroll) {
+      window.removeEventListener('scroll', this._onRevealScroll);
+      window.removeEventListener('resize', this._onRevealScroll);
+    }
+  }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
