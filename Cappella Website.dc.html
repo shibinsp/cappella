@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+<script src="https://unpkg.com/split-type"></script>
 </head>
 <body>
 <x-dc>
@@ -36,17 +40,118 @@
     }
     /* nav-overlay links must stay on one line (beats the global rule) */
     #cap-scaler span.cap-nav { white-space: nowrap !important; }
+
+    /* ===== SCROLL ANIMATION BASE STYLES ===== */
+    @media (prefers-reduced-motion: no-preference) {
+      /* Elements that will be revealed on scroll */
+      .cap-scroll-reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform;
+      }
+      .cap-scroll-reveal.cap-revealed {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      /* Stagger delays for child items */
+      .cap-scroll-reveal.cap-delay-1 { transition-delay: 0.1s; }
+      .cap-scroll-reveal.cap-delay-2 { transition-delay: 0.2s; }
+      .cap-scroll-reveal.cap-delay-3 { transition-delay: 0.3s; }
+      .cap-scroll-reveal.cap-delay-4 { transition-delay: 0.4s; }
+      .cap-scroll-reveal.cap-delay-5 { transition-delay: 0.5s; }
+
+      /* Slide-in from left */
+      .cap-slide-left {
+        opacity: 0;
+        transform: translateX(-60px);
+        transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform;
+      }
+      .cap-slide-left.cap-revealed {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      /* Scale-up reveal */
+      .cap-scale-reveal {
+        opacity: 0;
+        transform: scale(0.88);
+        transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform;
+      }
+      .cap-scale-reveal.cap-revealed {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      /* Clip reveal — text slides up from a masked box */
+      .cap-clip-reveal {
+        overflow: hidden;
+      }
+      .cap-clip-reveal > * {
+        display: block;
+        transform: translateY(100%);
+        transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform;
+      }
+      .cap-clip-reveal.cap-revealed > * {
+        transform: translateY(0);
+      }
+    }
+
+    /* Hero intro line animation */
+    .cap-hero-line {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.35);
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .cap-hero-line {
+        transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .cap-hero-line.cap-line-in {
+        transform: scaleX(1);
+      }
+    }
+    /* Preloader Logo drawing animation */
+    .cap-logo-path {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: capDraw 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    @keyframes capDraw {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    /* Persistent rule to hide legacy Figma red overlays in the portfolio section */
+    /* React renders numeric styles as top:3955px (no space) */
+    div[style*="top: 3955px"],
+    div[style*="top:3955px"] {
+      /* Only hide if it also has rgba red background */
+    }
+    /* JS will also hide these dynamically - belt and suspenders approach */
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
-  <div id="cap-scaler" style="width: 1457px; height: 7821px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
+  <div id="cap-scaler" style="width: 1457px; height: 7571px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
     <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1544px,8372px"></x-import>
 
     <!-- Interactive DotGrid canvas over the hero -->
     <canvas id="cap-dotgrid" width="1457" height="830" style="position: absolute; left: 0; top: 0; width: 1457px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
 
     <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
-    <div style="position: absolute; left: 0; top: 1958px; width: 1457px; height: 234px; background: rgb(209,32,47); z-index: 4;"></div>
+    <div style="position: absolute; left: 0; top: 1715px; width: 1457px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
 
     <!-- 75 Years+ stat on solid red (no staircase behind it) -->
     <div id="cap-75" style="position: absolute; left: 695px; top: 1360px; z-index: 5;">
@@ -58,13 +163,11 @@
     <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
 
     <!-- Scroll-linked staircase reveal — left half only, starting under "135 Acres" -->
-    <div id="cap-reveal" style="position: absolute; left: 129px; top: 1966px; width: 728px; height: 450px; z-index: 6; pointer-events: none; overflow: hidden; display: none">
-      <div class="cap-row" style="position: absolute; left: 0; top: 0px;    width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
-      <div class="cap-row" style="position: absolute; left: 0; top: 75px;   width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
-      <div class="cap-row" style="position: absolute; left: 0; top: 150px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
-      <div class="cap-row" style="position: absolute; left: 0; top: 225px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
-      <div class="cap-row" style="position: absolute; left: 0; top: 300px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
-      <div class="cap-row" style="position: absolute; left: 0; top: 375px;  width: 100%; height: 75px; background: rgb(255,255,255); transform-origin: right; transition: transform .12s linear;"></div>
+    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1715px; width: 728px; height: 440px; z-index: 6; pointer-events: none; overflow: hidden;">
+      <div class="cap-stair" style="position: absolute; left: 0; top: 0px;   width: 25%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 110px;  width: 50%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 220px;  width: 75%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 330px;  width: 100%; height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
     </div>
   </div>
   <div id="cap-spotlight" style="position: fixed; left: 0; top: 0; width: 460px; height: 460px; margin-left: -230px; margin-top: -230px; z-index: 60; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.12) 40%, transparent 68%); filter: blur(26px); mix-blend-mode: overlay; opacity: 0; transition: opacity .3s ease;"></div>
@@ -82,14 +185,48 @@
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
   componentDidMount() {
-    const FRAME_W = 1457, FRAME_H = 7821;
+    const FRAME_W = 1457, FRAME_H = 7571;
+
+    // Preloader must start immediately, not after the 1600ms hydration delay
+    this._setupPreloader();
+
+    // Run footer adjustments synchronously so that subsequent layout caches are accurate
+    const scaler = document.getElementById('cap-scaler');
+    if (scaler) {
+      const footerShift = 250;
+      
+      // Shift logos and bottom text up
+      const bottomElements = [...scaler.querySelectorAll('*')].filter(el => {
+        const t = parseFloat(el.style.top);
+        return t > 7600;
+      });
+      bottomElements.forEach(el => {
+        const currentTop = parseFloat(el.style.top);
+        el.style.top = (currentTop - footerShift) + 'px';
+      });
+
+      // Shrink red background
+      const allDivs = [...scaler.querySelectorAll('div')];
+      const footerContainer = allDivs.find(e => e.style.top === '7092px');
+      if (footerContainer) {
+        const currentHeight = parseFloat(footerContainer.style.height);
+        footerContainer.style.height = (currentHeight - footerShift) + 'px';
+        const redBg = footerContainer.querySelector('div');
+        if (redBg) {
+          const redHeight = parseFloat(redBg.style.height);
+          redBg.style.height = (redHeight - footerShift) + 'px';
+        }
+      }
+    }
+
     this._fit = () => {
-      const scaler = document.getElementById('cap-scaler');
+      const scalerEl = document.getElementById('cap-scaler');
       const vp = document.getElementById('cap-viewport');
-      if (!scaler || !vp) return;
+      if (!scalerEl || !vp) return;
       const s = vp.clientWidth / FRAME_W;
-      scaler.style.transform = 'scale(' + s + ')';
-      vp.style.height = (FRAME_H * s) + 'px';
+      scalerEl.style.transform = 'scale(' + s + ')';
+      const currentH = parseFloat(scalerEl.style.height) || FRAME_H;
+      vp.style.height = (currentH * s) + 'px';
     };
     this._fit();
     // re-fit after fonts/images settle and on resize
@@ -98,13 +235,26 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._fit);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(this._fit);
 
-    // ===== STAIRCASE SCROLL REVEAL — DISABLED =====
-    // this._setupReveal();
+    // ===== STAIRCASE SCROLL REVEAL =====
+    this._setupReveal();
 
     // ===== First-page effects: dot grid + spotlight cursor + nav text scramble =====
     this._setupDotGrid();
     this._setupSpotlight();
     this._setupNavScramble();
+
+    // ===== DEFERRED ANIMATIONS =====
+    // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
+    // The frame renders async, so 1.6s covers the worst case render + font settle.
+    this._t3 = setTimeout(() => {
+      this._setupScrollReveals();
+      this._setupStatCounters();
+      this._setupPortfolioInteraction();
+      this._setupAccordion();
+    }, 1600);
+
+    // Hero intro: slight delay so first-frame paint is visible before elements vanish
+    this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
   }
 
   _setupDotGrid() {
@@ -180,40 +330,6 @@ class Component extends DCLogic {
     }
     spans.forEach((el) => {
       const target = (el.textContent || '').trim();
-      let iv = null;
-      el.addEventListener('mouseenter', () => {
-        let frame = 0;
-        clearInterval(iv);
-        iv = setInterval(() => {
-          el.textContent = target.split('').map((c, i) => {
-            if (c === ' ') return ' ';
-            if (i < frame / 2.4) return target[i];
-            return chars[Math.floor(Math.random() * chars.length)];
-          }).join('');
-          frame++;
-          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
-        }, 32);
-      });
-    });
-    spans.forEach((el) => {
-      const target = (el.textContent || '').trim();
-      let iv = null;
-      el.addEventListener('mouseenter', () => {
-        let frame = 0;
-        clearInterval(iv);
-        iv = setInterval(() => {
-          el.textContent = target.split('').map((c, i) => {
-            if (c === ' ') return ' ';
-            if (i < frame / 2.4) return target[i];
-            return chars[Math.floor(Math.random() * chars.length)];
-          }).join('');
-          frame++;
-          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
-        }, 32);
-      });
-    });
-    spans.forEach((el) => {
-      const target = (el.textContent || '').trim();
       el.style.cursor = 'pointer';
       let iv = null;
       el.addEventListener('mouseenter', () => {
@@ -229,6 +345,449 @@ class Component extends DCLogic {
           if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
         }, 32);
       });
+    });
+  }
+
+  _setupHeroIntro() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // 1. VERTICAL GRID LINES REVEAL (scales scaleX from 0 to 1 for rotated 90deg SVGs)
+    const svgs = [...scaler.querySelectorAll('svg')].filter(el => {
+      const top = parseFloat(el.style.top) || 0;
+      if (top > 1000) return false;
+      const transform = el.style.transform || '';
+      return transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0');
+    });
+
+    svgs.forEach((el, idx) => {
+      const originalTransform = el.style.transform || '';
+      el.style.transformOrigin = '0 0';
+      el.style.transform = originalTransform + ' scaleX(0)';
+      el.style.transition = 'transform 1.6s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      setTimeout(() => {
+        el.style.transform = originalTransform + ' scaleX(1)';
+      }, 100 + idx * 80);
+    });
+
+    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL
+    const headings = [...scaler.querySelectorAll('span, p, h1, h2, h3')].filter(el => {
+      const top = parseFloat(el.style.top) || 0;
+      if (top > 850) return false;
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      const txt = (el.textContent || '').trim();
+      return fontSize >= 24 && txt.length > 3 && !el.querySelector('*') && txt !== 'CAPPELLA';
+    });
+
+    headings.forEach((el) => {
+      const originalText = el.textContent || '';
+      el.innerHTML = '';
+      
+      const words = originalText.split(/\s+/);
+      const wordSpans = words.map(word => {
+        const charSpans = word.split('').map(char => {
+          const s = document.createElement('span');
+          s.textContent = char;
+          s.style.display = 'inline-block';
+          s.style.opacity = '0';
+          s.style.transform = 'translateY(110%)';
+          s.style.transition = 'transform 0.8s cubic-bezier(0.215, 0.61, 0.355, 1), opacity 0.8s ease';
+          return s;
+        });
+        
+        const wordContainer = document.createElement('span');
+        wordContainer.style.display = 'inline-block';
+        wordContainer.style.overflow = 'hidden';
+        wordContainer.style.whiteSpace = 'nowrap';
+        wordContainer.style.verticalAlign = 'bottom';
+        wordContainer.style.marginRight = '0.22em';
+        
+        charSpans.forEach(cs => wordContainer.appendChild(cs));
+        return { container: wordContainer, chars: charSpans };
+      });
+
+      wordSpans.forEach(ws => el.appendChild(ws.container));
+
+      const allChars = wordSpans.flatMap(ws => ws.chars);
+
+      setTimeout(() => {
+        allChars.forEach((cs, cIdx) => {
+          setTimeout(() => {
+            cs.style.opacity = '1';
+            cs.style.transform = 'translateY(0)';
+          }, cIdx * 20);
+        });
+      }, 250);
+    });
+  }
+
+  _setupScrollReveals() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // Helper: get element's true top in page (px), accounting for scaler scale
+    const getScaledTop = (el) => {
+      const s = parseFloat((scaler.style.transform || 'scale(1)').match(/scale\(([^)]+)\)/)?.[1] || '1');
+      const r = el.getBoundingClientRect();
+      return r.top + window.scrollY;
+    };
+
+    // --- Classify elements by which section they're likely in ---
+    // Strategy: find key heading/block elements by text content and position,
+    // then add reveal classes + observe with IntersectionObserver.
+
+    const addReveal = (el, cls = 'cap-scroll-reveal', delay = '') => {
+      el.classList.add(cls);
+      if (delay) el.classList.add(delay);
+    };
+
+    // Observe and fire
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('cap-revealed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    // SECTION HEADINGS — find large text nodes that are section titles
+    const sectionHeadings = [...scaler.querySelectorAll('span, div')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      return fontSize >= 40 && txt.length > 3 && txt.length < 60;
+    });
+    sectionHeadings.slice(0, 20).forEach((el, i) => {
+      // Skip elements in the hero (visible on page load)
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      addReveal(el, 'cap-scroll-reveal');
+      io.observe(el);
+    });
+
+    // STAT NUMBERS — large metric text ($500 Mn+, 135 Acres, 16 Assets, 75 Years+)
+    const statNums = [...scaler.querySelectorAll('span, div')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      return /^(\$?\d+\s*\w*[+]?)$/.test(txt) || txt.match(/^\d.*[+]$/);
+    });
+    statNums.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      addReveal(el, 'cap-scale-reveal', 'cap-delay-' + Math.min(i + 1, 5));
+      io.observe(el);
+    });
+
+    // BODY PARAGRAPHS — description text blocks
+    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+    });
+    bodyParas.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      addReveal(el, 'cap-scroll-reveal', 'cap-delay-' + (i % 3 + 1));
+      io.observe(el);
+    });
+
+    this._scrollRevealIO = io;
+
+    // Initialize Lenis Smooth Scroll & Sync GSAP Ticker
+    if (window.Lenis && window.gsap && window.ScrollTrigger) {
+      this._lenis = new window.Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // OCI style easing
+      });
+      this._lenis.on('scroll', window.ScrollTrigger.update);
+      window.gsap.ticker.add((time) => {
+        this._lenis.raf(time * 1000);
+      });
+      window.gsap.ticker.lagSmoothing(0);
+    }
+
+    this._setupHeroZoom();
+    this._setupSplitText();
+
+    // ===== MENU SMOOTH SCROLLING =====
+    const navItems = [
+      { text: 'ABOUT US', target: 900 },
+      { text: 'PROJECTS', target: 3000 },
+      { text: 'PORTFOLIO', target: 3000 },
+      { text: 'TEAM', target: 6200 },
+      { text: 'CONTACT US', target: 7092 }
+    ];
+
+    setTimeout(() => {
+      navItems.forEach(item => {
+        const els = [...scaler.querySelectorAll('span')].filter(el => 
+          (el.textContent || '').trim().toUpperCase() === item.text
+        );
+        els.forEach(el => {
+          el.style.cursor = 'pointer';
+          el.addEventListener('click', () => {
+            const vp = document.getElementById('cap-viewport');
+            const target = item.target * ((vp ? vp.clientWidth : window.innerWidth) / 1457);
+            if (this._lenis) {
+              this._lenis.scrollTo(target);
+            } else {
+              window.scrollTo({ top: target, behavior: 'smooth' });
+            }
+          });
+        });
+      });
+    }, 500);
+
+    // ===== FOOTER EMAIL INPUT =====
+    setTimeout(() => {
+      const emailSpan = [...scaler.querySelectorAll('span')].find(el => 
+        (el.textContent || '').trim() === 'Your Email Id'
+      );
+      if (emailSpan) {
+        const input = document.createElement('input');
+        input.type = 'email';
+        input.placeholder = 'Your Email Id';
+        input.style.position = 'absolute';
+        input.style.left = emailSpan.style.left || '1113px';
+        input.style.top = emailSpan.style.top || '421px';
+        input.style.width = emailSpan.style.width || '180px';
+        input.style.height = '35px';
+        input.style.background = 'transparent';
+        input.style.border = 'none';
+        input.style.outline = 'none';
+        input.style.fontFamily = emailSpan.style.fontFamily || 'Montserrat, sans-serif';
+        input.style.fontSize = emailSpan.style.fontSize || '14px';
+        input.style.fontWeight = emailSpan.style.fontWeight || '500';
+        input.style.color = 'rgb(255,255,255)';
+        input.style.borderBottom = '1px solid rgba(255,255,255,0.4)';
+        
+        emailSpan.parentNode.replaceChild(input, emailSpan);
+
+        const arrowSvg = [...input.parentNode.querySelectorAll('svg')].find(s => 
+          s.style.left === '1307px' || (parseFloat(s.style.left) >= 1300 && parseFloat(s.style.left) <= 1320)
+        );
+        if (arrowSvg) {
+          arrowSvg.style.cursor = 'pointer';
+          arrowSvg.addEventListener('click', () => {
+            if (input.value) {
+              alert(`Thank you for subscribing, ${input.value}!`);
+              input.value = '';
+            } else {
+              alert('Please enter a valid email address.');
+            }
+          });
+        }
+      }
+    }, 500);
+  }
+
+  _setupPreloader() {
+    // Red background preloader screen
+    const preloader = document.createElement('div');
+    preloader.style.position = 'fixed';
+    preloader.style.top = '0';
+    preloader.style.left = '0';
+    preloader.style.width = '100vw';
+    preloader.style.height = '100vh';
+    preloader.style.backgroundColor = 'rgba(209,32,47,1)';
+    preloader.style.zIndex = '9999';
+    preloader.style.transition = 'transform 1.0s cubic-bezier(0.77, 0, 0.175, 1)';
+    document.body.appendChild(preloader);
+
+    // Separate logo container so it can animate independently of the preloader screen sliding off
+    const centerWrap = document.createElement('div');
+    centerWrap.style.position = 'fixed';
+    centerWrap.style.top = '0';
+    centerWrap.style.left = '0';
+    centerWrap.style.width = '100vw';
+    centerWrap.style.height = '100vh';
+    centerWrap.style.zIndex = '10000';
+    centerWrap.style.pointerEvents = 'none';
+    centerWrap.style.display = 'flex';
+    centerWrap.style.flexDirection = 'column';
+    centerWrap.style.alignItems = 'center';
+    centerWrap.style.justifyContent = 'center';
+
+    const logoImg = document.createElement('img');
+    logoImg.src = './components/assets/eae7f9bdb03982f5.png';
+    logoImg.style.width = '100px';
+    logoImg.style.height = 'auto';
+    logoImg.style.opacity = '0';
+    logoImg.style.transform = 'scale(0.8)';
+    logoImg.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease';
+    centerWrap.appendChild(logoImg);
+
+    const nameImg = document.createElement('img');
+    nameImg.src = './components/assets/7cb777f5a65019d1.png';
+    nameImg.style.width = '180px';
+    nameImg.style.height = 'auto';
+    nameImg.style.marginTop = '20px';
+    nameImg.style.opacity = '0';
+    nameImg.style.transform = 'translateY(15px)';
+    nameImg.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease';
+    centerWrap.appendChild(nameImg);
+
+    document.body.appendChild(centerWrap);
+
+    setTimeout(() => {
+      logoImg.style.opacity = '1';
+      logoImg.style.transform = 'scale(1)';
+      
+      setTimeout(() => {
+        nameImg.style.opacity = '1';
+        nameImg.style.transform = 'translateY(0)';
+      }, 200);
+    }, 150);
+
+    setTimeout(() => {
+      const vp = document.getElementById('cap-viewport');
+      const s = vp ? vp.clientWidth / 1457 : 1;
+      
+      // Calculate target position in top-left corner based on active scaler width
+      const targetX = 35 * s;
+      const targetY = 44 * s;
+      
+      // Fly logo & text dynamically to the navbar logo positions in the top-left
+      logoImg.style.transformOrigin = '50% 50%';
+      logoImg.style.transform = `translate(calc(-50vw + ${targetX + 22 * s}px), calc(-50vh + ${targetY + 18 * s}px)) scale(${0.3 * s})`;
+      logoImg.style.opacity = '0.2'; // Fade out slightly as it lands
+      
+      nameImg.style.transformOrigin = '0% 50%';
+      nameImg.style.transform = `translate(calc(-50vw + ${targetX + 60 * s}px), calc(-50vh + ${targetY + 22 * s}px)) scale(${0.55 * s})`;
+      nameImg.style.opacity = '0.2';
+
+      // Slide preloader red screen away diagonally to the left-top corner
+      preloader.style.transform = 'translate(-100%, -100%)';
+      
+      setTimeout(() => {
+        centerWrap.remove();
+        preloader.remove();
+      }, 1000);
+    }, 1100);
+  }
+
+  _setupHeroZoom() {
+    // 4. Parallax Hero Zoom
+    if (!window.gsap || !window.ScrollTrigger) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+    
+    const heroWrapper = [...scaler.querySelectorAll('div')].find(e => {
+      const style = e.getAttribute('style') || '';
+      return style.includes('width: 1440') && style.includes('height: 830.204');
+    });
+
+    if (heroWrapper) {
+      heroWrapper.style.transformOrigin = '50% 100%'; // Zoom from bottom center slightly
+      window.gsap.to(heroWrapper, {
+        scale: 1.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: document.body,
+          start: "top top",
+          end: "1200px", // Scroll distance
+          scrub: true
+        }
+      });
+    }
+  }
+
+  _setupSplitText() {
+    // 5. Staggered Line-Split Quote Reveal
+    if (!window.gsap || !window.ScrollTrigger || !window.SplitType) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // Apply to main body paragraphs (the ones used for cap-scroll-reveal)
+    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+    });
+
+    bodyParas.forEach((el) => {
+      // Clean up previous classes to avoid conflicts
+      el.classList.remove('cap-scroll-reveal');
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+
+      // Use SplitType to split text into lines
+      const split = new window.SplitType(el, { types: 'lines' });
+      
+      // Wrap each line in an overflow hidden mask
+      split.lines.forEach(line => {
+        const wrapper = document.createElement('div');
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.verticalAlign = 'top';
+        wrapper.style.padding = '0';
+        wrapper.style.margin = '0';
+        line.parentNode.insertBefore(wrapper, line);
+        wrapper.appendChild(line);
+        // Initial state for GSAP
+        window.gsap.set(line, { yPercent: 100 });
+      });
+
+      window.ScrollTrigger.create({
+        trigger: el,
+        start: "top 90%",
+        onEnter: () => {
+          window.gsap.to(split.lines, {
+            yPercent: 0,
+            duration: 1.2,
+            ease: "power4.out",
+            stagger: 0.08
+          });
+        }
+      });
+    });
+  }
+
+  _setupStatCounters() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+    // Find stat number elements — look for specific known values
+    const targets = [
+      { text: '$500 Mn+', end: 500, prefix: '$', suffix: ' Mn+' },
+      { text: '135 Acres', end: 135, prefix: '', suffix: ' Acres' },
+      { text: '16 Assets', end: 16, prefix: '', suffix: ' Assets' },
+      { text: '75 Years+', end: 75, prefix: '', suffix: ' Years+' }
+    ];
+    targets.forEach(({ text, end, prefix, suffix }) => {
+      const el = [...scaler.querySelectorAll('div, span')].find(e =>
+        (e.textContent || '').trim() === text && !e.querySelector('*')
+      );
+      if (!el) return;
+      let animated = false;
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && !animated) {
+            animated = true;
+            io.unobserve(el);
+            // Animate counter
+            const duration = 1400;
+            const start = performance.now();
+            const tick = (now) => {
+              const elapsed = now - start;
+              const progress = Math.min(elapsed / duration, 1);
+              // Ease out expo
+              const eased = 1 - Math.pow(2, -10 * progress);
+              const value = Math.round(eased * end);
+              el.textContent = prefix + value + suffix;
+              if (progress < 1) requestAnimationFrame(tick);
+              else el.textContent = text; // restore exact original
+            };
+            requestAnimationFrame(tick);
+          }
+        });
+      }, { threshold: 0.5 });
+      io.observe(el);
     });
   }
 
@@ -256,22 +815,33 @@ class Component extends DCLogic {
     const reveal = document.getElementById('cap-reveal');
     const stat75 = document.getElementById('cap-75');
     if (!reveal) return;
-    const rows = [...reveal.querySelectorAll('.cap-row')];
-    const N = rows.length;
+    const stairs = [...reveal.querySelectorAll('.cap-stair')];
+    const N = stairs.length;
     const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+    const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
     this._onRevealScroll = () => {
       const r = reveal.getBoundingClientRect();
       const vh = window.innerHeight;
-      // p: 0 when the band's top is a bit below viewport, 1 once it has risen ~80% up
+      
+      // Calculate progress p: 0 when the reveal top is near the bottom of viewport, 
+      // 1 when it's well above it.
       const p = clamp((vh * 0.85 - r.top) / (vh * 0.85));
-      // each row reveals over a staggered slice of p → moving staircase edge
-      const span = 0.55;              // width of each row's reveal window
-      const stagger = (1 - span) / (N - 1);
-      rows.forEach((row, i) => {
-        const rp = clamp((p - i * stagger) / span);
-        // white row physically slides to the RIGHT, uncovering red behind it (stops at center)
-        row.style.transform = 'translateX(' + (rp * 100) + '%)';
+      
+      // We want a staggered reveal starting from the bottom stair (index 3) to the top stair (index 0)
+      const span = 0.55;
+      const stagger = 0.15;
+      
+      stairs.forEach((stair, i) => {
+        // Since i=0 is top, i=1 is middle, i=2 is bottom,
+        // and we want bottom (i=2) to start first, middle (i=1) second, top (i=0) third:
+        const delay = (N - 1 - i) * stagger;
+        const stairProgress = clamp((p - delay) / span);
+        const easedProgress = easeInOutQuad(stairProgress);
+        
+        stair.style.transform = 'scaleX(' + easedProgress + ')';
       });
+
       if (stat75) {
         const fp = clamp((p - 0.45) / 0.4);
         stat75.style.opacity = String(fp);
@@ -282,13 +852,722 @@ class Component extends DCLogic {
     window.addEventListener('scroll', this._onRevealScroll, { passive: true });
     window.addEventListener('resize', this._onRevealScroll);
   }
+
+  _setupPortfolioInteraction() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // Scale helper function - must be defined before alignLogo uses it
+    const sc = () => { 
+      const e = document.getElementById('cap-scaler'); 
+      const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); 
+      return m ? parseFloat(m[1]) : 1; 
+    };
+
+    // 1. Find city elements
+    const cityNames = ['Dubai', 'Andhra Pradesh', 'Bangalore', 'Chhattisgarh', 'Chennai', 'Hyderabad', 'Pune'];
+    const cityEls = [];
+    cityNames.forEach(name => {
+      const el = [...scaler.querySelectorAll('span')].find(e => 
+        (e.textContent || '').trim().replace(/\u2028/g, '').trim() === name.trim()
+      );
+      if (el) cityEls.push({ name, el });
+    });
+
+    // Aggressively hide ALL red overlays in portfolio area — check multiple top values
+    const hideRedOverlays = () => {
+      [...scaler.querySelectorAll('div')].forEach(e => {
+        const style = e.getAttribute('style') || '';
+        const top = parseFloat(e.style.top) || 0;
+        const hasRedBg = style.includes('rgba(209,32,47') || style.includes('rgba(209, 32, 47');
+        if (top >= 3800 && top <= 5200 && hasRedBg) {
+          e.style.display = 'none';
+        }
+      });
+    };
+    hideRedOverlays();
+    // Also run after React potentially re-renders
+    setTimeout(hideRedOverlays, 500);
+    setTimeout(hideRedOverlays, 1500);
+
+    // 2. Find school card elements
+    const cards = [];
+    
+    // Helper to find absolute div by class name
+    const findElByClass = (cls) => scaler.querySelector('.' + cls);
+    
+    const cardData = [
+      {
+        id: 1,
+        imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725',
+        labelKeywords: ['Sancta', 'Maria'],
+        cities: ['Hyderabad', 'Bangalore']
+      },
+      {
+        id: 2,
+        imgCls: 'fig-asset-016a31a2601bd9e3',
+        labelKeywords: ['Michael'],
+        cities: ['Hyderabad', 'Chennai']
+      },
+      {
+        id: 3,
+        imgCls: 'fig-asset-0f9374cd498a11f1-a670101d',
+        labelKeywords: ['Keesara'],
+        cities: ['Andhra Pradesh', 'Bangalore', 'Pune']
+      },
+      {
+        id: 4,
+        imgCls: 'fig-asset-76ba2d1ec2162f53',
+        labelKeywords: ['Suchitra'],
+        cities: ['Andhra Pradesh', 'Chennai', 'Dubai', 'Chhattisgarh']
+      }
+    ];
+
+    // 4x4 Bayer Matrix for ordered dithering
+    const bayerMatrix = [
+      [  0, 12,  3, 15 ],
+      [  8,  4, 11,  7 ],
+      [  2, 14,  1, 13 ],
+      [ 10,  6,  9,  5 ]
+    ];
+
+    function applyDither(imgEl, canvasEl, darkColor, lightColor) {
+      const ctx = canvasEl.getContext('2d');
+      const tempImg = new Image();
+      tempImg.crossOrigin = 'anonymous';
+      
+      const computedBg = window.getComputedStyle(imgEl).backgroundImage;
+      if (!computedBg || computedBg === 'none') return;
+      const bgUrl = computedBg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+
+      tempImg.src = bgUrl;
+      tempImg.onload = () => {
+        const w = 150; // Downsample for pixelated halftone grid
+        const h = Math.round((tempImg.height / tempImg.width) * w);
+        canvasEl.width = w;
+        canvasEl.height = h;
+
+        ctx.drawImage(tempImg, 0, 0, w, h);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+
+        const dr = darkColor[0], dg = darkColor[1], db = darkColor[2];
+        const lr = lightColor[0], lg = lightColor[1], lb = lightColor[2];
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const gray = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+            const threshold = ((bayerMatrix[y % 4][x % 4] + 0.5) / 16) * 255;
+            
+            if (gray > threshold) {
+              data[idx] = lr;
+              data[idx+1] = lg;
+              data[idx+2] = lb;
+            } else {
+              data[idx] = dr;
+              data[idx+1] = dg;
+              data[idx+2] = db;
+            }
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+      };
+    }
+
+    cardData.forEach(data => {
+      const img = findElByClass(data.imgCls);
+      const label = [...scaler.querySelectorAll('span')].find(e => 
+        data.labelKeywords.every(k => (e.textContent || '').includes(k))
+      );
+      
+      if (img && label) {
+        img.style.overflow = 'hidden';
+        img.style.position = 'relative';
+
+        // Create clean WebGL-style Dither Canvas Overlay
+        const ditherCanvas = document.createElement('canvas');
+        ditherCanvas.style.position = 'absolute';
+        ditherCanvas.style.top = '0';
+        ditherCanvas.style.left = '0';
+        ditherCanvas.style.width = '100%';
+        ditherCanvas.style.height = '100%';
+        ditherCanvas.style.pointerEvents = 'none';
+        ditherCanvas.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        img.appendChild(ditherCanvas);
+
+        // Apply red duotone dither (dark red to light mercury-pink)
+        applyDither(img, ditherCanvas, [209, 32, 47], [255, 235, 235]);
+
+        // 2. Create Arrow Button (Square)
+        const arrowBtn = document.createElement('div');
+        arrowBtn.style.position = 'absolute';
+        arrowBtn.style.bottom = '0';
+        arrowBtn.style.right = '0';
+        arrowBtn.style.width = '55px';
+        arrowBtn.style.height = '55px';
+        arrowBtn.style.backgroundColor = '#ffffff';
+        arrowBtn.style.display = 'flex';
+        arrowBtn.style.justifyContent = 'center';
+        arrowBtn.style.alignItems = 'center';
+        arrowBtn.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease';
+        arrowBtn.style.transform = 'translate(100%, 100%)';
+        arrowBtn.style.opacity = '0';
+        
+        arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(209,32,47,1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
+        img.appendChild(arrowBtn);
+
+        cards.push({
+          id: data.id,
+          img,
+          label,
+          ditherCanvas,
+          arrowBtn,
+          cities: data.cities,
+          isHovered: false,
+          parallaxY: 0
+        });
+      }
+    });
+
+    // 3. Setup text scramble on cities and school labels
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*<>/';
+    
+    // Wrap target string in individual span tags for character-by-character layout tracking
+    const wrapInCharSpans = (el) => {
+      // innerText keeps rendered line breaks (nested nodes/<br>) as \n, which
+      // textContent drops — rebuilding from textContent glued words together
+      const originalText = (el.innerText || el.textContent || '').replace(/\u2028/g, '\n');
+      el.innerHTML = '';
+      const spans = originalText.split('').map(c => {
+        const s = document.createElement('span');
+        s.textContent = c;
+        s.className = 'cap-char';
+        // Keep chars inline: inline-block spans collapse whitespace to zero
+        // width and allow line breaks between letters mid-word
+        if (/\s/.test(c)) s.style.whiteSpace = 'pre-wrap';
+        el.appendChild(s);
+        return s;
+      });
+      return spans;
+    };
+
+    // Keep the red interlocking C logo perfectly positioned to the right of the word Hyderabad
+    let fontsRegistered = false;
+    const alignLogo = () => {
+      const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
+      if (!logoEl) return;
+      
+      const hyderabadEl = cityEls.find(c => c.name === 'Hyderabad')?.el;
+      if (!hyderabadEl) return;
+      
+      const charSpans = [...hyderabadEl.querySelectorAll('.cap-char')].filter(span => {
+        return (span.textContent || '').trim().length > 0;
+      });
+      
+      if (charSpans && charSpans.length > 0) {
+        const lastChar = charSpans[charSpans.length - 1]; // last letter 'd'
+        const lastCharRect = lastChar.getBoundingClientRect();
+        const scalerRect = scaler.getBoundingClientRect();
+        const s = sc();
+        
+        // Position the logo (21px wide, 19px tall) 12px to the right of the last character 'd'
+        logoEl.style.left = ((lastCharRect.right - scalerRect.left) / s + 12) + 'px';
+        // Vertically center the logo with the letter 'd'
+        logoEl.style.top = ((lastCharRect.top - scalerRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
+      }
+
+      if (!fontsRegistered) {
+        fontsRegistered = true;
+        if (document.fonts) {
+          document.fonts.ready.then(() => {
+            alignLogo();
+          });
+        }
+        setTimeout(alignLogo, 300);
+        setTimeout(alignLogo, 1000);
+      }
+    };
+
+    const scrambleText = (el, originalText) => {
+      // Keep indices aligned with wrapInCharSpans' innerText-based content
+      originalText = (el.innerText || originalText).replace(/\u2028/g, '\n');
+      const charSpans = wrapInCharSpans(el);
+      let interval;
+      let step = 0;
+      
+      el.addEventListener('mouseenter', () => {
+        clearInterval(interval);
+        interval = setInterval(() => {
+          charSpans.forEach((cs, index) => {
+            const char = originalText[index];
+            if (char === ' ' || char === '\n' || char === '\u2028') return;
+            if (index < step) {
+              cs.textContent = char;
+            } else {
+              cs.textContent = chars[Math.floor(Math.random() * chars.length)];
+            }
+          });
+          alignLogo(); // Align during scramble frames
+          step += 1;
+          if (step > originalText.length) {
+            clearInterval(interval);
+            charSpans.forEach((cs, index) => {
+              cs.textContent = originalText[index];
+            });
+            alignLogo();
+            step = 0;
+          }
+        }, 30);
+      });
+      
+      el.addEventListener('mouseleave', () => {
+        clearInterval(interval);
+        charSpans.forEach((cs, index) => {
+          cs.textContent = originalText[index];
+        });
+        alignLogo();
+        step = 0;
+      });
+    };
+
+    cityEls.forEach(c => {
+      scrambleText(c.el, c.el.textContent || '');
+    });
+
+    cards.forEach(c => {
+      scrambleText(c.label, c.label.textContent || '');
+    });
+
+    let currentCityName = 'Hyderabad';
+
+    // Core layout function combining filter state, hover zoom, and scroll parallax
+    const updateCardTransforms = () => {
+      cards.forEach(c => {
+        const isMatch = c.cities.includes(currentCityName);
+        
+        c.img.style.transition = 'transform 0.18s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease';
+        c.label.style.transition = 'transform 0.18s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease';
+
+        if (isMatch) {
+          c.img.style.pointerEvents = 'auto';
+          c.img.style.opacity = '1';
+          
+          const scale = c.isHovered ? 1.05 : 1.0;
+          c.img.style.transform = `translateY(${c.parallaxY}px) scale(${scale})`;
+          c.label.style.transform = `translateY(${c.parallaxY}px)`;
+          
+          c.ditherCanvas.style.opacity = c.isHovered ? '0' : '1';
+          c.ditherCanvas.style.transform = c.isHovered ? 'scale(1.05)' : 'scale(1)';
+          
+          if (c.isHovered) {
+            c.arrowBtn.style.opacity = '1';
+            c.arrowBtn.style.transform = 'translate(0, 0)';
+          } else {
+            c.arrowBtn.style.opacity = '0';
+            c.arrowBtn.style.transform = 'translate(100%, 100%)';
+          }
+        } else {
+          c.img.style.pointerEvents = 'none';
+          c.img.style.opacity = '0';
+          c.img.style.transform = 'translateY(30px) scale(0.95)';
+          c.label.style.opacity = '0';
+          c.label.style.transform = 'translateY(30px)';
+          
+          c.ditherCanvas.style.opacity = '1';
+          c.arrowBtn.style.opacity = '0';
+          c.arrowBtn.style.transform = 'translate(100%, 100%)';
+        }
+      });
+    };
+
+    // 4. Setup card hover zoom and overlay fade-out
+    cards.forEach(c => {
+      c.img.addEventListener('mouseenter', () => {
+        c.isHovered = true;
+        updateCardTransforms();
+      });
+      
+      c.img.addEventListener('mouseleave', () => {
+        c.isHovered = false;
+        updateCardTransforms();
+      });
+    });
+
+    // 5. Setup dynamic city filtering
+    const filterToCity = (cityName) => {
+      currentCityName = cityName;
+      cityEls.forEach(c => {
+        if (c.name === cityName) {
+          c.el.style.color = 'rgb(0,0,0)';
+          c.el.style.fontWeight = '700';
+        } else {
+          c.el.style.color = 'rgb(186,186,186)';
+          c.el.style.fontWeight = '500';
+        }
+      });
+      updateCardTransforms();
+      alignLogo(); // Align on filter change
+    };
+
+    cityEls.forEach(c => {
+      c.el.style.cursor = 'pointer';
+      c.el.addEventListener('click', () => {
+        filterToCity(c.name);
+      });
+    });
+
+    // 6. Setup scroll parallax listener (sc() already defined at top of method)
+    this._onPortfolioScroll = () => {
+      const scrollY = window.scrollY;
+      const s = sc();
+      // Portfolio area center in scaled pixels (approx 4400px)
+      const centerOffset = (scrollY + window.innerHeight / 2 - 4400 * s) / s;
+      
+      // Calculate parallax offset (Column 1 scrolls at different speed than Column 2)
+      const offsetVal = centerOffset * 0.12; 
+
+      cards.forEach(c => {
+        // Column 1: cards 1 & 3 (left side) -> translate up
+        // Column 2: cards 2 & 4 (right side) -> translate down
+        const isCol1 = (c.id === 1 || c.id === 3);
+        c.parallaxY = isCol1 ? -offsetVal : offsetVal;
+      });
+
+      updateCardTransforms();
+    };
+
+    window.addEventListener('scroll', this._onPortfolioScroll, { passive: true });
+    
+    // Track layout resize shifts
+    this._alignLogo = alignLogo;
+    window.addEventListener('resize', this._alignLogo);
+    
+    // Default to Hyderabad on load
+    filterToCity('Hyderabad');
+    this._onPortfolioScroll();
+    
+    // Re-run hide overlays after card DOM settles (belt and suspenders)
+    setTimeout(hideRedOverlays, 800);
+  }
+
+  _setupAccordion() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    const sc = () => {
+      const m = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+      return m ? parseFloat(m[1]) : 1;
+    };
+
+    // Geometry measured from the baked Figma frame, which ships with item 3
+    // ("Active asset management") open — everything below its description sits
+    // 258px lower than its closed spot. All values here are CLOSED-state
+    // coordinates. Opening item i pushes the rows/dividers below it down by
+    // that item's openH. The baked open state is the tallest layout the
+    // section reaches, so content below the section never needs to move.
+    const DESC_LEFT = 755, DESC_WIDTH = 624, DESC_OFFSET = 62;
+    const ICON_OFFSET = 20;
+    const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)'; // OCI power curve
+    const BAKED_OPEN_INDEX = 2, BAKED_SHIFT = 258;
+
+    const data = [
+      {
+        title: 'Operator-aligned structures',
+        text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield',
+        closedTop: 2315, figmaIconTop: 2335, closedDividerTop: 2386
+      },
+      {
+        title: 'Future-ready campuses',
+        text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.',
+        closedTop: 2389, figmaIconTop: 2409, closedDividerTop: 2452
+      },
+      {
+        title: 'Active asset management',
+        text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.',
+        closedTop: 2455, figmaIconTop: 2487, closedDividerTop: 2534, figmaShift: BAKED_SHIFT
+      },
+      {
+        title: 'Proven, long-term investor value',
+        text: 'A strong track record of delivering consistent, high-quality returns across three funds.',
+        closedTop: 2537, figmaIconTop: 2817, closedDividerTop: 2603
+      }
+    ];
+
+    // Hide the baked Figma +/− icons (replaced with animatable ones below)
+    data.forEach(d => {
+      const oldIcon = [...scaler.querySelectorAll('div')].find(e => {
+        const style = e.getAttribute('style') || '';
+        return style.includes('left: 1388') && style.includes('top: ' + d.figmaIconTop);
+      }) || [...scaler.querySelectorAll('svg')].find(e => {
+        const style = e.getAttribute('style') || '';
+        return style.includes('matrix') && style.includes('1410') && style.includes('' + d.figmaIconTop);
+      });
+      if (oldIcon) oldIcon.style.display = 'none';
+    });
+
+    // Hide the baked open description (recreated below with a masked reveal)
+    const bakedDesc = [...scaler.querySelectorAll('span')].find(e =>
+      (e.textContent || '').includes('Through our ecosystem')
+    );
+    if (bakedDesc) bakedDesc.style.display = 'none';
+
+    // Divider lines are 691×1 SVGs with transform matrix(-1,0,0,-1,1426,ty)
+    const allSVGs = [...scaler.querySelectorAll('svg')];
+    const findDivider = (bakedTy) => allSVGs.find(e => {
+      if (e.getAttribute('width') !== '691') return false;
+      const m = (e.getAttribute('style') || '').match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*1426,\s*([-\d.]+)\)/);
+      return m && Math.abs(parseFloat(m[1]) - bakedTy) < 8;
+    });
+
+    const items = [];
+    data.forEach((d, idx) => {
+      const titleEl = [...scaler.querySelectorAll('span')].find(e => {
+        const txt = (e.textContent || '').trim().replace(/\xA0/g, ' ').replace(/\s+/g, ' ');
+        return txt.includes(d.title);
+      });
+      if (!titleEl) return;
+
+      // OCI-style hover roll: duplicate the title inside an overflow mask
+      const rowH = titleEl.getBoundingClientRect().height / sc();
+      titleEl.style.height = rowH + 'px';
+      titleEl.style.overflow = 'hidden';
+      titleEl.style.transition = 'top 0.65s ' + EASE;
+      const roll = document.createElement('span');
+      roll.style.cssText = 'display:block; transition: transform 0.45s ' + EASE + ';';
+      const line1 = document.createElement('span');
+      line1.style.display = 'block';
+      line1.textContent = d.title;
+      const line2 = line1.cloneNode(true);
+      roll.appendChild(line1);
+      roll.appendChild(line2);
+      titleEl.textContent = '';
+      titleEl.appendChild(roll);
+
+      // Plus icon that spins 135° into an × when open (OCI signature)
+      const iconContainer = document.createElement('div');
+      iconContainer.style.cssText =
+        'position:absolute; left:1388px; width:22px; height:22px;' +
+        'display:flex; align-items:center; justify-content:center;' +
+        'color:rgb(209,32,47); pointer-events:none;' +
+        'transition: top 0.65s ' + EASE + ', transform 0.6s ' + EASE + ';';
+      const hBar = document.createElement('div');
+      hBar.style.cssText = 'position:absolute; width:22px; height:2px; background:currentColor;';
+      const vBar = document.createElement('div');
+      vBar.style.cssText = 'position:absolute; width:2px; height:22px; background:currentColor;';
+      iconContainer.appendChild(hBar);
+      iconContainer.appendChild(vBar);
+      scaler.appendChild(iconContainer);
+
+      // Masked description + [ LEARN MORE → ] link (OCI panel content)
+      const descWrap = document.createElement('div');
+      descWrap.style.cssText =
+        'position:absolute; left:' + DESC_LEFT + 'px; width:' + DESC_WIDTH + 'px;' +
+        'overflow:hidden; pointer-events:none; transition: top 0.65s ' + EASE + ';';
+      const inner = document.createElement('div');
+      inner.style.cssText =
+        'transform: translateY(110%); opacity:0;' +
+        'transition: transform 0.7s ' + EASE + ', opacity 0.45s ease;';
+      const txt = document.createElement('div');
+      txt.style.cssText =
+        'font-family: Montserrat, sans-serif; font-weight:300; font-size:24px;' +
+        'line-height:123.131%; color: rgb(0,0,0); white-space: normal;';
+      txt.textContent = d.text;
+      const link = document.createElement('div');
+      link.style.cssText =
+        'margin-top:22px; display:inline-flex; align-items:center; gap:8px;' +
+        'font-family: Montserrat, sans-serif; font-weight:600; font-size:13px;' +
+        'letter-spacing:1.5px; color: rgb(209,32,47); cursor:pointer; pointer-events:auto;';
+      const arrow = document.createElement('span');
+      arrow.textContent = '→';
+      arrow.style.cssText = 'display:inline-block; transition: transform 0.35s ' + EASE + ';';
+      link.appendChild(document.createTextNode('[  LEARN MORE '));
+      link.appendChild(arrow);
+      link.appendChild(document.createTextNode('  ]'));
+      link.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(6px)'; });
+      link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
+      link.addEventListener('click', () => {
+        const vp = document.getElementById('cap-viewport');
+        const target = 6900 * ((vp ? vp.clientWidth : window.innerWidth) / 1457);
+        if (this._lenis) this._lenis.scrollTo(target);
+        else window.scrollTo({ top: target, behavior: 'smooth' });
+      });
+      inner.appendChild(txt);
+      inner.appendChild(link);
+      descWrap.appendChild(inner);
+      scaler.appendChild(descWrap);
+
+      // Freeze the mask to the content's natural height, derive the open size
+      const innerH = Math.ceil(inner.getBoundingClientRect().height / sc());
+      descWrap.style.height = innerH + 'px';
+      const openH = Math.max(d.figmaShift || 0, DESC_OFFSET + innerH + 28);
+
+      // Divider under this row (item 3's is missing in Figma — clone one)
+      const bakedDividerTy = d.closedDividerTop + (idx >= BAKED_OPEN_INDEX ? BAKED_SHIFT : 0);
+      let dividerEl = findDivider(bakedDividerTy);
+      if (!dividerEl && idx === BAKED_OPEN_INDEX) {
+        const donor = findDivider(2386);
+        if (donor) {
+          dividerEl = donor.cloneNode(true);
+          donor.parentNode.appendChild(dividerEl);
+        }
+      }
+      const setDividerTop = dividerEl
+        ? (ty) => { dividerEl.style.transform = 'matrix(-1, 0, 0, -1, 1426, ' + ty + ')'; }
+        : () => {};
+      if (dividerEl) dividerEl.style.transition = 'transform 0.65s ' + EASE;
+
+      // Full-row click target
+      const hitArea = document.createElement('div');
+      hitArea.style.cssText =
+        'position:absolute; left:806px; width:614px; height:64px;' +
+        'cursor:pointer; z-index:10; transition: top 0.65s ' + EASE + ';';
+      scaler.appendChild(hitArea);
+
+      items.push({ ...d, titleEl, roll, rowH, iconContainer, descWrap, inner, openH, dividerEl, setDividerTop, hitArea });
+    });
+
+    if (!items.length) return;
+
+    let activeIndex = -1;
+    const layout = () => {
+      let shift = 0;
+      items.forEach((item, i) => {
+        const isOpen = i === activeIndex;
+        const top = item.closedTop + shift;
+        item.titleEl.style.top = top + 'px';
+        item.iconContainer.style.top = (top + ICON_OFFSET) + 'px';
+        item.iconContainer.style.transform = isOpen ? 'rotate(135deg)' : 'rotate(0deg)';
+        item.descWrap.style.top = (top + DESC_OFFSET) + 'px';
+        item.hitArea.style.top = (top - 4) + 'px';
+        if (isOpen) {
+          item.inner.style.transitionDelay = '0.15s, 0.15s';
+          item.inner.style.transform = 'translateY(0)';
+          item.inner.style.opacity = '1';
+          shift += item.openH;
+        } else {
+          item.inner.style.transitionDelay = '0s, 0s';
+          item.inner.style.transform = 'translateY(110%)';
+          item.inner.style.opacity = '0';
+        }
+        item.setDividerTop(item.closedDividerTop + shift);
+      });
+    };
+
+    // Dithered flash on the section image whenever the accordion changes (OCI)
+    const edgeImg = scaler.querySelector('.fig-asset-63186349250e044c-069f3173');
+    let flashImage = () => {};
+    if (edgeImg) {
+      edgeImg.style.overflow = 'hidden';
+      edgeImg.style.transition = 'transform 0.6s ' + EASE;
+      const canvas = document.createElement('canvas');
+      canvas.style.cssText =
+        'position:absolute; left:0; top:0; width:100%; height:100%;' +
+        'pointer-events:none; opacity:0; transition: opacity 0.4s ease;';
+      edgeImg.appendChild(canvas);
+
+      const bayer = [[0,12,3,15],[8,4,11,7],[2,14,1,13],[10,6,9,5]];
+      const bg = window.getComputedStyle(edgeImg).backgroundImage;
+      if (bg && bg !== 'none') {
+        const tempImg = new Image();
+        tempImg.crossOrigin = 'anonymous';
+        tempImg.src = bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+        tempImg.onload = () => {
+          const w = 150, h = Math.round((tempImg.height / tempImg.width) * w);
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(tempImg, 0, 0, w, h);
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const px = imgData.data;
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const i4 = (y * w + x) * 4;
+              const gray = 0.299 * px[i4] + 0.587 * px[i4 + 1] + 0.114 * px[i4 + 2];
+              const light = gray > ((bayer[y % 4][x % 4] + 0.5) / 16) * 255;
+              px[i4] = light ? 255 : 209;
+              px[i4 + 1] = light ? 235 : 32;
+              px[i4 + 2] = light ? 235 : 47;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        };
+      }
+
+      let flashT = null;
+      flashImage = () => {
+        canvas.style.opacity = '1';
+        edgeImg.style.transform = 'scale(1.03)';
+        clearTimeout(flashT);
+        flashT = setTimeout(() => {
+          canvas.style.opacity = '0';
+          edgeImg.style.transform = 'scale(1)';
+        }, 420);
+      };
+    }
+
+    items.forEach((item, i) => {
+      item.hitArea.addEventListener('click', () => {
+        activeIndex = activeIndex === i ? -1 : i;
+        layout();
+        flashImage();
+      });
+      item.hitArea.addEventListener('mouseenter', () => {
+        item.roll.style.transform = 'translateY(-' + item.rowH + 'px)';
+      });
+      item.hitArea.addEventListener('mouseleave', () => {
+        item.roll.style.transform = 'translateY(0)';
+      });
+    });
+
+    // Apply the baked open state without animating the initial layout…
+    const frozen = [];
+    items.forEach(item => {
+      [item.titleEl, item.iconContainer, item.descWrap, item.hitArea, item.dividerEl].forEach(el => {
+        if (!el) return;
+        frozen.push([el, el.style.transition]);
+        el.style.transition = 'none';
+      });
+    });
+    activeIndex = BAKED_OPEN_INDEX;
+    layout();
+    // …but keep the open description hidden so it can slide in on scroll
+    const openItem = items[activeIndex];
+    if (openItem) {
+      openItem.inner.style.transform = 'translateY(110%)';
+      openItem.inner.style.opacity = '0';
+    }
+    requestAnimationFrame(() => {
+      frozen.forEach(([el, t]) => { el.style.transition = t; });
+      if (openItem) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              openItem.inner.style.transform = 'translateY(0)';
+              openItem.inner.style.opacity = '1';
+              io.disconnect();
+            }
+          });
+        }, { threshold: 0.3 });
+        io.observe(openItem.descWrap);
+      }
+    });
+  }
+
   componentWillUnmount() {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
+    clearTimeout(this._t3); clearTimeout(this._t4);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
     }
+    if (this._onPortfolioScroll) {
+      window.removeEventListener('scroll', this._onPortfolioScroll);
+    }
+    if (this._alignLogo) {
+      window.removeEventListener('resize', this._alignLogo);
+    }
+    if (this._scrollRevealIO) this._scrollRevealIO.disconnect();
   }
   renderVals() { return {}; }
 }
