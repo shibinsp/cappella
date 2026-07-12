@@ -179,23 +179,6 @@
       100% { transform: translate(0, 0); }
     }
 
-    /* Custom cursor — white + difference blend inverts on any background */
-    .cap-no-cursor, .cap-no-cursor * { cursor: none !important; }
-    #cap-cursor-dot, #cap-cursor-ring {
-      position: fixed;
-      left: 0;
-      top: 0;
-      border-radius: 50%;
-      z-index: 100;
-      pointer-events: none;
-      mix-blend-mode: difference;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      will-change: transform;
-    }
-    #cap-cursor-dot { width: 8px; height: 8px; background: rgb(255, 255, 255); }
-    #cap-cursor-ring { width: 38px; height: 38px; border: 1.5px solid rgb(255, 255, 255); }
-
     /* Editorial section meta-labels: [ 01 — THE CAPPELLA EDGE ] */
     .cap-meta {
       position: absolute;
@@ -238,7 +221,6 @@
       <div class="cap-stair" style="position: absolute; left: 0; top: 330px;  width: 100%; height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
     </div>
   </div>
-  <div id="cap-spotlight" style="position: fixed; left: 0; top: 0; width: 460px; height: 460px; margin-left: -230px; margin-top: -230px; z-index: 60; pointer-events: none; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.12) 40%, transparent 68%); filter: blur(26px); mix-blend-mode: overlay; opacity: 0; transition: opacity .3s ease;"></div>
 </div>
 </x-dc>
 <template id="__bundler_thumbnail" data-bg-color="#D1202F">
@@ -417,12 +399,11 @@ class Component extends DCLogic {
 
     // ===== First-page effects: dot grid + spotlight cursor + nav text scramble =====
     this._setupDotGrid();
-    this._setupSpotlight();
     this._setupNavScramble();
 
-    // ===== PREMIUM PASS: film grain + custom cursor (viewport-level, no frame needed) =====
+    // ===== PREMIUM PASS: film grain (viewport-level, no frame needed) =====
+    // OCI reference: native cursor only — no custom cursor, ring, or spotlight
     this._setupGrain();
-    this._setupCursor();
 
     // ===== DEFERRED ANIMATIONS =====
     // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
@@ -594,53 +575,6 @@ class Component extends DCLogic {
       this._dgRaf = requestAnimationFrame(draw);
     };
     draw();
-  }
-
-  _setupSpotlight() {
-    const sp = document.getElementById('cap-spotlight');
-    if (!sp) return;
-
-    // Spring physics state — spotlight only, normal system cursor (like OCI reference)
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let active = false;
-
-    // Spotlight spring — slow, heavy trailing → "water wave" feel
-    let spX = mouseX, spY = mouseY, spVX = 0, spVY = 0;
-    const SP_K = 0.055;   // stiffness  (lower = slower / more water-like)
-    const SP_D = 0.80;    // damping    (higher = less bounce)
-
-    this._onSpot = (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      if (!active) {
-        active = true;
-        sp.style.opacity = '1';
-      }
-    };
-
-    const update = () => {
-      if (active) {
-        // Velocity-based spring: feels like dragging through water
-        spVX += (mouseX - spX) * SP_K;
-        spVY += (mouseY - spY) * SP_K;
-        spVX *= SP_D;
-        spVY *= SP_D;
-        spX  += spVX;
-        spY  += spVY;
-
-        sp.style.left = spX + 'px';
-        sp.style.top  = spY + 'px';
-      }
-      this._spotRaf = requestAnimationFrame(update);
-    };
-    this._spotRaf = requestAnimationFrame(update);
-
-    window.addEventListener('mousemove', this._onSpot, { passive: true });
-    window.addEventListener('mouseleave', () => {
-      active = false;
-      sp.style.opacity = '0';
-    });
   }
 
   _setupNavScramble() {
@@ -1223,67 +1157,6 @@ class Component extends DCLogic {
     const g = document.createElement('div');
     g.id = 'cap-grain';
     document.body.appendChild(g);
-  }
-
-  _setupCursor() {
-    // Fine pointers only — touch devices keep their native behaviour
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (document.getElementById('cap-cursor-dot')) return;
-    // Native cursor stays visible — the dot + ring are an accent, not a replacement
-
-    const ring = document.createElement('div');
-    ring.id = 'cap-cursor-ring';
-    const dot = document.createElement('div');
-    dot.id = 'cap-cursor-dot';
-    document.body.appendChild(ring);
-    document.body.appendChild(dot);
-
-    let mx = -100, my = -100, rx = -100, ry = -100;
-    let visible = false, active = false;
-    let dotScale = 1, ringScale = 1;
-
-    // Elements with an inline cursor:pointer (nav, cards, accordion rows, links)
-    // — computed style can't be used because .cap-no-cursor forces cursor:none
-    const isInteractive = (t) => {
-      let n = t;
-      while (n && n !== document.body) {
-        if (n.tagName === 'A' || n.tagName === 'BUTTON' || n.tagName === 'INPUT' ||
-            (n.style && n.style.cursor === 'pointer')) return true;
-        n = n.parentElement;
-      }
-      return false;
-    };
-
-    this._onCursorMove = (e) => {
-      mx = e.clientX; my = e.clientY;
-      if (!visible) {
-        visible = true;
-        rx = mx; ry = my;
-        dot.style.opacity = '1';
-        ring.style.opacity = '1';
-      }
-    };
-    this._onCursorOver = (e) => { active = isInteractive(e.target); };
-    this._onCursorLeave = () => {
-      visible = false;
-      dot.style.opacity = '0';
-      ring.style.opacity = '0';
-    };
-    window.addEventListener('mousemove', this._onCursorMove, { passive: true });
-    window.addEventListener('mouseover', this._onCursorOver, { passive: true });
-    document.documentElement.addEventListener('mouseleave', this._onCursorLeave);
-
-    const loop = () => {
-      rx += (mx - rx) * 0.16;
-      ry += (my - ry) * 0.16;
-      dotScale += ((active ? 0.45 : 1) - dotScale) * 0.2;
-      ringScale += ((active ? 1.7 : 1) - ringScale) * 0.2;
-      dot.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px) scale(' + dotScale + ')';
-      ring.style.transform = 'translate(' + (rx - 19) + 'px,' + (ry - 19) + 'px) scale(' + ringScale + ')';
-      this._cursorRaf = requestAnimationFrame(loop);
-    };
-    loop();
   }
 
   _setupMetaLabels() {
@@ -2441,10 +2314,6 @@ class Component extends DCLogic {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
-    if (this._cursorRaf) cancelAnimationFrame(this._cursorRaf);
-    if (this._onCursorMove) window.removeEventListener('mousemove', this._onCursorMove);
-    if (this._onCursorOver) window.removeEventListener('mouseover', this._onCursorOver);
-    if (this._onCursorLeave) document.documentElement.removeEventListener('mouseleave', this._onCursorLeave);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
