@@ -519,14 +519,29 @@ class Component extends DCLogic {
       // Initial run
       adjustFooter();
 
-      // Observe React hydration or updates to keep layout intact
-      const observer = new MutationObserver(() => {
+      // Observe React hydration or updates to keep layout intact.
+      // Animations (gsap scrubs, the logo marquee) write style attributes
+      // every frame — running adjustFooter + _fit 60x/s janks the footer.
+      // Run immediately for childList changes (hydration); coalesce
+      // attribute-only bursts until the stream has been idle for 400ms.
+      const OBS_CFG = { attributes: true, childList: true, subtree: true, attributeFilter: ['style'] };
+      let styleSettleT = null;
+      const runAdjust = () => {
         observer.disconnect();
         adjustFooter();
         if (this._fit) this._fit();
-        observer.observe(scaler, { attributes: true, childList: true, subtree: true, attributeFilter: ['style'] });
+        observer.observe(scaler, OBS_CFG);
+      };
+      const observer = new MutationObserver((muts) => {
+        if (muts.some(mu => mu.type === 'childList')) {
+          clearTimeout(styleSettleT);
+          runAdjust();
+          return;
+        }
+        clearTimeout(styleSettleT);
+        styleSettleT = setTimeout(runAdjust, 400);
       });
-      observer.observe(scaler, { attributes: true, childList: true, subtree: true, attributeFilter: ['style'] });
+      observer.observe(scaler, OBS_CFG);
     }
 
     this._fit = () => {
@@ -1437,6 +1452,18 @@ class Component extends DCLogic {
       // otherwise the input is left out and stays static during the scrub
       setTimeout(() => {
         const slide = [...footer.children].filter(el => !(parseFloat(el.style.width) > 1400));
+        // Part of the footer's content (email, address, designed-by, partner
+        // logos) lives OUTSIDE the container in the Figma DOM — without them
+        // the curtain shears the footer apart mid-scrub. adjustFooter tagged
+        // everything in the footer region with data-original-top; take the
+        // top-most tagged elements that aren't inside the container.
+        const tagged = [...scaler.querySelectorAll('[data-original-top]')].filter(el => {
+          if (el === footer || footer.contains(el)) return false;
+          return parseFloat(el.getAttribute('data-original-top')) > 7092;
+        });
+        tagged.filter(el => !tagged.some(a => a !== el && a.contains(el)))
+              .forEach(el => slide.push(el));
+        slide.push(clock); // static clock would overlap sliding text mid-scrub
         window.gsap.fromTo(slide, { y: -420 }, {
           y: 0,
           ease: 'none',
