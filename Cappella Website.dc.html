@@ -360,6 +360,7 @@ class Component extends DCLogic {
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
     this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
+    this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
   }
 
   _setupDotGrid() {
@@ -585,6 +586,98 @@ class Component extends DCLogic {
         });
       }, 250);
     });
+  }
+
+  _setupHeroTitle() {
+    // The 100px headline ("India's Leading / Edu-Infra Asset / Management
+    // Company") is a single span with <br> children, so the generic char
+    // reveal above skips it (!el.querySelector('*')). Animate it here:
+    // per-line masks, chars rising with a settle rotation, then a
+    // scroll-linked exit where each line drifts up into its mask and fades.
+    const scaler = document.getElementById('cap-scaler');
+    const heroTitle = scaler && [...scaler.querySelectorAll('span')].find(el => {
+      const top = parseFloat(el.style.top) || 0;
+      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
+      return top < 850 && fs >= 90;
+    });
+    if (!heroTitle) {
+      if ((this._htTries = (this._htTries || 0) + 1) < 40) setTimeout(() => this._setupHeroTitle(), 200);
+      return;
+    }
+    if (heroTitle.dataset.capAnimated) return;
+    heroTitle.dataset.capAnimated = '1';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Rebuild the span preserving its <br> line structure
+    const lines = [];
+    let current = [];
+    [...heroTitle.childNodes].forEach(n => {
+      if (n.nodeType === Node.ELEMENT_NODE && n.tagName === 'BR') {
+        lines.push(current.join(' '));
+        current = [];
+      } else if (n.textContent && n.textContent.trim()) {
+        current.push(n.textContent.trim());
+      }
+    });
+    if (current.length) lines.push(current.join(' '));
+    if (!lines.length) return;
+
+    heroTitle.innerHTML = '';
+    const lineEls = lines.map(lineText => {
+      const lineMask = document.createElement('span');
+      lineMask.style.cssText = 'display:block; overflow:hidden; white-space:nowrap;';
+      const lineInner = document.createElement('span');
+      lineInner.style.cssText = 'display:block; will-change:transform;';
+      const chars = [];
+      lineText.split(/\s+/).forEach((word, wi, arr) => {
+        const w = document.createElement('span');
+        w.style.cssText = 'display:inline-block; white-space:nowrap;' +
+          (wi < arr.length - 1 ? ' margin-right:0.25em;' : '');
+        word.split('').forEach(ch => {
+          const c = document.createElement('span');
+          c.textContent = ch;
+          c.style.cssText =
+            'display:inline-block; opacity:0;' +
+            'transform:translateY(115%) rotate(6deg); transform-origin:0% 100%;' +
+            'transition: transform 1.05s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease;';
+          w.appendChild(c);
+          chars.push(c);
+        });
+        lineInner.appendChild(w);
+      });
+      lineMask.appendChild(lineInner);
+      heroTitle.appendChild(lineMask);
+      return { lineInner, chars };
+    });
+
+    // Staggered entrance: line by line, chars cascading within each line.
+    // Base delay syncs with the preloader wipe (slides away at ~1.1s) so the
+    // reveal is actually visible instead of finishing behind the red screen.
+    lineEls.forEach((L, li) => {
+      L.chars.forEach((c, ci) => {
+        setTimeout(() => {
+          c.style.opacity = '1';
+          c.style.transform = 'translateY(0) rotate(0deg)';
+        }, 1150 + li * 140 + ci * 20);
+      });
+    });
+
+    // Scroll-linked parallax exit — lower lines leave faster for depth
+    if (window.gsap && window.ScrollTrigger) {
+      lineEls.forEach((L, li) => {
+        window.gsap.to(L.lineInner, {
+          y: -(40 + li * 30),
+          opacity: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: document.getElementById('cap-viewport'),
+            start: 'top top',
+            end: () => '+=' + window.innerHeight * 0.8,
+            scrub: true
+          }
+        });
+      });
+    }
   }
 
   _setupScrollReveals() {
@@ -1989,7 +2082,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
-    clearTimeout(this._t3); clearTimeout(this._t4);
+    clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
