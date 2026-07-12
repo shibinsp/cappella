@@ -192,6 +192,160 @@
       transition: opacity 0.8s var(--cap-ease-expo), transform 0.8s var(--cap-ease-expo);
     }
     .cap-meta.cap-meta-in { opacity: 0.85; transform: translateY(0); }
+
+    /* ===== OCI-STYLE MENU OVERLAY ===== */
+    #cap-menu-btn {
+      position: fixed;
+      top: 26px;
+      right: 26px;
+      z-index: 94;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgb(209, 32, 47);
+      background: rgb(255, 255, 255);
+      border: 1px solid rgba(209, 32, 47, 0.35);
+      padding: 13px 22px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.35s var(--cap-ease-power), color 0.35s var(--cap-ease-power), opacity 0.3s ease;
+    }
+    #cap-menu-btn:hover { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
+
+    #cap-menu-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 93;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #cap-menu-overlay.cap-menu-open { visibility: visible; pointer-events: auto; }
+    #cap-menu-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(120, 12, 22, 0.35);
+      opacity: 0;
+      transition: opacity 0.6s var(--cap-ease-power);
+    }
+    .cap-menu-open #cap-menu-backdrop { opacity: 1; }
+    #cap-menu-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: min(600px, 94vw);
+      background: rgb(255, 255, 255);
+      border-left: 1px solid rgba(209, 32, 47, 0.25);
+      transform: translateX(102%);
+      transition: transform 0.75s var(--cap-ease-power);
+      display: flex;
+      flex-direction: column;
+      padding: 26px 44px 34px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    .cap-menu-open #cap-menu-panel { transform: translateX(0); }
+
+    .cap-menu-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 56px;
+    }
+    .cap-menu-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgba(209, 32, 47, 0.75);
+    }
+    #cap-menu-close {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgb(209, 32, 47);
+      background: rgb(255, 255, 255);
+      border: 1px solid rgba(209, 32, 47, 0.35);
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.35s var(--cap-ease-power), color 0.35s var(--cap-ease-power);
+    }
+    #cap-menu-close:hover { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
+
+    .cap-menu-links { display: flex; flex-direction: column; gap: 6px; margin-bottom: auto; }
+    .cap-menu-links .cap-menu-mask { overflow: hidden; }
+    .cap-menu-links a {
+      display: inline-block;
+      font-family: Montserrat, sans-serif;
+      font-weight: 600;
+      font-size: 48px;
+      line-height: 1.25;
+      color: rgb(209, 32, 47);
+      cursor: pointer;
+      transform: translateY(115%);
+      transition: transform 0.8s var(--cap-ease-expo), padding-left 0.45s var(--cap-ease-power);
+    }
+    .cap-menu-open .cap-menu-links a { transform: translateY(0); }
+    .cap-menu-links a:hover { padding-left: 18px; }
+
+    .cap-menu-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      border-top: 1px solid rgba(209, 32, 47, 0.3);
+      padding: 18px 0;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.7s var(--cap-ease-expo), transform 0.7s var(--cap-ease-expo);
+    }
+    .cap-menu-open .cap-menu-row { opacity: 1; transform: translateY(0); }
+    .cap-menu-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: rgb(209, 32, 47);
+      padding-top: 3px;
+      white-space: nowrap;
+    }
+    .cap-menu-info {
+      text-align: right;
+      font-family: Montserrat, sans-serif;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.6;
+      color: rgb(40, 40, 40);
+    }
+    .cap-menu-info a { color: rgb(209, 32, 47); cursor: pointer; display: inline-block; }
+    .cap-menu-info a:hover { color: rgb(170, 20, 34); }
+
+    .cap-menu-email {
+      display: flex;
+      border: 1px solid rgba(209, 32, 47, 0.4);
+      margin-top: 18px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.7s var(--cap-ease-expo) 0.1s, transform 0.7s var(--cap-ease-expo) 0.1s;
+    }
+    .cap-menu-open .cap-menu-email { opacity: 1; transform: translateY(0); }
+    .cap-menu-email input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 18px 20px;
+      font-family: Montserrat, sans-serif;
+      font-size: 15px;
+      color: rgb(40, 40, 40);
+    }
+    .cap-menu-email button {
+      border: none;
+      background: transparent;
+      color: rgb(209, 32, 47);
+      font-size: 22px;
+      padding: 0 22px;
+      cursor: pointer;
+      transition: transform 0.35s var(--cap-ease-power);
+    }
+    .cap-menu-email button:hover { transform: translateX(5px); }
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
@@ -404,6 +558,7 @@ class Component extends DCLogic {
     // ===== PREMIUM PASS: film grain (viewport-level, no frame needed) =====
     // OCI reference: native cursor only — no custom cursor, ring, or spotlight
     this._setupGrain();
+    this._setupMenuOverlay();
 
     // ===== DEFERRED ANIMATIONS =====
     // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
@@ -1149,6 +1304,101 @@ class Component extends DCLogic {
           });
         }
       });
+    });
+  }
+
+  _setupMenuOverlay() {
+    if (document.getElementById('cap-menu-btn')) return;
+
+    const btn = document.createElement('div');
+    btn.id = 'cap-menu-btn';
+    btn.textContent = 'MENU';
+    document.body.appendChild(btn);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cap-menu-overlay';
+    overlay.innerHTML =
+      '<div id="cap-menu-backdrop"></div>' +
+      '<aside id="cap-menu-panel">' +
+        '<div class="cap-menu-top">' +
+          '<span class="cap-menu-tag">[ MENU ]</span>' +
+          '<button id="cap-menu-close">CLOSE</button>' +
+        '</div>' +
+        '<nav class="cap-menu-links">' +
+          '<div class="cap-menu-mask"><a data-target="900">About Us</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="3900">Portfolio</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="6200">Team</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="6942">Contact Us</a></div>' +
+        '</nav>' +
+        '<div class="cap-menu-row">' +
+          '<span class="cap-menu-label">EXPLORE</span>' +
+          '<div class="cap-menu-info">' +
+            '<a data-target="2140">The Cappella Edge</a><br>' +
+            '<a data-target="2940">Our Journey</a><br>' +
+            '<a data-target="5200">Operators</a>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cap-menu-row">' +
+          '<span class="cap-menu-label">STAY IN TOUCH</span>' +
+          '<div class="cap-menu-info">' +
+            '<a href="mailto:partner@cappella.in">partner@cappella.in</a><br>' +
+            'Suite 303, Niharika Jubilee One, Jubilee Hills,<br>Road No. 1, Hyderabad, Telangana 500033' +
+          '</div>' +
+        '</div>' +
+        '<div class="cap-menu-email">' +
+          '<input type="email" placeholder="Email address">' +
+          '<button aria-label="Subscribe">&#8594;</button>' +
+        '</div>' +
+      '</aside>';
+    document.body.appendChild(overlay);
+
+    // Staggered rise for the big links (transition-delay set per index)
+    const links = [...overlay.querySelectorAll('.cap-menu-links a')];
+    links.forEach((a, i) => { a.style.transitionDelay = (0.12 + i * 0.07) + 's, 0s'; });
+
+    const open = () => {
+      overlay.classList.add('cap-menu-open');
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+      if (this._lenis) this._lenis.stop();
+      document.body.style.overflow = 'hidden';
+    };
+    const close = () => {
+      overlay.classList.remove('cap-menu-open');
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+      if (this._lenis) this._lenis.start();
+      document.body.style.overflow = '';
+    };
+    btn.addEventListener('click', open);
+    overlay.querySelector('#cap-menu-close').addEventListener('click', close);
+    overlay.querySelector('#cap-menu-backdrop').addEventListener('click', close);
+    this._onMenuKey = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', this._onMenuKey);
+
+    // Section links: close, then glide to the target (frame px -> page px)
+    [...overlay.querySelectorAll('a[data-target]')].forEach(a => {
+      a.addEventListener('click', () => {
+        const frameTop = parseFloat(a.dataset.target);
+        const vp = document.getElementById('cap-viewport');
+        const target = frameTop * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
+        close();
+        setTimeout(() => {
+          if (this._lenis) this._lenis.scrollTo(target);
+          else window.scrollTo({ top: target, behavior: 'smooth' });
+        }, 250);
+      });
+    });
+
+    // Email subscribe — same behaviour as the footer input
+    const email = overlay.querySelector('.cap-menu-email input');
+    overlay.querySelector('.cap-menu-email button').addEventListener('click', () => {
+      if (email.value && email.value.includes('@')) {
+        alert('Thank you for subscribing, ' + email.value + '!');
+        email.value = '';
+      } else {
+        alert('Please enter a valid email address.');
+      }
     });
   }
 
@@ -2314,6 +2564,7 @@ class Component extends DCLogic {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
+    if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
