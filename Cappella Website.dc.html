@@ -587,6 +587,7 @@ class Component extends DCLogic {
       this._setupMetaLabels();
       this._setupJourneyStory();
       this._setupFooterAnimations();
+      this._setupOperatorsMarquee();
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1339,41 +1340,6 @@ class Component extends DCLogic {
     };
     const hasMatrix = (el) => ((el.getAttribute('style') || '').includes('matrix'));
 
-    // ===== LOGO ROWS: operators grid + pre-footer partner logos =====
-    // Staggered rise on scroll + hover lift (matrix-positioned SVGs animate
-    // opacity only — adding a transform would clobber their placement)
-    const logoEls = [...scaler.querySelectorAll('img, svg, div[class*="fig-asset"]')].filter(el => {
-      const b = frameBox(el);
-      const inOperators = b.top > 5250 && b.top < 5900;
-      const inPreFooter = b.top > 6450 && b.top < 6930;
-      if (!inOperators && !inPreFooter) return false;
-      return b.w > 30 && b.w < 360 && b.h > 18 && b.h < 220;
-    });
-    if (!reduced) logoEls.forEach(el => {
-      const b = frameBox(el);
-      const mx = hasMatrix(el);
-      el.dataset.capT = el.style.transform || '';
-      el.style.opacity = '0';
-      el.style.transition = 'opacity 0.8s var(--cap-ease-expo), transform 0.8s var(--cap-ease-expo)';
-      if (!mx) el.style.transform = el.dataset.capT + ' translateY(22px)';
-      const delay = ((b.left % 1440) / 1440) * 0.35;
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          io.disconnect();
-          el.style.transitionDelay = delay + 's';
-          el.style.opacity = '1';
-          if (!mx) el.style.transform = el.dataset.capT;
-          setTimeout(() => { el.style.transitionDelay = '0s'; }, (delay + 0.85) * 1000);
-        });
-      }, { threshold: 0.4 });
-      io.observe(el);
-      if (!mx) {
-        el.addEventListener('mouseenter', () => { el.style.transform = el.dataset.capT + ' translateY(-5px)'; });
-        el.addEventListener('mouseleave', () => { el.style.transform = el.dataset.capT; });
-      }
-    });
-
     // ===== FOOTER REVEAL =====
     const footer = [...scaler.querySelectorAll('div')].find(d => d.getAttribute('data-original-top') === '7092');
     if (!footer) return;
@@ -1434,20 +1400,15 @@ class Component extends DCLogic {
       const b = frameBox(el);
       const relTop = b.top - footerTopFrame;
       const delay = 0.15 + (b.left / 1440) * 0.4 + Math.max(0, relTop / 530) * 0.15;
-      const mx = hasMatrix(el);
-      el.dataset.capT = el.style.transform || '';
       if (el === bigLogo) {
         el.style.clipPath = 'inset(0 100% 0 0)';
         el.style.transition = 'clip-path 1.1s var(--cap-ease-expo) 0.1s';
         staged.push(() => { el.style.clipPath = 'inset(0 0% 0 0)'; });
       } else {
+        // opacity-only: the curtain scrub below owns the transform channel
         el.style.opacity = '0';
-        if (!mx) el.style.transform = el.dataset.capT + ' translateY(24px)';
-        el.style.transition = 'opacity 0.85s var(--cap-ease-expo) ' + delay + 's, transform 0.85s var(--cap-ease-expo) ' + delay + 's';
-        staged.push(() => {
-          el.style.opacity = '1';
-          if (!mx) el.style.transform = el.dataset.capT;
-        });
+        el.style.transition = 'opacity 0.85s var(--cap-ease-expo) ' + delay + 's';
+        staged.push(() => { el.style.opacity = '1'; });
       }
     });
     clock.style.opacity = '0';
@@ -1462,6 +1423,120 @@ class Component extends DCLogic {
       });
     }, { threshold: 0.25 });
     io.observe(footer);
+
+    // ===== CURTAIN REVEAL =====
+    // The footer container becomes a clipped window; its content is offset
+    // one footer-height up and scrubs to rest as the window scrolls in, so
+    // the footer reads as a fixed surface being uncovered by the page.
+    if (window.gsap && window.ScrollTrigger) {
+      footer.style.overflow = 'hidden';
+      clock.style.zIndex = '6';
+      // Capture slide targets AFTER the deferred footer-email setup (runs
+      // ~500ms later) replaces the placeholder span with the real input —
+      // otherwise the input is left out and stays static during the scrub
+      setTimeout(() => {
+        const slide = [...footer.children].filter(el => !(parseFloat(el.style.width) > 1400));
+        window.gsap.fromTo(slide, { y: -420 }, {
+          y: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: footer,
+            start: 'top bottom',
+            end: 'bottom bottom',
+            scrub: true
+          }
+        });
+      }, 700);
+    }
+  }
+
+  _setupOperatorsMarquee() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler || this._mqBuilt) return;
+    this._mqBuilt = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Operator logos (fig-asset background divs) measured from the frame
+    const ROW_A = ['fig-asset-79356d431474ada0', 'fig-asset-91ee4f07ef1ea5a8',
+                   'fig-asset-620dc3d6704178dd', 'fig-asset-1ec5ca333db94fc0'];
+    const ROW_B = ['fig-asset-1e639ffbc0aca215', 'fig-asset-1462c629c4c2879d',
+                   'fig-asset-55a8dd7666421f70-d65f9521'];
+    const rowAEls = ROW_A.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
+    const rowBEls = ROW_B.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
+    if (rowAEls.length < 3 || rowBEls.length < 2) return; // frame changed — keep the grid
+
+    // Hide the static grid + the triangle decorations woven between the rows
+    [...rowAEls, ...rowBEls].forEach(el => { el.style.display = 'none'; });
+    [...scaler.querySelectorAll('div')].forEach(el => {
+      const st = el.getAttribute('style') || '';
+      const top = parseFloat(el.style.top) || 0;
+      if (top > 5560 && top < 6900 && st.includes('linear-gradient') && st.includes('209, 32, 47')) {
+        el.style.display = 'none';
+      }
+    });
+
+    // Build a marquee band: [row of cells]x(repeats), translated on rAF
+    const rows = [];
+    const buildBand = (els, top, dir) => {
+      const band = document.createElement('div');
+      band.style.cssText =
+        'position:absolute; left:0; top:' + top + 'px; width:1440px; height:170px;' +
+        'overflow:hidden; z-index:3; opacity:0; transition: opacity 1s var(--cap-ease-expo);';
+      const track = document.createElement('div');
+      track.style.cssText =
+        'display:flex; align-items:center; height:100%; width:max-content;' +
+        'will-change:transform;';
+      const GAP = 150;
+      const seqW = els.reduce((sum, el) => sum + (parseFloat(el.style.width) || 180) + GAP, 0);
+      const repeats = Math.max(3, Math.ceil((1440 + seqW) / seqW) + 1);
+      for (let rep = 0; rep < repeats; rep++) {
+        els.forEach(el => {
+          const cell = el.cloneNode(true);
+          cell.style.display = 'block';
+          cell.style.position = 'static';
+          cell.style.left = 'auto';
+          cell.style.top = 'auto';
+          cell.style.transform = 'none';
+          cell.style.margin = '0 ' + (GAP / 2) + 'px';
+          cell.style.flex = '0 0 auto';
+          cell.style.transition = 'transform 0.5s var(--cap-ease-expo)';
+          cell.addEventListener('mouseenter', () => { cell.style.transform = 'translateY(-6px)'; });
+          cell.addEventListener('mouseleave', () => { cell.style.transform = 'translateY(0)'; });
+          track.appendChild(cell);
+        });
+      }
+      band.appendChild(track);
+      scaler.appendChild(band);
+      const row = { band, track, seqW, dir, x: 0, speed: 0, targetSpeed: 34 };
+      band.addEventListener('mouseenter', () => { row.targetSpeed = 0; });
+      band.addEventListener('mouseleave', () => { row.targetSpeed = 34; });
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => { if (entry.isIntersecting) { band.style.opacity = '1'; io.disconnect(); } });
+      }, { threshold: 0.3 });
+      io.observe(band);
+      rows.push(row);
+    };
+    buildBand(rowAEls, 5810, -1);
+    buildBand(rowBEls, 6330, 1);
+
+    // Shared drive loop — skips work while both bands are off-screen
+    let lastT = performance.now();
+    const step = (now) => {
+      const dt = Math.min((now - lastT) / 1000, 0.05);
+      lastT = now;
+      let visible = false;
+      rows.forEach(row => {
+        const r = row.band.getBoundingClientRect();
+        if (r.bottom < -100 || r.top > window.innerHeight + 100) return;
+        visible = true;
+        row.speed += (row.targetSpeed - row.speed) * 0.06; // eased pause/resume
+        row.x = (row.x + row.dir * row.speed * dt) % row.seqW;
+        const offset = row.dir === -1 ? row.x : row.x - row.seqW;
+        row.track.style.transform = 'translateX(' + offset.toFixed(2) + 'px)';
+      });
+      this._mqRaf = requestAnimationFrame(step);
+    };
+    this._mqRaf = requestAnimationFrame(step);
   }
 
   _setupMenuOverlay() {
@@ -2723,6 +2798,7 @@ class Component extends DCLogic {
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._clockIv) clearInterval(this._clockIv);
+    if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
