@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cappella — India's Leading Edu-Infra Asset Management Company</title>
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
 <script src="./support.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
@@ -144,14 +146,14 @@
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
-  <div id="cap-scaler" style="width: 1457px; height: 7571px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
-    <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1544px,8372px"></x-import>
+  <div id="cap-scaler" style="width: 1440px; height: 7571px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
+    <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1440px,8372px"></x-import>
 
     <!-- Interactive DotGrid canvas over the hero -->
-    <canvas id="cap-dotgrid" width="1457" height="830" style="position: absolute; left: 0; top: 0; width: 1457px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
+    <canvas id="cap-dotgrid" width="1440" height="830" style="position: absolute; left: 0; top: 0; width: 1440px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
 
     <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
-    <div style="position: absolute; left: 0; top: 1715px; width: 1457px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
+    <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
 
     <!-- 75 Years+ stat on solid red (no staircase behind it) -->
     <div id="cap-75" style="position: absolute; left: 695px; top: 1360px; z-index: 5;">
@@ -185,7 +187,7 @@
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
   componentDidMount() {
-    const FRAME_W = 1457, FRAME_H = 7571;
+    const FRAME_W = 1440, FRAME_H = 7472;
 
     // Preloader must start immediately, not after the 1600ms hydration delay
     this._setupPreloader();
@@ -193,30 +195,120 @@ class Component extends DCLogic {
     // Run footer adjustments synchronously so that subsequent layout caches are accurate
     const scaler = document.getElementById('cap-scaler');
     if (scaler) {
-      const footerShift = 250;
+      const footerShiftTop = 150; // Shift top of footer container up by 150px (from 7092 to 6942)
+      const footerHeight = 530;   // Compact footer height (reduced from 734px)
       
-      // Shift logos and bottom text up
-      const bottomElements = [...scaler.querySelectorAll('*')].filter(el => {
-        const t = parseFloat(el.style.top);
-        return t > 7600;
-      });
-      bottomElements.forEach(el => {
-        const currentTop = parseFloat(el.style.top);
-        el.style.top = (currentTop - footerShift) + 'px';
-      });
+      const adjustFooter = () => {
+        const allEls = scaler.querySelectorAll('*');
+        for (let i = 0; i < allEls.length; i++) {
+          const el = allEls[i];
+          let originalTop = el.getAttribute('data-original-top');
+          if (!originalTop) {
+            const topVal = parseFloat(el.style.top);
+            if (!isNaN(topVal) && topVal >= 7092 && topVal <= 8372) {
+              originalTop = topVal.toString();
+              el.setAttribute('data-original-top', originalTop);
+            }
+          }
+          
+          if (originalTop) {
+            const orig = parseFloat(originalTop);
+            if (orig === 7092) {
+              el.style.top = (7092 - footerShiftTop) + 'px';
+              el.style.height = footerHeight + 'px';
+              
+              // Scale down and center the giant white interlocking logo
+              const logo = el.querySelector('.fig-asset-c9d8f12cf6e90c99');
+              if (logo) {
+                logo.style.width = '305px';
+                logo.style.height = '280px';
+                logo.style.left = '213px'; // Centered horizontally (202px + 11px container offset)
+                logo.style.top = '80px';
+              }
+              
+              const redBg = el.querySelector('div');
+              if (redBg) {
+                redBg.style.top = '0px';
+                redBg.style.height = footerHeight + 'px';
+              }
 
-      // Shrink red background
-      const allDivs = [...scaler.querySelectorAll('div')];
-      const footerContainer = allDivs.find(e => e.style.top === '7092px');
-      if (footerContainer) {
-        const currentHeight = parseFloat(footerContainer.style.height);
-        footerContainer.style.height = (currentHeight - footerShift) + 'px';
-        const redBg = footerContainer.querySelector('div');
-        if (redBg) {
-          const redHeight = parseFloat(redBg.style.height);
-          redBg.style.height = (redHeight - footerShift) + 'px';
+              // Adjust STAY IN TOUCH and email input block relative coordinates to avoid overlap
+              const stayInTouch = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'STAY IN TOUCH');
+              if (stayInTouch) {
+                stayInTouch.style.top = '300px';
+                stayInTouch.style.left = '1117px'; // Aligned horizontally (1106px + 11px container offset)
+              }
+              const designerBox = [...el.querySelectorAll('div')].find(d => d.style.boxShadow && d.style.boxShadow.includes('inset'));
+              if (designerBox) {
+                designerBox.style.top = '335px';
+                designerBox.style.left = '1124px'; // Aligned horizontally (1113px + 11px container offset)
+              }
+              const emailInput = el.querySelector('input[type="email"]');
+              if (emailInput) {
+                emailInput.style.top = '345px';
+                emailInput.style.left = '1124px';
+              } else {
+                const emailSpan = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'Your Email Id');
+                if (emailSpan) {
+                  emailSpan.style.top = '345px';
+                  emailSpan.style.left = '1124px';
+                }
+              }
+              const arrowSvg = [...el.querySelectorAll('svg')].find(s => {
+                const leftVal = parseFloat(s.style.left);
+                return leftVal >= 1300 && leftVal <= 1320;
+              });
+              if (arrowSvg) {
+                arrowSvg.style.top = '360px';
+                arrowSvg.style.left = '1318px'; // Aligned horizontally (1307px + 11px container offset)
+              }
+            } else {
+              // Determine shift based on original coordinate section
+              let shift = footerShiftTop;
+              if (orig >= 7500 && orig < 7650) {
+                shift = 300; // middle section elements (Connect / Stay in Touch)
+              } else if (orig >= 7650) {
+                // Shift designer credit elements by 348px instead of 378px to avoid overlaps
+                if (orig === 7723 || orig === 7750) {
+                  shift = 348;
+                } else {
+                  shift = 378; // bottom section elements (Partner logos / credits)
+                }
+              }
+              el.style.top = (orig - shift) + 'px';
+
+              // Apply fine alignment corrections for shifted elements
+              if (orig === 7734 || orig === 7732 || orig === 7728) {
+                // Align partner logos to the exact same vertical line (relative top ~412px, absolute 7354px)
+                el.style.top = '7354px';
+              } else if (orig === 7750) {
+                // Limitless logo
+                el.style.left = '1113px'; // Left-aligned with email input
+                el.style.top = '7402px';
+              } else if (orig === 7723) {
+                // Designed by text
+                el.style.left = '1113px'; // Left-aligned with email input
+              } else if (orig === 7688) {
+                // "An Initiative by" span
+                el.style.left = '265px'; // Centered horizontally under the white logo
+              }
+            }
+          }
         }
-      }
+        scaler.style.height = (7092 - footerShiftTop + footerHeight) + 'px';
+      };
+
+      // Initial run
+      adjustFooter();
+
+      // Observe React hydration or updates to keep layout intact
+      const observer = new MutationObserver(() => {
+        observer.disconnect();
+        adjustFooter();
+        if (this._fit) this._fit();
+        observer.observe(scaler, { attributes: true, childList: true, subtree: true, attributeFilter: ['style'] });
+      });
+      observer.observe(scaler, { attributes: true, childList: true, subtree: true, attributeFilter: ['style'] });
     }
 
     this._fit = () => {
@@ -261,7 +353,7 @@ class Component extends DCLogic {
     const canvas = document.getElementById('cap-dotgrid');
     if (!canvas) { if ((this._dgTries = (this._dgTries || 0) + 1) < 40) setTimeout(() => this._setupDotGrid(), 200); return; }
     const ctx = canvas.getContext('2d');
-    const W = 1457, H = 830, dotSize = 2.2, gap = 2, cell = dotSize + gap;
+    const W = 1440, H = 830, dotSize = 1.4, gap = 1.6, cell = dotSize + gap;
     const baseA = 0.16, activeA = 0.95;
     const cols = Math.floor((W + gap) / cell), rows = Math.floor((H + gap) / cell);
     const gridW = cell * cols - gap, gridH = cell * rows - gap;
@@ -269,6 +361,7 @@ class Component extends DCLogic {
     const dots = [];
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) dots.push({ cx: sx + x * cell, cy: sy + y * cell, ox: 0, oy: 0, vx: 0, vy: 0 });
     const P = { x: -9999, y: -9999, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0 };
+    let smoothX = -9999, smoothY = -9999;
     const prox = 90, proxSq = prox * prox, speedTrigger = 120, k = 0.12, damp = 0.72;
     const sc = () => { const e = document.getElementById('cap-scaler'); const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); return m ? parseFloat(m[1]) : 1; };
     const onMove = (e) => {
@@ -284,20 +377,37 @@ class Component extends DCLogic {
       for (const d of dots) { const dx = d.cx - cx, dy = d.cy - cy, dist = Math.hypot(dx, dy); if (dist < R) { const f = 1 - dist / R; d.vx += dx * 0.28 * f; d.vy += dy * 0.28 * f; } }
     };
     window.addEventListener('mousemove', onMove, { passive: true });
+    window.addEventListener('mouseleave', () => { P.x = -9999; P.y = -9999; });
     window.addEventListener('click', onClick);
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
       const T = (this._dgT = (this._dgT || 0) + 0.025); // water-flow time
+      
+      // Interpolate/lerp mouse position for smooth highlight trailing
+      if (P.x > -9000) {
+        if (smoothX < -9000) {
+          smoothX = P.x;
+          smoothY = P.y;
+        } else {
+          smoothX += (P.x - smoothX) * 0.08;
+          smoothY += (P.y - smoothY) * 0.08;
+        }
+      } else {
+        smoothX = -9999;
+        smoothY = -9999;
+      }
+
       for (const d of dots) {
         d.vx += -k * d.ox; d.vy += -k * d.oy; d.vx *= damp; d.vy *= damp; d.ox += d.vx; d.oy += d.vy;
         // traveling waves → flowing-water shimmer
         const wave = Math.sin(d.cx * 0.011 + d.cy * 0.006 + T) + Math.sin(d.cy * 0.018 - T * 1.25);
         const wx = Math.cos(d.cx * 0.009 + d.cy * 0.004 + T * 0.9) * 2.6;
         const wy = wave * 2.4;
-        const dx = d.cx - P.x, dy = d.cy - P.y, dsq = dx * dx + dy * dy;
+        const dx = d.cx - smoothX, dy = d.cy - smoothY, dsq = dx * dx + dy * dy;
         let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5)); // brightness ripples with the flow
         if (dsq <= proxSq) { const t = 1 - Math.sqrt(dsq) / prox; a = baseA + (activeA - baseA) * t; }
-        ctx.beginPath(); ctx.arc(d.cx + d.ox + wx, d.cy + d.oy + wy, dotSize / 2, 0, 6.2832); ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+        ctx.fillRect(d.cx + d.ox + wx - dotSize / 2, d.cy + d.oy + wy - dotSize / 2, dotSize, dotSize);
       }
       this._dgRaf = requestAnimationFrame(draw);
     };
@@ -307,13 +417,39 @@ class Component extends DCLogic {
   _setupSpotlight() {
     const sp = document.getElementById('cap-spotlight');
     if (!sp) return;
+    
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 2;
+    let currentX = targetX;
+    let currentY = targetY;
+    let active = false;
+
     this._onSpot = (e) => {
-      sp.style.left = e.clientX + 'px';
-      sp.style.top = e.clientY + 'px';
-      sp.style.opacity = '1';
+      targetX = e.clientX;
+      targetY = e.clientY;
+      active = true;
     };
+    
+    const update = () => {
+      if (active) {
+        // Linear interpolation (lerp) for smooth trailing physics
+        const lerpFactor = 0.08;
+        currentX += (targetX - currentX) * lerpFactor;
+        currentY += (targetY - currentY) * lerpFactor;
+        
+        sp.style.left = currentX + 'px';
+        sp.style.top = currentY + 'px';
+        sp.style.opacity = '1';
+      }
+      this._spotRaf = requestAnimationFrame(update);
+    };
+    this._spotRaf = requestAnimationFrame(update);
+
     window.addEventListener('mousemove', this._onSpot, { passive: true });
-    window.addEventListener('mouseleave', () => { sp.style.opacity = '0'; });
+    window.addEventListener('mouseleave', () => { 
+      active = false;
+      sp.style.opacity = '0'; 
+    });
   }
 
   _setupNavScramble() {
@@ -519,19 +655,19 @@ class Component extends DCLogic {
       { text: 'PROJECTS', target: 3000 },
       { text: 'PORTFOLIO', target: 3000 },
       { text: 'TEAM', target: 6200 },
-      { text: 'CONTACT US', target: 7092 }
+      { text: 'CONTACT US', target: 6942 }
     ];
 
     setTimeout(() => {
       navItems.forEach(item => {
         const els = [...scaler.querySelectorAll('span')].filter(el => 
-          (el.textContent || '').trim().toUpperCase() === item.text
+          (el.textContent || '').replace(/\s+/g, '').toUpperCase() === item.text.replace(/\s+/g, '')
         );
         els.forEach(el => {
           el.style.cursor = 'pointer';
           el.addEventListener('click', () => {
             const vp = document.getElementById('cap-viewport');
-            const target = item.target * ((vp ? vp.clientWidth : window.innerWidth) / 1457);
+            const target = item.target * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
             if (this._lenis) {
               this._lenis.scrollTo(target);
             } else {
@@ -552,8 +688,8 @@ class Component extends DCLogic {
         input.type = 'email';
         input.placeholder = 'Your Email Id';
         input.style.position = 'absolute';
-        input.style.left = emailSpan.style.left || '1113px';
-        input.style.top = emailSpan.style.top || '421px';
+        input.style.left = emailSpan.style.left || '1124px';
+        input.style.top = emailSpan.style.top || '345px';
         input.style.width = emailSpan.style.width || '180px';
         input.style.height = '35px';
         input.style.background = 'transparent';
@@ -586,88 +722,138 @@ class Component extends DCLogic {
   }
 
   _setupPreloader() {
-    // Red background preloader screen
+    // --- OCI-style sequential loader ---
+    document.body.style.overflow = 'hidden';
+
+    // Full-screen red background
     const preloader = document.createElement('div');
-    preloader.style.position = 'fixed';
-    preloader.style.top = '0';
-    preloader.style.left = '0';
-    preloader.style.width = '100vw';
-    preloader.style.height = '100vh';
-    preloader.style.backgroundColor = 'rgba(209,32,47,1)';
-    preloader.style.zIndex = '9999';
-    preloader.style.transition = 'transform 1.0s cubic-bezier(0.77, 0, 0.175, 1)';
+    preloader.style.cssText =
+      'position:fixed; inset:0; background:rgb(209,32,47); z-index:9999;' +
+      'transition:transform 1.0s cubic-bezier(0.77,0,0.175,1);';
     document.body.appendChild(preloader);
 
-    // Separate logo container so it can animate independently of the preloader screen sliding off
+    // --- Crosshair lines (OCI loader-lines) ---
+    const hLine = document.createElement('div');
+    hLine.style.cssText =
+      'position:absolute; top:50%; left:0; width:100%; height:2px;' +
+      'background:rgba(255,255,255,0.25); transform:scaleX(0); transform-origin:center;' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1);';
+    preloader.appendChild(hLine);
+
+    const vLine = document.createElement('div');
+    vLine.style.cssText =
+      'position:absolute; left:50%; top:0; width:2px; height:100%;' +
+      'background:rgba(255,255,255,0.25); transform:scaleY(0); transform-origin:center;' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1);';
+    preloader.appendChild(vLine);
+
+    // --- Circles (OCI loader-circles) ---
+    const circleWrap = document.createElement('div');
+    circleWrap.style.cssText =
+      'position:absolute; left:50%; top:50%; width:80px; height:80px;' +
+      'transform:translate(-50%,-50%);';
+    preloader.appendChild(circleWrap);
+
+    const circleOuter = document.createElement('div');
+    circleOuter.style.cssText =
+      'position:absolute; inset:0; border-radius:50%;' +
+      'border:2px solid rgba(255,255,255,0.4);' +
+      'transform:scale(0); transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);';
+    circleWrap.appendChild(circleOuter);
+
+    const circleInner = document.createElement('div');
+    circleInner.style.cssText =
+      'position:absolute; width:52px; height:52px; left:50%; top:50%;' +
+      'border-radius:50%; border:2px solid rgba(255,255,255,0.6);' +
+      'transform:translate(-50%,-50%) scale(0);' +
+      'transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);';
+    circleWrap.appendChild(circleInner);
+
+    // --- Center logo content ---
     const centerWrap = document.createElement('div');
-    centerWrap.style.position = 'fixed';
-    centerWrap.style.top = '0';
-    centerWrap.style.left = '0';
-    centerWrap.style.width = '100vw';
-    centerWrap.style.height = '100vh';
-    centerWrap.style.zIndex = '10000';
-    centerWrap.style.pointerEvents = 'none';
-    centerWrap.style.display = 'flex';
-    centerWrap.style.flexDirection = 'column';
-    centerWrap.style.alignItems = 'center';
-    centerWrap.style.justifyContent = 'center';
+    centerWrap.style.cssText =
+      'position:fixed; inset:0; z-index:10000; pointer-events:none;' +
+      'display:flex; flex-direction:column; align-items:center; justify-content:center;';
+    document.body.appendChild(centerWrap);
 
     const logoImg = document.createElement('img');
     logoImg.src = './components/assets/eae7f9bdb03982f5.png';
-    logoImg.style.width = '100px';
-    logoImg.style.height = 'auto';
-    logoImg.style.opacity = '0';
-    logoImg.style.transform = 'scale(0.8)';
-    logoImg.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease';
+    logoImg.style.cssText =
+      'width:90px; height:auto; opacity:0; transform:scale(0.7);' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
+      'filter:brightness(0) invert(1);'; // Make it white on red
     centerWrap.appendChild(logoImg);
 
     const nameImg = document.createElement('img');
     nameImg.src = './components/assets/7cb777f5a65019d1.png';
-    nameImg.style.width = '180px';
-    nameImg.style.height = 'auto';
-    nameImg.style.marginTop = '20px';
-    nameImg.style.opacity = '0';
-    nameImg.style.transform = 'translateY(15px)';
-    nameImg.style.transition = 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease';
+    nameImg.style.cssText =
+      'width:160px; height:auto; margin-top:18px; opacity:0;' +
+      'transform:translateY(12px);' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
+      'filter:brightness(0) invert(1);'; // White on red
     centerWrap.appendChild(nameImg);
 
-    document.body.appendChild(centerWrap);
+    // === OCI Sequential timing ===
+    // Step 1: H-line expands (100ms)
+    setTimeout(() => { hLine.style.transform = 'scaleX(1)'; }, 100);
 
+    // Step 2: V-line expands (260ms)
+    setTimeout(() => { vLine.style.transform = 'scaleY(1)'; }, 260);
+
+    // Step 3: Outer circle grows (460ms)
+    setTimeout(() => { circleOuter.style.transform = 'scale(1)'; }, 460);
+
+    // Step 4: Inner circle grows (600ms)
+    setTimeout(() => { circleInner.style.transform = 'translate(-50%,-50%) scale(1)'; }, 600);
+
+    // Step 5: Logo icon pops in (850ms)
     setTimeout(() => {
       logoImg.style.opacity = '1';
       logoImg.style.transform = 'scale(1)';
-      
-      setTimeout(() => {
-        nameImg.style.opacity = '1';
-        nameImg.style.transform = 'translateY(0)';
-      }, 200);
-    }, 150);
+    }, 850);
 
+    // Step 6: Name text slides up (1050ms)
     setTimeout(() => {
-      const vp = document.getElementById('cap-viewport');
-      const s = vp ? vp.clientWidth / 1457 : 1;
-      
-      // Calculate target position in top-left corner based on active scaler width
-      const targetX = 35 * s;
-      const targetY = 44 * s;
-      
-      // Fly logo & text dynamically to the navbar logo positions in the top-left
-      logoImg.style.transformOrigin = '50% 50%';
-      logoImg.style.transform = `translate(calc(-50vw + ${targetX + 22 * s}px), calc(-50vh + ${targetY + 18 * s}px)) scale(${0.3 * s})`;
-      logoImg.style.opacity = '0.2'; // Fade out slightly as it lands
-      
-      nameImg.style.transformOrigin = '0% 50%';
-      nameImg.style.transform = `translate(calc(-50vw + ${targetX + 60 * s}px), calc(-50vh + ${targetY + 22 * s}px)) scale(${0.55 * s})`;
-      nameImg.style.opacity = '0.2';
+      nameImg.style.opacity = '1';
+      nameImg.style.transform = 'translateY(0)';
+    }, 1050);
 
-      // Slide preloader red screen away diagonally to the left-top corner
+    // Step 7: Exit — fly to navbar corner while fading out, curtain slides away (1600ms)
+    setTimeout(() => {
+      document.body.style.overflow = '';
+
+      const vp = document.getElementById('cap-viewport');
+      const s = vp ? vp.clientWidth / 1440 : 1;
+      const hw = window.innerWidth / 2;
+      const hh = window.innerHeight / 2;
+      const targetX = 35 * s;
+      const targetY = 38 * s;
+
+      // Logo flies toward navbar AND fades out simultaneously — arrives invisible
+      logoImg.style.transition =
+        'transform 0.75s cubic-bezier(0.77,0,0.175,1), opacity 0.55s ease';
+      logoImg.style.transformOrigin = '50% 50%';
+      logoImg.style.transform =
+        `translate(calc(-${hw}px + ${targetX + 18 * s}px), calc(-${hh}px + ${targetY + 14 * s}px)) scale(${0.26 * s})`;
+      logoImg.style.opacity = '0';
+
+      // CAPPELLA name flies toward navbar AND fades out simultaneously
+      nameImg.style.transition =
+        'transform 0.75s cubic-bezier(0.77,0,0.175,1), opacity 0.55s ease';
+      nameImg.style.transformOrigin = '0% 50%';
+      nameImg.style.transform =
+        `translate(calc(-${hw}px + ${targetX + 50 * s}px), calc(-${hh}px + ${targetY + 16 * s}px)) scale(${0.48 * s})`;
+      nameImg.style.opacity = '0';
+
+      // Red curtain slides off to top-left corner simultaneously
       preloader.style.transform = 'translate(-100%, -100%)';
-      
+
+      // Clean up after curtain is fully gone
       setTimeout(() => {
         centerWrap.remove();
         preloader.remove();
-      }, 1000);
-    }, 1100);
+      }, 1100);
+    }, 1600);
   }
 
   _setupHeroZoom() {
@@ -857,6 +1043,8 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
 
+    let currentCityName = 'Hyderabad';
+
     // Scale helper function - must be defined before alignLogo uses it
     const sc = () => { 
       const e = document.getElementById('cap-scaler'); 
@@ -1014,7 +1202,7 @@ class Component extends DCLogic {
         arrowBtn.style.transform = 'translate(100%, 100%)';
         arrowBtn.style.opacity = '0';
         
-        arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(209,32,47,1)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
+        arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(209,32,47)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
         img.appendChild(arrowBtn);
 
         cards.push({
@@ -1052,40 +1240,45 @@ class Component extends DCLogic {
       return spans;
     };
 
-    // Keep the red interlocking C logo perfectly positioned to the right of the word Hyderabad
+    // Keep the red interlocking C logo perfectly positioned to the right of the active city name
     let fontsRegistered = false;
     const alignLogo = () => {
       const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
       if (!logoEl) return;
       
-      const hyderabadEl = cityEls.find(c => c.name === 'Hyderabad')?.el;
-      if (!hyderabadEl) return;
+      const activeCityEl = cityEls.find(c => c.name === currentCityName)?.el;
+      if (!activeCityEl) return;
       
-      const charSpans = [...hyderabadEl.querySelectorAll('.cap-char')].filter(span => {
-        return (span.textContent || '').trim().length > 0;
+      // Filter out trailing spaces, line breaks, zero-width chars - only count actual letters
+      const charSpans = [...activeCityEl.querySelectorAll('.cap-char')].filter(span => {
+        return /[a-zA-Z]/.test(span.textContent || '');
       });
       
       if (charSpans && charSpans.length > 0) {
-        const lastChar = charSpans[charSpans.length - 1]; // last letter 'd'
+        const lastChar = charSpans[charSpans.length - 1];
         const lastCharRect = lastChar.getBoundingClientRect();
-        const scalerRect = scaler.getBoundingClientRect();
+        const parentRect = (logoEl.offsetParent || scaler).getBoundingClientRect();
         const s = sc();
         
-        // Position the logo (21px wide, 19px tall) 12px to the right of the last character 'd'
-        logoEl.style.left = ((lastCharRect.right - scalerRect.left) / s + 12) + 'px';
-        // Vertically center the logo with the letter 'd'
-        logoEl.style.top = ((lastCharRect.top - scalerRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
+        // Position the logo (21px wide, 19px tall) 12px to the right of the last character
+        logoEl.style.left = ((lastCharRect.right - parentRect.left) / s + 12) + 'px';
+        // Vertically center the logo with the last character
+        logoEl.style.top = ((lastCharRect.top - parentRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
       }
 
       if (!fontsRegistered) {
         fontsRegistered = true;
+        const runAlign = () => {
+          alignLogo();
+          requestAnimationFrame(alignLogo);
+        };
         if (document.fonts) {
-          document.fonts.ready.then(() => {
-            alignLogo();
-          });
+          document.fonts.ready.then(runAlign);
         }
-        setTimeout(alignLogo, 300);
-        setTimeout(alignLogo, 1000);
+        setTimeout(runAlign, 100);
+        setTimeout(runAlign, 350);
+        setTimeout(runAlign, 800);
+        setTimeout(runAlign, 1500);
       }
     };
 
@@ -1138,8 +1331,6 @@ class Component extends DCLogic {
     cards.forEach(c => {
       scrambleText(c.label, c.label.textContent || '');
     });
-
-    let currentCityName = 'Hyderabad';
 
     // Core layout function combining filter state, hover zoom, and scroll parallax
     const updateCardTransforms = () => {
@@ -1344,13 +1535,13 @@ class Component extends DCLogic {
       titleEl.textContent = '';
       titleEl.appendChild(roll);
 
-      // Plus icon that spins 135° into an × when open (OCI signature)
+      // Plus icon — styled as thin + bars, rotates to × via GSAP on open (OCI signature)
       const iconContainer = document.createElement('div');
       iconContainer.style.cssText =
         'position:absolute; left:1388px; width:22px; height:22px;' +
         'display:flex; align-items:center; justify-content:center;' +
         'color:rgb(209,32,47); pointer-events:none;' +
-        'transition: top 0.65s ' + EASE + ', transform 0.6s ' + EASE + ';';
+        'transition: top 0.65s ' + EASE + ';';
       const hBar = document.createElement('div');
       hBar.style.cssText = 'position:absolute; width:22px; height:2px; background:currentColor;';
       const vBar = document.createElement('div');
@@ -1388,7 +1579,7 @@ class Component extends DCLogic {
       link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
       link.addEventListener('click', () => {
         const vp = document.getElementById('cap-viewport');
-        const target = 6900 * ((vp ? vp.clientWidth : window.innerWidth) / 1457);
+        const target = 6942 * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
         if (this._lenis) this._lenis.scrollTo(target);
         else window.scrollTo({ top: target, behavior: 'smooth' });
       });
@@ -1417,10 +1608,10 @@ class Component extends DCLogic {
         : () => {};
       if (dividerEl) dividerEl.style.transition = 'transform 0.65s ' + EASE;
 
-      // Full-row click target
+      // Full-row click target — covers entire accordion row from title to icon
       const hitArea = document.createElement('div');
       hitArea.style.cssText =
-        'position:absolute; left:806px; width:614px; height:64px;' +
+        'position:absolute; left:150px; width:1280px; height:72px;' +
         'cursor:pointer; z-index:10; transition: top 0.65s ' + EASE + ';';
       scaler.appendChild(hitArea);
 
@@ -1437,7 +1628,19 @@ class Component extends DCLogic {
         const top = item.closedTop + shift;
         item.titleEl.style.top = top + 'px';
         item.iconContainer.style.top = (top + ICON_OFFSET) + 'px';
-        item.iconContainer.style.transform = isOpen ? 'rotate(135deg)' : 'rotate(0deg)';
+
+        // OCI-exact GSAP rotation: 135deg open (×), 0deg closed
+        if (window.gsap) {
+          window.gsap.to(item.iconContainer, {
+            rotation: isOpen ? 135 : 0,
+            duration: 0.8,
+            ease: 'power4.inOut',
+            overwrite: true
+          });
+        } else {
+          item.iconContainer.style.transform = isOpen ? 'rotate(135deg)' : 'rotate(0deg)';
+        }
+
         item.descWrap.style.top = (top + DESC_OFFSET) + 'px';
         item.hitArea.style.top = (top - 4) + 'px';
         if (isOpen) {
@@ -1484,7 +1687,8 @@ class Component extends DCLogic {
               const i4 = (y * w + x) * 4;
               const gray = 0.299 * px[i4] + 0.587 * px[i4 + 1] + 0.114 * px[i4 + 2];
               const light = gray > ((bayer[y % 4][x % 4] + 0.5) / 16) * 255;
-              px[i4] = light ? 255 : 209;
+              // Brand red duotone: dark=rgb(209,32,47) red, light=rgb(255,235,235) pink
+              px[i4]     = light ? 255 : 209;
               px[i4 + 1] = light ? 235 : 32;
               px[i4 + 2] = light ? 235 : 47;
             }
@@ -1511,11 +1715,30 @@ class Component extends DCLogic {
         layout();
         flashImage();
       });
+      // OCI hover: pre-rotate to 90° when hovered (closed), back to 0° on leave
       item.hitArea.addEventListener('mouseenter', () => {
         item.roll.style.transform = 'translateY(-' + item.rowH + 'px)';
+        const isOpen = activeIndex === i;
+        if (!isOpen && window.gsap) {
+          window.gsap.to(item.iconContainer, {
+            rotation: 90,
+            duration: 0.3,
+            ease: 'power4.inOut',
+            overwrite: true
+          });
+        }
       });
       item.hitArea.addEventListener('mouseleave', () => {
         item.roll.style.transform = 'translateY(0)';
+        const isOpen = activeIndex === i;
+        if (!isOpen && window.gsap) {
+          window.gsap.to(item.iconContainer, {
+            rotation: 0,
+            duration: 0.3,
+            ease: 'power4.inOut',
+            overwrite: true
+          });
+        }
       });
     });
 
