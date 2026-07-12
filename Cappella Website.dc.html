@@ -1145,7 +1145,7 @@ class Component extends DCLogic {
     if (!window.matchMedia('(pointer: fine)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (document.getElementById('cap-cursor-dot')) return;
-    document.documentElement.classList.add('cap-no-cursor');
+    // Native cursor stays visible — the dot + ring are an accent, not a replacement
 
     const ring = document.createElement('div');
     ring.id = 'cap-cursor-ring';
@@ -2360,7 +2360,6 @@ class Component extends DCLogic {
     if (this._onCursorMove) window.removeEventListener('mousemove', this._onCursorMove);
     if (this._onCursorOver) window.removeEventListener('mouseover', this._onCursorOver);
     if (this._onCursorLeave) document.documentElement.removeEventListener('mouseleave', this._onCursorLeave);
-    document.documentElement.classList.remove('cap-no-cursor');
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
