@@ -588,6 +588,7 @@ class Component extends DCLogic {
       this._setupJourneyStory();
       this._setupFooterAnimations();
       this._setupOperatorsMarquee();
+      this._setupDitherEntries();
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1537,6 +1538,76 @@ class Component extends DCLogic {
       this._mqRaf = requestAnimationFrame(step);
     };
     this._mqRaf = requestAnimationFrame(step);
+  }
+
+  _setupDitherEntries() {
+    // OCI-style photo entries: the image sits as a red duotone Bayer dither
+    // and resolves to full colour as it scrolls into view. Applied to the
+    // journey backdrop and the journey building photo (the Edge image and
+    // portfolio cards already have their own dither behaviours).
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler || this._ditherEntriesDone) return;
+    this._ditherEntriesDone = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const TARGETS = [
+      'fig-asset-9943ffc227529f04-36d3d657',  // journey full-width backdrop
+      'fig-asset-531180345e372e44-3031d3f7'   // journey building photo
+    ];
+    const bayer = [[0,12,3,15],[8,4,11,7],[2,14,1,13],[10,6,9,5]];
+
+    TARGETS.forEach(cls => {
+      const el = scaler.querySelector('.' + CSS.escape(cls));
+      if (!el) return;
+      const bg = window.getComputedStyle(el).backgroundImage;
+      if (!bg || bg === 'none') return;
+
+      el.style.overflow = 'hidden';
+      const canvas = document.createElement('canvas');
+      canvas.style.cssText =
+        'position:absolute; left:0; top:0; width:100%; height:100%;' +
+        'pointer-events:none; opacity:0; transition: opacity 0.9s var(--cap-ease-power) 0.2s;';
+      el.appendChild(canvas);
+
+      const tempImg = new Image();
+      tempImg.crossOrigin = 'anonymous';
+      tempImg.src = bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+      tempImg.onload = () => {
+        try {
+          const w = 190, h = Math.round((tempImg.height / tempImg.width) * w);
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(tempImg, 0, 0, w, h);
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const px = imgData.data;
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const i4 = (y * w + x) * 4;
+              const gray = 0.299 * px[i4] + 0.587 * px[i4 + 1] + 0.114 * px[i4 + 2];
+              const light = gray > ((bayer[y % 4][x % 4] + 0.5) / 16) * 255;
+              px[i4] = light ? 255 : 209;
+              px[i4 + 1] = light ? 235 : 32;
+              px[i4 + 2] = light ? 235 : 47;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch (e) { canvas.remove(); return; }
+
+        // Dithered until the photo scrolls in, then resolve to full colour
+        canvas.style.transition = 'none';
+        canvas.style.opacity = '1';
+        void canvas.offsetHeight;
+        canvas.style.transition = 'opacity 0.9s var(--cap-ease-power) 0.2s';
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            io.disconnect();
+            canvas.style.opacity = '0';
+          });
+        }, { threshold: 0.3 });
+        io.observe(el);
+      };
+    });
   }
 
   _setupMenuOverlay() {
