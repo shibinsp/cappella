@@ -136,13 +136,7 @@
       }
     }
 
-    /* Persistent rule to hide legacy Figma red overlays in the portfolio section */
-    /* React renders numeric styles as top:3955px (no space) */
-    div[style*="top: 3955px"],
-    div[style*="top:3955px"] {
-      /* Only hide if it also has rgba red background */
-    }
-    /* JS will also hide these dynamically - belt and suspenders approach */
+    /* JS dynamically hides legacy Figma red overlays in the portfolio section via hideRedOverlays() */
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
@@ -330,6 +324,25 @@ class Component extends DCLogic {
     // ===== STAIRCASE SCROLL REVEAL =====
     this._setupReveal();
 
+    // ===== IMMEDIATE LOGO HIDE (Portfolio Red C logo fix) =====
+    // The red interlocking C logo sits at left:309, top:4464 in Figma which
+    // overlaps the "Hyderabad" city text. alignLogo() (called 1.6s later) repositions
+    // it correctly — but we must hide it NOW so it never flashes at the wrong spot.
+    (() => {
+      const tryHideLogo = () => {
+        const scalerEl = document.getElementById('cap-scaler');
+        if (!scalerEl) { setTimeout(tryHideLogo, 100); return; }
+        const logoEl = scalerEl.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
+        if (logoEl) {
+          logoEl.style.opacity = '0';
+          logoEl.style.transition = 'opacity 0.25s ease';
+        } else {
+          setTimeout(tryHideLogo, 100);
+        }
+      };
+      tryHideLogo();
+    })();
+
     // ===== First-page effects: dot grid + spotlight cursor + nav text scramble =====
     this._setupDotGrid();
     this._setupSpotlight();
@@ -383,14 +396,20 @@ class Component extends DCLogic {
       ctx.clearRect(0, 0, W, H);
       const T = (this._dgT = (this._dgT || 0) + 0.025); // water-flow time
       
-      // Interpolate/lerp mouse position for smooth highlight trailing
+      // Spring-physics mouse tracking (much more organic than lerp)
+      // Using velocity-based spring: pos += vel; vel += (target-pos)*K; vel *= damping
       if (P.x > -9000) {
         if (smoothX < -9000) {
-          smoothX = P.x;
-          smoothY = P.y;
+          smoothX = P.x; smoothY = P.y;
         } else {
-          smoothX += (P.x - smoothX) * 0.08;
-          smoothY += (P.y - smoothY) * 0.08;
+          // Spring state for smooth-tracking
+          if (!this._dgVX) { this._dgVX = 0; this._dgVY = 0; }
+          this._dgVX += (P.x - smoothX) * 0.07;
+          this._dgVY += (P.y - smoothY) * 0.07;
+          this._dgVX *= 0.78;
+          this._dgVY *= 0.78;
+          smoothX += this._dgVX;
+          smoothY += this._dgVY;
         }
       } else {
         smoothX = -9999;
@@ -417,38 +436,47 @@ class Component extends DCLogic {
   _setupSpotlight() {
     const sp = document.getElementById('cap-spotlight');
     if (!sp) return;
-    
-    let targetX = window.innerWidth / 2;
-    let targetY = window.innerHeight / 2;
-    let currentX = targetX;
-    let currentY = targetY;
+
+    // Spring physics state — spotlight only, normal system cursor (like OCI reference)
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
     let active = false;
 
+    // Spotlight spring — slow, heavy trailing → "water wave" feel
+    let spX = mouseX, spY = mouseY, spVX = 0, spVY = 0;
+    const SP_K = 0.055;   // stiffness  (lower = slower / more water-like)
+    const SP_D = 0.80;    // damping    (higher = less bounce)
+
     this._onSpot = (e) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      active = true;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (!active) {
+        active = true;
+        sp.style.opacity = '1';
+      }
     };
-    
+
     const update = () => {
       if (active) {
-        // Linear interpolation (lerp) for smooth trailing physics
-        const lerpFactor = 0.08;
-        currentX += (targetX - currentX) * lerpFactor;
-        currentY += (targetY - currentY) * lerpFactor;
-        
-        sp.style.left = currentX + 'px';
-        sp.style.top = currentY + 'px';
-        sp.style.opacity = '1';
+        // Velocity-based spring: feels like dragging through water
+        spVX += (mouseX - spX) * SP_K;
+        spVY += (mouseY - spY) * SP_K;
+        spVX *= SP_D;
+        spVY *= SP_D;
+        spX  += spVX;
+        spY  += spVY;
+
+        sp.style.left = spX + 'px';
+        sp.style.top  = spY + 'px';
       }
       this._spotRaf = requestAnimationFrame(update);
     };
     this._spotRaf = requestAnimationFrame(update);
 
     window.addEventListener('mousemove', this._onSpot, { passive: true });
-    window.addEventListener('mouseleave', () => { 
+    window.addEventListener('mouseleave', () => {
       active = false;
-      sp.style.opacity = '0'; 
+      sp.style.opacity = '0';
     });
   }
 
@@ -1111,109 +1139,258 @@ class Component extends DCLogic {
       }
     ];
 
-    // 4x4 Bayer Matrix for ordered dithering
-    const bayerMatrix = [
-      [  0, 12,  3, 15 ],
-      [  8,  4, 11,  7 ],
-      [  2, 14,  1, 13 ],
-      [ 10,  6,  9,  5 ]
-    ];
+    // =====================================================================
+    // TRUE WebGL GLSL Bayer-Matrix Dither  (OCI-style, Cappella Red)
+    // Architecture mirrors oci-website/js/dither.js but uses:
+    //   dark  = #D1202F (Cappella red)   light = #FFF0F0 (warm white)
+    // uDitherAmount uniform: 1.0 = full dither  /  0.0 = full colour
+    // On hover → tween to 0.0 + zoom 1.05x  (reveal original image)
+    // On leave → tween to 1.0 + zoom 1.0x   (restore dither)
+    // =====================================================================
 
-    function applyDither(imgEl, canvasEl, darkColor, lightColor) {
-      const ctx = canvasEl.getContext('2d');
-      const tempImg = new Image();
-      tempImg.crossOrigin = 'anonymous';
-      
-      const computedBg = window.getComputedStyle(imgEl).backgroundImage;
-      if (!computedBg || computedBg === 'none') return;
-      const bgUrl = computedBg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+    // --- GLSL shaders ---
+    const VERT_SRC = `
+      attribute vec2 a_pos;
+      attribute vec2 a_uv;
+      varying   vec2 v_uv;
+      void main() {
+        gl_Position = vec4(a_pos, 0.0, 1.0);
+        v_uv = a_uv;
+      }
+    `;
 
-      tempImg.src = bgUrl;
-      tempImg.onload = () => {
-        const w = 150; // Downsample for pixelated halftone grid
-        const h = Math.round((tempImg.height / tempImg.width) * w);
-        canvasEl.width = w;
-        canvasEl.height = h;
+    // 4×4 Bayer threshold matrix encoded as uniforms
+    // u_bayer[y*4+x] = ordered-dither threshold (0–15)
+    const FRAG_SRC = `
+      precision mediump float;
+      varying vec2 v_uv;
+      uniform sampler2D u_tex;
+      uniform float u_dither;      // 0=colour, 1=dither
+      uniform float u_zoom;        // 1.0 default, 1.05 hovered
+      uniform float u_bayer[16];   // 4x4 Bayer matrix values
 
-        ctx.drawImage(tempImg, 0, 0, w, h);
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
+      void main() {
+        /* zoom from centre */
+        vec2 uv = (v_uv - 0.5) / u_zoom + 0.5;
+        vec4 col = texture2D(u_tex, uv);
 
-        const dr = darkColor[0], dg = darkColor[1], db = darkColor[2];
-        const lr = lightColor[0], lg = lightColor[1], lb = lightColor[2];
+        /* luminance */
+        float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
 
-        for (let y = 0; y < h; y++) {
-          for (let x = 0; x < w; x++) {
-            const idx = (y * w + x) * 4;
-            const gray = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
-            const threshold = ((bayerMatrix[y % 4][x % 4] + 0.5) / 16) * 255;
-            
-            if (gray > threshold) {
-              data[idx] = lr;
-              data[idx+1] = lg;
-              data[idx+2] = lb;
-            } else {
-              data[idx] = dr;
-              data[idx+1] = dg;
-              data[idx+2] = db;
-            }
-          }
-        }
-        ctx.putImageData(imgData, 0, 0);
+        /* Bayer threshold lookup (use mod on pixel coords) */
+        int bx = int(mod(floor(gl_FragCoord.x), 4.0));
+        int by = int(mod(floor(gl_FragCoord.y), 4.0));
+        float idx = float(by * 4 + bx);
+
+        /* manually index — GLSL ES 1.0 needs constant-index arrays  */
+        /* so we use a chain of comparisons (16 branches, GPU trivial) */
+        float thr = 0.0;
+        if      (idx <  1.0) thr = u_bayer[ 0];
+        else if (idx <  2.0) thr = u_bayer[ 1];
+        else if (idx <  3.0) thr = u_bayer[ 2];
+        else if (idx <  4.0) thr = u_bayer[ 3];
+        else if (idx <  5.0) thr = u_bayer[ 4];
+        else if (idx <  6.0) thr = u_bayer[ 5];
+        else if (idx <  7.0) thr = u_bayer[ 6];
+        else if (idx <  8.0) thr = u_bayer[ 7];
+        else if (idx <  9.0) thr = u_bayer[ 8];
+        else if (idx < 10.0) thr = u_bayer[ 9];
+        else if (idx < 11.0) thr = u_bayer[10];
+        else if (idx < 12.0) thr = u_bayer[11];
+        else if (idx < 13.0) thr = u_bayer[12];
+        else if (idx < 14.0) thr = u_bayer[13];
+        else if (idx < 15.0) thr = u_bayer[14];
+        else                 thr = u_bayer[15];
+
+        float threshold = (thr + 0.5) / 16.0;
+
+        /* Cappella red duotone  */
+        vec3 dark  = vec3(0.820, 0.125, 0.184);   /* #D1202F */
+        vec3 light = vec3(1.000, 0.941, 0.941);   /* #FFF0F0 */
+        vec3 dithered = lum > threshold ? light : dark;
+
+        /* blend between dithered and original */
+        gl_FragColor = vec4(mix(col.rgb, dithered, u_dither), col.a);
+      }
+    `;
+
+    // 4×4 Bayer matrix (same as OCI)
+    const BAYER16 = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
+
+    /**
+     * Creates a WebGL dither instance on a <canvas> element.
+     * Mirrors OCI's WebGLDither class: exposes showOriginal() / showDither()
+     * which tween uDitherAmount + uZoom with requestAnimationFrame.
+     */
+    function createWebGLDither(canvasEl, imgUrl) {
+      const gl = canvasEl.getContext('webgl') || canvasEl.getContext('experimental-webgl');
+      if (!gl) return null;
+
+      // compile shader
+      const compile = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      };
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER,   VERT_SRC));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG_SRC));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      // quad covering clip-space [-1,1]
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1,-1, 0,1,
+         1,-1, 1,1,
+        -1, 1, 0,0,
+         1, 1, 1,0
+      ]), gl.STATIC_DRAW);
+
+      const aPos = gl.getAttribLocation(prog, 'a_pos');
+      const aUV  = gl.getAttribLocation(prog, 'a_uv');
+      gl.enableVertexAttribArray(aPos);
+      gl.enableVertexAttribArray(aUV);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+      gl.vertexAttribPointer(aUV,  2, gl.FLOAT, false, 16, 8);
+
+      // uniforms
+      const uDither = gl.getUniformLocation(prog, 'u_dither');
+      const uZoom   = gl.getUniformLocation(prog, 'u_zoom');
+      const uBayer  = gl.getUniformLocation(prog, 'u_bayer[0]');
+      gl.uniform1fv(uBayer, new Float32Array(BAYER16));
+
+      // texture
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+      // ── INSTANT PLACEHOLDER ──────────────────────────────────────────────
+      // Upload a 1×1 Cappella-red pixel IMMEDIATELY so render() has valid
+      // texture data from frame 0, and the canvas never appears transparent
+      // (which would let the raw photo bleed through the canvas overlay).
+      canvasEl.width  = 4;
+      canvasEl.height = 4;
+      gl.texImage2D(
+        gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0,
+        gl.RGBA, gl.UNSIGNED_BYTE,
+        new Uint8Array([209, 32, 47, 255]) // #D1202F
+      );
+      gl.clearColor(0.82, 0.125, 0.184, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      // ─────────────────────────────────────────────────────────────────────
+
+      let ditherAmt = 1.0;
+      let zoom      = 1.0;
+      let rafId     = null;
+
+      const render = () => {
+        gl.viewport(0, 0, canvasEl.width, canvasEl.height);
+        gl.uniform1f(uDither, ditherAmt);
+        gl.uniform1f(uZoom,   zoom);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      };
+
+      // smooth ease helper (mimics GSAP power2.out)
+      const ease = t => 1 - Math.pow(1 - t, 3);
+
+      const tween = (fromD, toD, fromZ, toZ, dur) => {
+        if (rafId) cancelAnimationFrame(rafId);
+        const start = performance.now();
+        const step  = now => {
+          const t  = Math.min((now - start) / dur, 1);
+          const et = ease(t);
+          ditherAmt = fromD + (toD - fromD) * et;
+          zoom      = fromZ + (toZ - fromZ) * et;
+          render();
+          if (t < 1) rafId = requestAnimationFrame(step);
+        };
+        rafId = requestAnimationFrame(step);
+      };
+
+      // Load image into texture then do first render
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        // KEY DIFFERENCE vs Canvas 2D: downsample to ~35% of natural size.
+        // CSS width:100% stretches the low-res canvas to fill the card —
+        // each 4×4 Bayer cell then covers ~10 screen pixels, giving the
+        // same chunky halftone look as the OCI website (which uses ~40%).
+        const scale = 0.35;
+        canvasEl.width  = Math.max(60, Math.round((img.naturalWidth  || 300) * scale));
+        canvasEl.height = Math.max(60, Math.round((img.naturalHeight || 300) * scale));
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        render();
+      };
+      img.src = imgUrl;
+
+      return {
+        // Reveal full-colour image (like OCI showOriginal)
+        showOriginal() { tween(ditherAmt, 0.0, zoom, 1.05, 700); },
+        // Restore dither (like OCI showDither)
+        showDither()   { tween(ditherAmt, 1.0, zoom, 1.00, 700); },
+        render
       };
     }
 
+    // --- Per-card WebGL setup ---
     cardData.forEach(data => {
       const img = findElByClass(data.imgCls);
-      const label = [...scaler.querySelectorAll('span')].find(e => 
+      const label = [...scaler.querySelectorAll('span')].find(e =>
         data.labelKeywords.every(k => (e.textContent || '').includes(k))
       );
-      
+
       if (img && label) {
         img.style.overflow = 'hidden';
         img.style.position = 'relative';
 
-        // Create clean WebGL-style Dither Canvas Overlay
+        // WebGL canvas — fills the card image div
         const ditherCanvas = document.createElement('canvas');
-        ditherCanvas.style.position = 'absolute';
-        ditherCanvas.style.top = '0';
-        ditherCanvas.style.left = '0';
-        ditherCanvas.style.width = '100%';
-        ditherCanvas.style.height = '100%';
-        ditherCanvas.style.pointerEvents = 'none';
-        ditherCanvas.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        ditherCanvas.style.cssText = [
+          'position:absolute', 'top:0', 'left:0',
+          'width:100%', 'height:100%',
+          'pointer-events:none',
+          'image-rendering:pixelated'          // keep the halftone crisp
+        ].join(';');
         img.appendChild(ditherCanvas);
 
-        // Apply red duotone dither (dark red to light mercury-pink)
-        applyDither(img, ditherCanvas, [209, 32, 47], [255, 235, 235]);
+        // Extract background image URL from Figma div
+        const bgUrl = (() => {
+          const bg = window.getComputedStyle(img).backgroundImage;
+          if (!bg || bg === 'none') return null;
+          return bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+        })();
 
-        // 2. Create Arrow Button (Square)
+        // Create WebGL dither instance and store on element (like OCI .webglDitherInstance)
+        let webglInst = null;
+        if (bgUrl) {
+          webglInst = createWebGLDither(ditherCanvas, bgUrl);
+          if (webglInst) ditherCanvas.webglDitherInstance = webglInst;
+        }
+
+        // Arrow button (bottom-right corner slides in on hover)
         const arrowBtn = document.createElement('div');
-        arrowBtn.style.position = 'absolute';
-        arrowBtn.style.bottom = '0';
-        arrowBtn.style.right = '0';
-        arrowBtn.style.width = '55px';
-        arrowBtn.style.height = '55px';
-        arrowBtn.style.backgroundColor = '#ffffff';
-        arrowBtn.style.display = 'flex';
-        arrowBtn.style.justifyContent = 'center';
-        arrowBtn.style.alignItems = 'center';
-        arrowBtn.style.transition = 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease';
-        arrowBtn.style.transform = 'translate(100%, 100%)';
-        arrowBtn.style.opacity = '0';
-        
+        arrowBtn.style.cssText = [
+          'position:absolute', 'bottom:0', 'right:0',
+          'width:55px', 'height:55px',
+          'background:#fff',
+          'display:flex', 'justify-content:center', 'align-items:center',
+          'transition:transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.45s ease',
+          'transform:translate(100%,100%)', 'opacity:0'
+        ].join(';');
         arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(209,32,47)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
         img.appendChild(arrowBtn);
 
         cards.push({
-          id: data.id,
-          img,
-          label,
-          ditherCanvas,
-          arrowBtn,
-          cities: data.cities,
-          isHovered: false,
-          parallaxY: 0
+          id: data.id, img, label, ditherCanvas, arrowBtn,
+          webglInst,
+          cities: data.cities, isHovered: false, parallaxY: 0
         });
       }
     });
@@ -1241,6 +1418,17 @@ class Component extends DCLogic {
     };
 
     // Keep the red interlocking C logo perfectly positioned to the right of the active city name
+    // ROOT CAUSE FIX: hide the logo immediately so it never shows at its default Figma
+    // position (left:309, top:4464) which overlaps the 'Hyderabad' text. Only show it
+    // after alignLogo() has successfully re-positioned it.
+    (() => {
+      const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
+      if (logoEl) {
+        logoEl.style.opacity = '0';
+        logoEl.style.transition = 'opacity 0.3s ease';
+      }
+    })();
+
     let fontsRegistered = false;
     const alignLogo = () => {
       const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
@@ -1260,10 +1448,25 @@ class Component extends DCLogic {
         const parentRect = (logoEl.offsetParent || scaler).getBoundingClientRect();
         const s = sc();
         
-        // Position the logo (21px wide, 19px tall) 12px to the right of the last character
-        logoEl.style.left = ((lastCharRect.right - parentRect.left) / s + 12) + 'px';
-        // Vertically center the logo with the last character
-        logoEl.style.top = ((lastCharRect.top - parentRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
+        // getBoundingClientRect can return 0-rect for off-screen elements on some browsers.
+        // Fall back to reading the span's inline style (Figma coordinates) in that case.
+        if (lastCharRect.width === 0 && lastCharRect.height === 0) {
+          // Use the city el's own style top/left as a fallback absolute position
+          const cityTop = parseFloat(activeCityEl.style.top) || 0;
+          const cityLeft = parseFloat(activeCityEl.style.left) || 0;
+          const cityWidth = parseFloat(activeCityEl.style.width) || 120;
+          const cityHeight = parseFloat(activeCityEl.style.height) || 28;
+          logoEl.style.left = (cityLeft + cityWidth + 12) + 'px';
+          logoEl.style.top = (cityTop + (cityHeight - 19) / 2) + 'px';
+        } else {
+          // Position the logo (21px wide, 19px tall) 12px to the right of the last character
+          logoEl.style.left = ((lastCharRect.right - parentRect.left) / s + 12) + 'px';
+          // Vertically center the logo with the last character
+          logoEl.style.top = ((lastCharRect.top - parentRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
+        }
+        
+        // Reveal the logo now that it's correctly positioned
+        logoEl.style.opacity = '1';
       }
 
       if (!fontsRegistered) {
@@ -1344,12 +1547,18 @@ class Component extends DCLogic {
           c.img.style.pointerEvents = 'auto';
           c.img.style.opacity = '1';
           
-          const scale = c.isHovered ? 1.05 : 1.0;
-          c.img.style.transform = `translateY(${c.parallaxY}px) scale(${scale})`;
+          // Don't CSS-scale the card image itself — WebGL handles zoom internally via u_zoom
+          c.img.style.transform = `translateY(${c.parallaxY}px)`;
           c.label.style.transform = `translateY(${c.parallaxY}px)`;
           
-          c.ditherCanvas.style.opacity = c.isHovered ? '0' : '1';
-          c.ditherCanvas.style.transform = c.isHovered ? 'scale(1.05)' : 'scale(1)';
+          // Trigger WebGL dither tween (mirrors OCI mouseenter/mouseleave exactly)
+          if (c.webglInst) {
+            if (c.isHovered) {
+              c.webglInst.showOriginal(); // uDitherAmount → 0.0, zoom → 1.05
+            } else {
+              c.webglInst.showDither();   // uDitherAmount → 1.0, zoom → 1.00
+            }
+          }
           
           if (c.isHovered) {
             c.arrowBtn.style.opacity = '1';
@@ -1365,7 +1574,8 @@ class Component extends DCLogic {
           c.label.style.opacity = '0';
           c.label.style.transform = 'translateY(30px)';
           
-          c.ditherCanvas.style.opacity = '1';
+          // Always show dither on hidden cards
+          if (c.webglInst) c.webglInst.showDither();
           c.arrowBtn.style.opacity = '0';
           c.arrowBtn.style.transform = 'translate(100%, 100%)';
         }
