@@ -16,7 +16,7 @@
 <helmet>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Over+the+Rainbow&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Over+the+Rainbow&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="components/fig-assets.css">
   <style>
     html, body { margin: 0; padding: 0; background: rgb(255,255,255); }
@@ -137,6 +137,78 @@
     }
 
     /* JS dynamically hides legacy Figma red overlays in the portfolio section via hideRedOverlays() */
+
+    /* ===== PREMIUM PASS ===== */
+    :root {
+      --cap-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);   /* reveals / settles */
+      --cap-ease-power: cubic-bezier(0.76, 0, 0.24, 1); /* movement / layout */
+      --cap-red: rgb(209, 32, 47);
+    }
+
+    /* Brand text selection */
+    ::selection { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
+    ::-moz-selection { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
+
+    /* Thin brand scrollbar */
+    html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 244); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgb(244, 244, 244); }
+    ::-webkit-scrollbar-thumb { background: rgb(209, 32, 47); border-radius: 3px; }
+
+    /* Film grain — subtle animated noise over everything */
+    #cap-grain {
+      position: fixed;
+      inset: -120px;
+      z-index: 95;
+      pointer-events: none;
+      opacity: 0.05;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      #cap-grain { animation: capGrain 0.7s steps(7) infinite; }
+    }
+    @keyframes capGrain {
+      0%   { transform: translate(0, 0); }
+      14%  { transform: translate(-38px, 22px); }
+      28%  { transform: translate(24px, -44px); }
+      42%  { transform: translate(-52px, -18px); }
+      56%  { transform: translate(40px, 36px); }
+      70%  { transform: translate(-20px, 48px); }
+      84%  { transform: translate(46px, -12px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    /* Custom cursor — white + difference blend inverts on any background */
+    .cap-no-cursor, .cap-no-cursor * { cursor: none !important; }
+    #cap-cursor-dot, #cap-cursor-ring {
+      position: fixed;
+      left: 0;
+      top: 0;
+      border-radius: 50%;
+      z-index: 100;
+      pointer-events: none;
+      mix-blend-mode: difference;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      will-change: transform;
+    }
+    #cap-cursor-dot { width: 8px; height: 8px; background: rgb(255, 255, 255); }
+    #cap-cursor-ring { width: 38px; height: 38px; border: 1.5px solid rgb(255, 255, 255); }
+
+    /* Editorial section meta-labels: [ 01 — THE CAPPELLA EDGE ] */
+    .cap-meta {
+      position: absolute;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      z-index: 5;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.8s var(--cap-ease-expo), transform 0.8s var(--cap-ease-expo);
+    }
+    .cap-meta.cap-meta-in { opacity: 0.85; transform: translateY(0); }
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
@@ -348,6 +420,10 @@ class Component extends DCLogic {
     this._setupSpotlight();
     this._setupNavScramble();
 
+    // ===== PREMIUM PASS: film grain + custom cursor (viewport-level, no frame needed) =====
+    this._setupGrain();
+    this._setupCursor();
+
     // ===== DEFERRED ANIMATIONS =====
     // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
     // The frame renders async, so 1.6s covers the worst case render + font settle.
@@ -356,6 +432,8 @@ class Component extends DCLogic {
       this._setupStatCounters();
       this._setupPortfolioInteraction();
       this._setupAccordion();
+      this._setupMetaLabels();
+      this._setupJourneyStory();
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1055,45 +1133,240 @@ class Component extends DCLogic {
     });
   }
 
-  _setupStatCounters() {
+  _setupGrain() {
+    if (document.getElementById('cap-grain')) return;
+    const g = document.createElement('div');
+    g.id = 'cap-grain';
+    document.body.appendChild(g);
+  }
+
+  _setupCursor() {
+    // Fine pointers only — touch devices keep their native behaviour
+    if (!window.matchMedia('(pointer: fine)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (document.getElementById('cap-cursor-dot')) return;
+    document.documentElement.classList.add('cap-no-cursor');
+
+    const ring = document.createElement('div');
+    ring.id = 'cap-cursor-ring';
+    const dot = document.createElement('div');
+    dot.id = 'cap-cursor-dot';
+    document.body.appendChild(ring);
+    document.body.appendChild(dot);
+
+    let mx = -100, my = -100, rx = -100, ry = -100;
+    let visible = false, active = false;
+    let dotScale = 1, ringScale = 1;
+
+    // Elements with an inline cursor:pointer (nav, cards, accordion rows, links)
+    // — computed style can't be used because .cap-no-cursor forces cursor:none
+    const isInteractive = (t) => {
+      let n = t;
+      while (n && n !== document.body) {
+        if (n.tagName === 'A' || n.tagName === 'BUTTON' || n.tagName === 'INPUT' ||
+            (n.style && n.style.cursor === 'pointer')) return true;
+        n = n.parentElement;
+      }
+      return false;
+    };
+
+    this._onCursorMove = (e) => {
+      mx = e.clientX; my = e.clientY;
+      if (!visible) {
+        visible = true;
+        rx = mx; ry = my;
+        dot.style.opacity = '1';
+        ring.style.opacity = '1';
+      }
+    };
+    this._onCursorOver = (e) => { active = isInteractive(e.target); };
+    this._onCursorLeave = () => {
+      visible = false;
+      dot.style.opacity = '0';
+      ring.style.opacity = '0';
+    };
+    window.addEventListener('mousemove', this._onCursorMove, { passive: true });
+    window.addEventListener('mouseover', this._onCursorOver, { passive: true });
+    document.documentElement.addEventListener('mouseleave', this._onCursorLeave);
+
+    const loop = () => {
+      rx += (mx - rx) * 0.16;
+      ry += (my - ry) * 0.16;
+      dotScale += ((active ? 0.45 : 1) - dotScale) * 0.2;
+      ringScale += ((active ? 1.7 : 1) - ringScale) * 0.2;
+      dot.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px) scale(' + dotScale + ')';
+      ring.style.transform = 'translate(' + (rx - 19) + 'px,' + (ry - 19) + 'px) scale(' + ringScale + ')';
+      this._cursorRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  _setupMetaLabels() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler || scaler.querySelector('.cap-meta')) return;
+    // Anchored just above each section heading (frame coordinates)
+    const defs = [
+      ['01', 'THE CAPPELLA EDGE', 821, 2158, 'rgb(209,32,47)'],
+      ['02', 'OUR JOURNEY',        45, 2996, 'rgb(255,255,255)'],
+      ['03', 'OUR PORTFOLIO',     210, 4171, 'rgb(209,32,47)'],
+      ['04', 'OPERATORS',         775, 5234, 'rgb(209,32,47)'],
+      ['05', 'CONTACT',            44, 6990, 'rgb(255,255,255)']
+    ];
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('cap-meta-in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    defs.forEach(([num, text, left, top, color]) => {
+      const el = document.createElement('div');
+      el.className = 'cap-meta';
+      el.textContent = '[ ' + num + ' — ' + text + ' ]';
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+      el.style.color = color;
+      scaler.appendChild(el);
+      io.observe(el);
+    });
+  }
+
+  _setupJourneyStory() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.gsap || !window.ScrollTrigger) return;
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
-    // Find stat number elements — look for specific known values
-    const targets = [
-      { text: '$500 Mn+', end: 500, prefix: '$', suffix: ' Mn+' },
-      { text: '135 Acres', end: 135, prefix: '', suffix: ' Acres' },
-      { text: '16 Assets', end: 16, prefix: '', suffix: ' Assets' },
-      { text: '75 Years+', end: 75, prefix: '', suffix: ' Years+' }
-    ];
-    targets.forEach(({ text, end, prefix, suffix }) => {
-      const el = [...scaler.querySelectorAll('div, span')].find(e =>
-        (e.textContent || '').trim() === text && !e.querySelector('*')
-      );
-      if (!el) return;
-      let animated = false;
+
+    // The S-curve SVG at (178, 2959): reveal it top-down with scroll.
+    // Figma flattens strokes to fills, so prefer a clip reveal; if the path
+    // turns out to be genuinely stroked, draw it with dashoffset instead.
+    const svg = [...scaler.querySelectorAll('svg')].find(el => {
+      const top = parseFloat(el.style.top) || 0;
+      return top > 2900 && top < 3000 &&
+        parseInt(el.getAttribute('height') || '0', 10) > 600 &&
+        el.querySelectorAll('path').length === 1;
+    });
+    if (svg) {
+      const path = svg.querySelector('path');
+      const stroked = path && window.getComputedStyle(path).stroke !== 'none';
+      if (stroked) {
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = len;
+        // len -> 2*len reveals from the path END (the 2016 top of the curve)
+        window.gsap.fromTo(path, { strokeDashoffset: len }, {
+          strokeDashoffset: len * 2,
+          ease: 'none',
+          scrollTrigger: { trigger: svg, start: 'top 82%', end: 'bottom 45%', scrub: true }
+        });
+      } else {
+        window.gsap.fromTo(svg, { clipPath: 'inset(0 0 100% 0)' }, {
+          clipPath: 'inset(0 0 0% 0)',
+          ease: 'none',
+          scrollTrigger: { trigger: svg, start: 'top 82%', end: 'bottom 45%', scrub: true }
+        });
+      }
+    }
+
+    // Year markers: dot pops, then the year + its captions rise, in scroll order
+    const dots = [...scaler.querySelectorAll('div')].filter(el => {
+      const top = parseFloat(el.style.top) || 0;
+      return top > 3000 && top < 3700 &&
+        (el.style.borderRadius || '').includes('50%') &&
+        parseFloat(el.style.width) <= 30;
+    });
+    ['2016', '2017', '2018'].forEach(y => {
+      const yEl = [...scaler.querySelectorAll('span')].find(s => (s.textContent || '').trim() === y);
+      if (!yEl) return;
+      const yTop = parseFloat(yEl.style.top) || 0;
+      const yLeft = parseFloat(yEl.style.left) || 0;
+      const dot = dots.find(d => Math.abs((parseFloat(d.style.top) || 0) - yTop) < 45);
+      const captions = [...scaler.querySelectorAll('span')].filter(s => {
+        if (s === yEl || !(s.textContent || '').trim()) return false;
+        const t = parseFloat(s.style.top) || 0;
+        const l = parseFloat(s.style.left) || 0;
+        return t > yTop - 6 && t < yTop + 115 && Math.abs(l - yLeft) < 230;
+      });
+      // Kill the generic reveal classes so they can't fight the timeline
+      [yEl, dot, ...captions].filter(Boolean).forEach(el =>
+        el.classList.remove('cap-scale-reveal', 'cap-scroll-reveal', 'cap-revealed'));
+      window.gsap.set([yEl, ...captions], { opacity: 0, y: 26 });
+      if (dot) window.gsap.set(dot, { scale: 0, opacity: 0, transformOrigin: '50% 50%' });
+      window.ScrollTrigger.create({
+        trigger: yEl,
+        start: 'top 80%',
+        once: true,
+        onEnter: () => {
+          if (dot) window.gsap.to(dot, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(2.4)' });
+          window.gsap.to([yEl, ...captions], {
+            opacity: 1, y: 0, duration: 0.9, stagger: 0.09, ease: 'expo.out', delay: 0.12
+          });
+        }
+      });
+    });
+  }
+
+  _setupStatCounters() {
+    // PREMIUM PASS: odometer digit rolls. Every large stat figure (leaf nodes,
+    // >=55px — catches "$500", "135 Acres", "16 Assets", "75 Years+", "10 Years")
+    // rolls each digit through a masked 0-9 column into place.
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const els = [...scaler.querySelectorAll('div, span')].filter(el => {
+      if (el.querySelector('*') || el.dataset.capOdo) return false;
+      const txt = (el.textContent || '').trim();
+      if (!txt || txt.length > 12 || !/\d/.test(txt)) return false;
+      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
+      return fs >= 55;
+    });
+    els.forEach(el => {
+      el.dataset.capOdo = '1';
+      if (reduced) return; // leave static text
+      const txt = (el.textContent || '').trim();
+      el.textContent = '';
+      const rolls = [];
+      [...txt].forEach(ch => {
+        if (!/\d/.test(ch)) {
+          const s = document.createElement('span');
+          s.textContent = ch;
+          s.style.whiteSpace = 'pre';
+          el.appendChild(s);
+          return;
+        }
+        // Mask holds a column of 0-9 twice; rolling to 10+digit passes a full
+        // cycle before landing. Initially shows the real digit (offset digit).
+        const digit = parseInt(ch, 10);
+        const mask = document.createElement('span');
+        mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:baseline;';
+        const col = document.createElement('span');
+        col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
+        for (let r = 0; r < 2; r++) {
+          for (let d = 0; d <= 9; d++) {
+            const cell = document.createElement('span');
+            cell.textContent = String(d);
+            cell.style.cssText = 'display:block; height:1em; line-height:1em;';
+            col.appendChild(cell);
+          }
+        }
+        mask.appendChild(col);
+        el.appendChild(mask);
+        rolls.push({ col, digit });
+      });
+      if (!rolls.length) return;
       const io = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting && !animated) {
-            animated = true;
-            io.unobserve(el);
-            // Animate counter
-            const duration = 1400;
-            const start = performance.now();
-            const tick = (now) => {
-              const elapsed = now - start;
-              const progress = Math.min(elapsed / duration, 1);
-              // Ease out expo
-              const eased = 1 - Math.pow(2, -10 * progress);
-              const value = Math.round(eased * end);
-              el.textContent = prefix + value + suffix;
-              if (progress < 1) requestAnimationFrame(tick);
-              else el.textContent = text; // restore exact original
-            };
-            requestAnimationFrame(tick);
-          }
+          if (!entry.isIntersecting) return;
+          io.disconnect();
+          rolls.forEach(({ col, digit }, i) => {
+            col.style.transition = 'none';
+            col.style.transform = 'translateY(0)';
+            void col.offsetHeight; // reflow so the jump to 0 doesn't animate
+            col.style.transition = 'transform 1.5s var(--cap-ease-expo) ' + (i * 0.09) + 's';
+            col.style.transform = 'translateY(-' + (10 + digit) + 'em)';
+          });
         });
-      }, { threshold: 0.5 });
+      }, { threshold: 0.4 });
       io.observe(el);
     });
   }
@@ -2083,6 +2356,11 @@ class Component extends DCLogic {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
+    if (this._cursorRaf) cancelAnimationFrame(this._cursorRaf);
+    if (this._onCursorMove) window.removeEventListener('mousemove', this._onCursorMove);
+    if (this._onCursorOver) window.removeEventListener('mouseover', this._onCursorOver);
+    if (this._onCursorLeave) document.documentElement.removeEventListener('mouseleave', this._onCursorLeave);
+    document.documentElement.classList.remove('cap-no-cursor');
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);
