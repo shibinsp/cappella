@@ -451,62 +451,146 @@ class Component extends DCLogic {
     const gridW = cell * cols - gap, gridH = cell * rows - gap;
     const sx = (W - gridW) / 2 + dotSize / 2, sy = (H - gridH) / 2 + dotSize / 2;
     const dots = [];
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) dots.push({ cx: sx + x * cell, cy: sy + y * cell, ox: 0, oy: 0, vx: 0, vy: 0 });
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      const cx = sx + x * cell, cy = sy + y * cell;
+      dots.push({ cx, cy, ox: 0, oy: 0,
+        p1: cx * 0.011 + cy * 0.006, p2: cy * 0.018, p3: cx * 0.009 + cy * 0.004 });
+    }
+    // Pixel-buffer renderer: 130k+ fillRect calls per frame run at slideshow
+    // speed; writing pixels into one ImageData and blitting it once is ~60fps.
+    canvas.width = W; canvas.height = H;
+    const frame = ctx.createImageData(W, H);
+    const px32 = new Uint32Array(frame.data.buffer);
+    // sine lookup table — 3 trig calls x 130k dots per frame is the other hotspot
+    const SIN_N = 4096, SIN_MASK = SIN_N - 1, SIN_K = SIN_N / (Math.PI * 2);
+    const SIN = new Float32Array(SIN_N);
+    for (let i = 0; i < SIN_N; i++) SIN[i] = Math.sin((i / SIN_N) * Math.PI * 2);
+    const fsin = (v) => SIN[((v * SIN_K) | 0) & SIN_MASK];
+    const fcos = (v) => SIN[(((v * SIN_K) | 0) + SIN_N / 4) & SIN_MASK];
+
+    // ===== WATER-FLOW CURSOR FIELD =====
+    // No impulse kicks: every frame each dot eases toward a continuous target
+    // displacement (surface bulge + directional drag + ripple rings), which is
+    // what makes the response read as fluid instead of twitchy.
     const P = { x: -9999, y: -9999, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0 };
     let smoothX = -9999, smoothY = -9999;
-    const prox = 90, proxSq = prox * prox, speedTrigger = 120, k = 0.12, damp = 0.72;
+    let sVX = 0, sVY = 0;              // smoothed cursor velocity (the wake direction)
+    const R = 150, R2 = R * R;         // cursor influence radius
+    const BULGE = 16;                  // how far the surface parts around the cursor
+    const rings = [];                  // expanding click/wake ripples
+    let lastWake = 0;
     const sc = () => { const e = document.getElementById('cap-scaler'); const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); return m ? parseFloat(m[1]) : 1; };
     const onMove = (e) => {
-      const s = sc(), r = canvas.getBoundingClientRect(), now = performance.now(), dt = P.lastT ? now - P.lastT : 16;
+      const s = sc(), r = canvas.getBoundingClientRect(), now = performance.now(), dt = P.lastT ? Math.max(now - P.lastT, 1) : 16;
       const nx = (e.clientX - r.left) / s, ny = (e.clientY - r.top) / s;
       P.vx = (nx - P.lastX) / dt * 1000; P.vy = (ny - P.lastY) / dt * 1000;
       P.lastX = nx; P.lastY = ny; P.lastT = now; P.x = nx; P.y = ny;
+      // fast strokes shed small wake ripples behind the cursor, like a hand through water
       const speed = Math.hypot(P.vx, P.vy);
-      if (speed > speedTrigger) for (const d of dots) { const dx = d.cx - nx, dy = d.cy - ny; if (dx * dx + dy * dy < proxSq) { d.vx += dx * 0.02 + P.vx * 0.003; d.vy += dy * 0.02 + P.vy * 0.003; } }
+      if (speed > 550 && now - lastWake > 110 && ny > -50 && ny < H + 50) {
+        lastWake = now;
+        rings.push({ x: nx, y: ny, r: 10, speed: 3.2, amp: 7, sigma: 22 });
+      }
     };
     const onClick = (e) => {
-      const s = sc(), r = canvas.getBoundingClientRect(); const cx = (e.clientX - r.left) / s, cy = (e.clientY - r.top) / s, R = 130;
-      for (const d of dots) { const dx = d.cx - cx, dy = d.cy - cy, dist = Math.hypot(dx, dy); if (dist < R) { const f = 1 - dist / R; d.vx += dx * 0.28 * f; d.vy += dy * 0.28 * f; } }
+      const s = sc(), r = canvas.getBoundingClientRect();
+      const cx = (e.clientX - r.left) / s, cy = (e.clientY - r.top) / s;
+      if (cy < -50 || cy > H + 50) return;
+      // a dropped-stone ripple: main crest + a softer follower
+      rings.push({ x: cx, y: cy, r: 6, speed: 5.2, amp: 22, sigma: 30 });
+      rings.push({ x: cx, y: cy, r: -34, speed: 5.2, amp: 12, sigma: 24 });
     };
     window.addEventListener('mousemove', onMove, { passive: true });
     window.addEventListener('mouseleave', () => { P.x = -9999; P.y = -9999; });
     window.addEventListener('click', onClick);
+
     const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      const T = (this._dgT = (this._dgT || 0) + 0.025); // water-flow time
-      
-      // Spring-physics mouse tracking (much more organic than lerp)
-      // Using velocity-based spring: pos += vel; vel += (target-pos)*K; vel *= damping
+      // Hero off-screen -> skip all physics/painting, just idle the loop
+      const rect = canvas.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        this._dgRaf = requestAnimationFrame(draw);
+        return;
+      }
+      const T = (this._dgT = (this._dgT || 0) + 0.025); // ambient water time
+      px32.fill(0);
+
+      // Spring-smoothed cursor position (organic tracking)
       if (P.x > -9000) {
-        if (smoothX < -9000) {
-          smoothX = P.x; smoothY = P.y;
-        } else {
-          // Spring state for smooth-tracking
-          if (!this._dgVX) { this._dgVX = 0; this._dgVY = 0; }
-          this._dgVX += (P.x - smoothX) * 0.07;
-          this._dgVY += (P.y - smoothY) * 0.07;
-          this._dgVX *= 0.78;
-          this._dgVY *= 0.78;
-          smoothX += this._dgVX;
-          smoothY += this._dgVY;
-        }
-      } else {
-        smoothX = -9999;
-        smoothY = -9999;
+        if (smoothX < -9000) { smoothX = P.x; smoothY = P.y; this._dgVX = 0; this._dgVY = 0; }
+        if (!this._dgVX) { this._dgVX = 0; this._dgVY = 0; }
+        this._dgVX += (P.x - smoothX) * 0.07; this._dgVY += (P.y - smoothY) * 0.07;
+        this._dgVX *= 0.78; this._dgVY *= 0.78;
+        smoothX += this._dgVX; smoothY += this._dgVY;
+      } else { smoothX = -9999; smoothY = -9999; }
+      // Smoothed velocity — decays gently so the wake trails and settles
+      sVX += (((P.x > -9000) ? P.vx : 0) - sVX) * 0.06;
+      sVY += (((P.x > -9000) ? P.vy : 0) - sVY) * 0.06;
+      const dragX = Math.max(-30, Math.min(30, sVX * 0.022));
+      const dragY = Math.max(-30, Math.min(30, sVY * 0.022));
+
+      // Advance ripples
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const g = rings[i];
+        g.r += g.speed;
+        g.amp *= 0.962;
+        if (g.amp < 0.35 || g.r - 4 * g.sigma > Math.hypot(W, H)) rings.splice(i, 1);
       }
 
       for (const d of dots) {
-        d.vx += -k * d.ox; d.vy += -k * d.oy; d.vx *= damp; d.vy *= damp; d.ox += d.vx; d.oy += d.vy;
-        // traveling waves → flowing-water shimmer
-        const wave = Math.sin(d.cx * 0.011 + d.cy * 0.006 + T) + Math.sin(d.cy * 0.018 - T * 1.25);
-        const wx = Math.cos(d.cx * 0.009 + d.cy * 0.004 + T * 0.9) * 2.6;
+        // ambient flowing-water shimmer
+        const wave = fsin(d.p1 + T) + fsin(d.p2 - T * 1.25);
+        const wx = fcos(d.p3 + T * 0.9) * 2.6;
         const wy = wave * 2.4;
+        let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5));
+
+        // target displacement this frame
+        let tx = 0, ty = 0;
+
+        // 1. surface bulge + directional drag around the cursor
         const dx = d.cx - smoothX, dy = d.cy - smoothY, dsq = dx * dx + dy * dy;
-        let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5)); // brightness ripples with the flow
-        if (dsq <= proxSq) { const t = 1 - Math.sqrt(dsq) / prox; a = baseA + (activeA - baseA) * t; }
-        ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
-        ctx.fillRect(d.cx + d.ox + wx - dotSize / 2, d.cy + d.oy + wy - dotSize / 2, dotSize, dotSize);
+        if (dsq <= R2) {
+          const dist = Math.sqrt(dsq) || 0.5;
+          let t = 1 - dist / R;
+          t = t * t * (3 - 2 * t); // smoothstep falloff — no hard edge
+          tx += (dx / dist) * BULGE * t + dragX * t;
+          ty += (dy / dist) * BULGE * t + dragY * t;
+          a = Math.max(a, baseA + (activeA - baseA) * t);
+        }
+
+        // 2. ripple rings — a gaussian crest passing through the dot
+        for (const g of rings) {
+          if (g.r < 0) continue;
+          const bb = g.r + 3.5 * g.sigma;
+          const gx = d.cx - g.x, gy = d.cy - g.y;
+          if (gx > bb || gx < -bb || gy > bb || gy < -bb) continue;
+          const gd = Math.sqrt(gx * gx + gy * gy) || 0.5;
+          const off = gd - g.r;
+          if (off > 3.5 * g.sigma || off < -3.5 * g.sigma) continue;
+          const crest = Math.exp(-(off * off) / (2 * g.sigma * g.sigma));
+          const push = g.amp * crest;
+          tx += (gx / gd) * push;
+          ty += (gy / gd) * push;
+          a = Math.min(0.95, a + crest * (g.amp / 22) * 0.5); // the crest glints
+        }
+
+        // ease toward the target — this is the water smoothness
+        d.ox += (tx - d.ox) * 0.09;
+        d.oy += (ty - d.oy) * 0.09;
+
+        const ix = (d.cx + d.ox + wx) | 0, iy = (d.cy + d.oy + wy) | 0;
+        if (ix >= 0 && ix < W && iy >= 0 && iy < H) {
+          const A = (a * 255) | 0;
+          px32[iy * W + ix] = (A << 24) | 0x00FFFFFF; // white, alpha A (little-endian)
+          if (a > 0.45 && ix + 1 < W && iy + 1 < H) {
+            // bright dots (cursor glow / ripple crests) get a 2x2 glint
+            const A2 = (a * 140) | 0;
+            const half = (A2 << 24) | 0x00FFFFFF;
+            px32[iy * W + ix + 1] = half;
+            px32[(iy + 1) * W + ix] = half;
+          }
+        }
       }
+      ctx.putImageData(frame, 0, 0);
       this._dgRaf = requestAnimationFrame(draw);
     };
     draw();
@@ -573,6 +657,7 @@ class Component extends DCLogic {
     }
     spans.forEach((el) => {
       const target = (el.textContent || '').trim();
+      el.classList.add('cap-nav'); // nowrap exception — keeps CONTACT US on one line
       el.style.cursor = 'pointer';
       let iv = null;
       el.addEventListener('mouseenter', () => {
