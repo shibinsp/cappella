@@ -5,11 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cappella — India's Leading Edu-Infra Asset Management Company</title>
 <link rel="icon" type="image/x-icon" href="./favicon.ico">
+<script>
+  // Serve React/ReactDOM/Babel from the repo instead of unpkg.com — support.js
+  // checks window.__resources before falling back to the CDN. Extensions/VPN
+  // proxies that block unpkg were preventing the whole frame from rendering.
+  window.__resources = {
+    "https://unpkg.com/react@18.3.1/umd/react.production.min.js": "./components/vendor/react.production.min.js",
+    "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js": "./components/vendor/react-dom.production.min.js",
+    "https://unpkg.com/@babel/standalone@7.29.0/babel.min.js": "./components/vendor/babel.min.js"
+  };
+</script>
 <script src="./support.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
-<script src="https://unpkg.com/split-type"></script>
+<!-- Animation libs vendored locally: CDN copies broke behind VPN/adblock extensions,
+     killing every GSAP-driven animation. Versions: gsap 3.12.5, lenis 1.0.29, split-type 0.3.4 -->
+<script src="./components/vendor/gsap.min.js"></script>
+<script src="./components/vendor/ScrollTrigger.min.js"></script>
+<script src="./components/vendor/lenis.min.js"></script>
+<script src="./components/vendor/split-type.min.js"></script>
 </head>
 <body>
 <x-dc>
@@ -699,15 +711,20 @@ class Component extends DCLogic {
     // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
     // The frame renders async, so 1.6s covers the worst case render + font settle.
     this._t3 = setTimeout(() => {
-      this._setupScrollReveals();
-      this._setupStatCounters();
-      this._setupPortfolioInteraction();
-      this._setupAccordion();
+      // Each setup isolated: one throwing (e.g. a lib blocked by an extension)
+      // must not kill the systems queued after it.
+      const safe = (fn, name) => {
+        try { fn(); } catch (e) { console.error('[cappella] ' + name + ' failed:', e); }
+      };
+      safe(() => this._setupScrollReveals(), 'scrollReveals');
+      safe(() => this._setupStatCounters(), 'statCounters');
+      safe(() => this._setupPortfolioInteraction(), 'portfolio');
+      safe(() => this._setupAccordion(), 'accordion');
       // this._setupMetaLabels();
-      this._setupJourneyStory();
-      this._setupFooterAnimations();
-      this._setupOperatorsMarquee();
-      this._setupDitherEntries();
+      safe(() => this._setupJourneyStory(), 'journeyStory');
+      safe(() => this._setupFooterAnimations(), 'footer');
+      safe(() => this._setupOperatorsMarquee(), 'marquee');
+      safe(() => this._setupDitherEntries(), 'ditherEntries');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1936,6 +1953,9 @@ class Component extends DCLogic {
 
   _setupJourneyStory() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Hard dependency on GSAP + ScrollTrigger (curve draw, slider transitions);
+    // bail cleanly if the libs failed to load rather than throwing mid-setup.
+    if (!window.gsap || !window.ScrollTrigger) return;
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
 
