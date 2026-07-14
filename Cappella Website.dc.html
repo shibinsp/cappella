@@ -2126,7 +2126,7 @@ class Component extends DCLogic {
       // Animate details fade and slide-up
       window.gsap.fromTo(animatedElements, 
         { opacity: 0, y: 15 }, 
-        { opacity: (el) => el.style.color === 'rgb(0,0,0)' ? 0.95 : 1, y: 0, duration: 0.65, stagger: 0.08, ease: 'power2.out' }
+        { opacity: (i, el) => el.style.color === 'rgb(0,0,0)' ? 0.95 : 1, y: 0, duration: 0.65, stagger: 0.08, ease: 'power2.out' }
       );
     };
 
