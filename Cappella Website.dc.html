@@ -1262,23 +1262,34 @@ class Component extends DCLogic {
       'transition:transform 1.0s cubic-bezier(0.77,0,0.175,1);';
     document.body.appendChild(preloader);
 
-    // Hide the actual header logo on page initially so we don't see double
+    // Hide the actual header logo on page initially so we don't see double.
+    // The wordmark lives in the async Figma bundle and can render AFTER the
+    // preloader has already exited (slow/hard refresh) — in that case show it
+    // immediately instead of hiding it forever.
+    let preloaderFinished = false;
     const hideHeaderWordmark = () => {
       const el = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-      if (el) {
-        el.style.opacity = '0';
-        el.style.transition = 'opacity 0.25s ease';
-        
-        // Add logo icon to header and shift wordmark
-        if (!document.getElementById('cap-header-logo-icon')) {
-          const logoIcon = document.createElement('div');
-          logoIcon.id = 'cap-header-logo-icon';
-          logoIcon.style.cssText = 'position:absolute; left:32px; top:44px; width:34px; height:37px; background:url(./components/assets/eae7f9bdb03982f5.png) center/contain no-repeat; opacity:0; filter:brightness(0) invert(1); z-index:90;';
-          el.parentNode.appendChild(logoIcon);
-          el.style.left = '76px';
-        }
-      } else {
+      if (!el) {
         setTimeout(hideHeaderWordmark, 50);
+        return;
+      }
+      el.style.transition = 'opacity 0.25s ease';
+
+      // Add logo icon to header and shift wordmark
+      if (!document.getElementById('cap-header-logo-icon')) {
+        const logoIcon = document.createElement('div');
+        logoIcon.id = 'cap-header-logo-icon';
+        logoIcon.style.cssText = 'position:absolute; left:32px; top:44px; width:34px; height:37px; background:url(./components/assets/eae7f9bdb03982f5.png) center/contain no-repeat; opacity:0; filter:brightness(0) invert(1); z-index:90;';
+        el.parentNode.appendChild(logoIcon);
+        el.style.left = '76px';
+      }
+
+      if (preloaderFinished) {
+        el.style.opacity = '1';
+        const icon = document.getElementById('cap-header-logo-icon');
+        if (icon) icon.style.opacity = '1';
+      } else {
+        el.style.opacity = '0';
       }
     };
     hideHeaderWordmark();
@@ -1375,10 +1386,16 @@ class Component extends DCLogic {
       // Red curtain slides off to top-left corner simultaneously
       preloader.style.transform = 'translate(-100%, -100%)';
 
-      // Clean up and restore header logo opacity when preloader completes
+      // Clean up and restore header logo opacity when preloader completes.
+      // Re-query instead of using the refs captured at 1100ms — on slow loads
+      // the wordmark renders late and those refs are null (the retry loop in
+      // hideHeaderWordmark then handles showing it via preloaderFinished).
       setTimeout(() => {
-        if (headerWordmark) headerWordmark.style.opacity = '1';
-        if (logoIcon) logoIcon.style.opacity = '1';
+        preloaderFinished = true;
+        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+        if (wm) wm.style.opacity = '1';
+        const icon = document.getElementById('cap-header-logo-icon');
+        if (icon) icon.style.opacity = '1';
         centerWrap.remove();
         preloader.remove();
       }, 950);
