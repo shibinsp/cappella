@@ -2363,6 +2363,26 @@ class Component extends DCLogic {
 
     let currentCityName = 'Hyderabad';
 
+    // Real portfolio (source: Cappella_Website_Other Pages.docx — PROJECTS).
+    // students = current enrolment, capacity = total capacity.
+    const PORTFOLIO_DATA = [
+      { name: 'Hartland International School',      city: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400' },
+      { name: 'North London Collegiate School',     city: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100' },
+      { name: 'St. Andrews, Suchitra',              city: 'Hyderabad',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300' },
+      { name: 'St. Andrews, Keesara',               city: 'Hyderabad',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300' },
+      { name: 'St. Michael’s',                 city: 'Hyderabad',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600' },
+      { name: 'Sancta Maria International School',  city: 'Hyderabad',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500' },
+      { name: 'The Shri Ram Universal School',      city: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600' },
+      { name: 'Billabong High International School',city: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350' },
+      { name: 'Jain International Residential School', city: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000' },
+      { name: 'Jain Public School',                 city: 'Bangalore',      est: 2013, land: '6.3',  bua: '66k',    students: '1,226', capacity: '1,575' },
+      { name: 'Jain Public School',                 city: 'Bangalore',      est: 2012, land: '3.5',  bua: '70k',    students: '928',   capacity: '1,240' },
+      { name: 'Jain Public School, Korba',          city: 'Chhattisgarh',   est: 2012, land: '2.8',  bua: '55k',    students: '438',   capacity: '1,050' },
+      { name: 'Jain Public School, Kadiri',         city: 'Andhra Pradesh', est: 2012, land: '3.5',  bua: '64k',    students: '795',   capacity: '1,050' },
+      { name: 'IFIM – Student Housing',        city: 'Bangalore',      est: 1995, land: '2.5',  bua: '73k',    students: '400',   capacity: '440' },
+      { name: 'JU-SET Hostel',                      city: 'Bangalore',      est: 1990, land: '10.8', bua: '271k',   students: '1,100', capacity: '1,100' }
+    ];
+
     // Scale helper function - must be defined before alignLogo uses it
     const sc = () => { 
       const e = document.getElementById('cap-scaler'); 
@@ -2402,30 +2422,36 @@ class Component extends DCLogic {
     // Helper to find absolute div by class name
     const findElByClass = (cls) => scaler.querySelector('.' + cls);
     
+    // All four photo cards are Hyderabad schools (per the docx portfolio).
+    // assetName links each card to its PORTFOLIO_DATA record for the detail strip.
     const cardData = [
       {
         id: 1,
         imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725',
         labelKeywords: ['Sancta', 'Maria'],
-        cities: ['Hyderabad', 'Bangalore']
+        cities: ['Hyderabad'],
+        assetName: 'Sancta Maria International School'
       },
       {
         id: 2,
         imgCls: 'fig-asset-016a31a2601bd9e3',
         labelKeywords: ['Michael'],
-        cities: ['Hyderabad', 'Chennai']
+        cities: ['Hyderabad'],
+        assetName: 'St. Michael’s'
       },
       {
         id: 3,
         imgCls: 'fig-asset-0f9374cd498a11f1-a670101d',
         labelKeywords: ['Keesara'],
-        cities: ['Andhra Pradesh', 'Bangalore', 'Pune']
+        cities: ['Hyderabad'],
+        assetName: 'St. Andrews, Keesara'
       },
       {
         id: 4,
         imgCls: 'fig-asset-76ba2d1ec2162f53',
         labelKeywords: ['Suchitra'],
-        cities: ['Andhra Pradesh', 'Chennai', 'Dubai', 'Chhattisgarh']
+        cities: ['Hyderabad'],
+        assetName: 'St. Andrews, Suchitra'
       }
     ];
 
@@ -2677,8 +2703,29 @@ class Component extends DCLogic {
         arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(209,32,47)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
         img.appendChild(arrowBtn);
 
+        // Asset detail strip (Est · Land · BUA · Students) — slides up on hover
+        const asset = PORTFOLIO_DATA.find(a => a.name === data.assetName);
+        let detailStrip = null;
+        if (asset) {
+          detailStrip = document.createElement('div');
+          detailStrip.style.cssText = [
+            'position:absolute', 'left:0', 'bottom:0', 'right:55px',
+            'padding:10px 14px',
+            'background:rgba(209,32,47,0.92)', 'color:rgb(255,255,255)',
+            'font-family:"Space Mono", monospace', 'font-size:11px', 'letter-spacing:0.5px',
+            'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
+            'pointer-events:none',
+            'transition:transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.45s ease',
+            'transform:translateY(100%)', 'opacity:0'
+          ].join(';');
+          detailStrip.textContent =
+            'EST ' + asset.est + ' · ' + asset.land + ' AC · ' + asset.bua + ' SF · ' +
+            asset.students + ' / ' + asset.capacity + ' STUDENTS';
+          img.appendChild(detailStrip);
+        }
+
         cards.push({
-          id: data.id, img, label, ditherCanvas, arrowBtn,
+          id: data.id, img, label, ditherCanvas, arrowBtn, detailStrip,
           webglInst,
           cities: data.cities, isHovered: false, parallaxY: 0
         });
@@ -2853,9 +2900,17 @@ class Component extends DCLogic {
           if (c.isHovered) {
             c.arrowBtn.style.opacity = '1';
             c.arrowBtn.style.transform = 'translate(0, 0)';
+            if (c.detailStrip) {
+              c.detailStrip.style.opacity = '1';
+              c.detailStrip.style.transform = 'translateY(0)';
+            }
           } else {
             c.arrowBtn.style.opacity = '0';
             c.arrowBtn.style.transform = 'translate(100%, 100%)';
+            if (c.detailStrip) {
+              c.detailStrip.style.opacity = '0';
+              c.detailStrip.style.transform = 'translateY(100%)';
+            }
           }
         } else {
           c.img.style.pointerEvents = 'none';
@@ -2863,11 +2918,15 @@ class Component extends DCLogic {
           c.img.style.transform = 'translateY(30px) scale(0.95)';
           c.label.style.opacity = '0';
           c.label.style.transform = 'translateY(30px)';
-          
+
           // Always show dither on hidden cards
           if (c.webglInst) c.webglInst.showDither();
           c.arrowBtn.style.opacity = '0';
           c.arrowBtn.style.transform = 'translate(100%, 100%)';
+          if (c.detailStrip) {
+            c.detailStrip.style.opacity = '0';
+            c.detailStrip.style.transform = 'translateY(100%)';
+          }
         }
       });
     };
@@ -2885,6 +2944,70 @@ class Component extends DCLogic {
       });
     });
 
+    // --- Asset tiles for cities without photo cards (data from the docx) ---
+    // Placed over the photo-card grid area, computed from the cards' inline
+    // Figma coordinates so the tiles inherit the exact same region.
+    let tilesWrap = null;
+    const ensureTilesWrap = () => {
+      if (tilesWrap || !cards.length) return tilesWrap;
+      let minL = Infinity, minT = Infinity, maxR = 0;
+      cards.forEach(c => {
+        const l = parseFloat(c.img.style.left) || 0;
+        const t = parseFloat(c.img.style.top) || 0;
+        const w = parseFloat(c.img.style.width) || 0;
+        minL = Math.min(minL, l); minT = Math.min(minT, t);
+        maxR = Math.max(maxR, l + w);
+      });
+      if (!isFinite(minL)) return null;
+      tilesWrap = document.createElement('div');
+      tilesWrap.id = 'cap-portfolio-tiles';
+      tilesWrap.style.cssText =
+        'position:absolute; left:' + minL + 'px; top:' + minT + 'px;' +
+        'width:' + (maxR - minL) + 'px; z-index:6;' +
+        'display:grid; grid-template-columns:1fr 1fr; gap:28px;' +
+        'pointer-events:none;';
+      scaler.appendChild(tilesWrap);
+      return tilesWrap;
+    };
+
+    const renderCityTiles = (cityName) => {
+      const wrap = ensureTilesWrap();
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      if (cityName === 'Hyderabad') return; // photo cards own this city
+      const assets = PORTFOLIO_DATA.filter(a => a.city === cityName);
+      assets.forEach(a => {
+        const tile = document.createElement('div');
+        tile.style.cssText =
+          'background:rgb(255,255,255); border:1px solid rgba(209,32,47,0.3);' +
+          'border-top:3px solid rgb(209,32,47); padding:30px 28px 26px;' +
+          'pointer-events:auto; opacity:0;';
+        tile.innerHTML =
+          '<div style="font-family:Montserrat,sans-serif; font-weight:600; font-size:26px;' +
+            'line-height:1.25; color:rgb(0,0,0);">' + a.name + '</div>' +
+          '<div style="font-family:\'Space Mono\',monospace; font-size:12px; letter-spacing:1.5px;' +
+            'color:rgb(209,32,47); margin-top:10px;">' + a.city.toUpperCase() + ' — EST. ' + a.est + '</div>' +
+          '<div style="display:flex; gap:34px; margin-top:22px; font-family:Montserrat,sans-serif;">' +
+            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.land + '</div>' +
+              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">ACRES</div></div>' +
+            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.bua + '</div>' +
+              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">SF BUA</div></div>' +
+            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.students + ' / ' + a.capacity + '</div>' +
+              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">STUDENTS</div></div>' +
+          '</div>';
+        wrap.appendChild(tile);
+        // Scramble hover on the school name, matching the photo-card labels
+        scrambleText(tile.firstChild, a.name);
+      });
+      const tiles = [...wrap.children];
+      if (window.gsap) {
+        window.gsap.fromTo(tiles, { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.65, stagger: 0.09, ease: 'power2.out' });
+      } else {
+        tiles.forEach(t => { t.style.opacity = '1'; });
+      }
+    };
+
     // 5. Setup dynamic city filtering
     const filterToCity = (cityName) => {
       currentCityName = cityName;
@@ -2898,6 +3021,7 @@ class Component extends DCLogic {
         }
       });
       updateCardTransforms();
+      renderCityTiles(cityName);
       alignLogo(); // Align on filter change
     };
 
