@@ -470,10 +470,12 @@
     <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
 
     <!-- 135 Acres, static (no animation, no odometer via data-cap-odo).
-         Moved above the staircase zone (stairs start at 1715) so the reveal
-         never overlaps it. The baked copy is hidden in _setupStatCounters
-         because its inherited color renders inconsistently. -->
-    <div id="cap-135" style="position: absolute; left: 214px; top: 1560px; z-index: 5;">
+         Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left)
+         -> staircase below. Sits in the step-1 zone (1715-1825) where the
+         step is only 182px wide, so the reveal never reaches the text at
+         x214+; the wider steps 2-4 draw in below it. The baked copy is
+         hidden in _setupStatCounters (inconsistent inherited color). -->
+    <div id="cap-135" style="position: absolute; left: 214px; top: 1720px; z-index: 5;">
       <div data-cap-odo="1" style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">135 Acres</div>
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Total Land Area</div>
     </div>
