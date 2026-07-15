@@ -1,0 +1,13 @@
+{
+  "name": "cappella-site",
+  "private": true,
+  "description": "Static Cappella website — Playwright test harness",
+  "scripts": {
+    "serve": "node scripts/serve.mjs 8788",
+    "test": "playwright test",
+    "test:twice": "playwright test --repeat-each=2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

@@ -1254,31 +1254,32 @@ class Component extends DCLogic {
     this._setupHeroZoom();
     this._setupSplitText();
 
-    // ===== MENU SMOOTH SCROLLING =====
+    // ===== NAV → PAGE NAVIGATION =====
+    // The nav/footer labels are Figma-materialized <span>s, not anchors.
+    // They now navigate to the real standalone pages (About / Projects /
+    // Team / Contact) instead of scrolling within the frame. role="link" +
+    // tabindex + Enter make the converted spans keyboard-operable. The
+    // scramble hover (_setupNavScramble) binds separately and is unaffected.
     const navItems = [
-      { text: 'ABOUT US', target: 900 },
-      { text: 'PROJECTS', target: 3260 },
-      { text: 'PORTFOLIO', target: 3260 },
-      { text: 'TEAM', target: 6460 },
-      { text: 'CONTACT US', target: 7202 }
+      { text: 'ABOUT US', href: 'about-us.html' },
+      { text: 'PROJECTS', href: 'projects.html' },
+      { text: 'PORTFOLIO', href: 'projects.html' },
+      { text: 'TEAM', href: 'team.html' },
+      { text: 'CONTACT US', href: 'contact-us.html' }
     ];
 
     setTimeout(() => {
       navItems.forEach(item => {
-        const els = [...scaler.querySelectorAll('span')].filter(el => 
+        const els = [...scaler.querySelectorAll('span')].filter(el =>
           (el.textContent || '').replace(/\s+/g, '').toUpperCase() === item.text.replace(/\s+/g, '')
         );
         els.forEach(el => {
           el.style.cursor = 'pointer';
-          el.addEventListener('click', () => {
-            const vp = document.getElementById('cap-viewport');
-            const target = item.target * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
-            if (this._lenis) {
-              this._lenis.scrollTo(target);
-            } else {
-              window.scrollTo({ top: target, behavior: 'smooth' });
-            }
-          });
+          el.setAttribute('role', 'link');
+          el.setAttribute('tabindex', '0');
+          const go = () => { window.location.href = item.href; };
+          el.addEventListener('click', go);
+          el.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
         });
       });
     }, 500);
@@ -1596,6 +1597,16 @@ class Component extends DCLogic {
       if (linkTexts.includes(t)) {
         sp.classList.add('cap-ft-link');
         sp.style.cursor = 'pointer';
+        // The 4 nav labels get page navigation from the navItems loop above.
+        // The email label opens mail here; LINKEDIN stays label-only (no URL
+        // exists in the source material — none invented).
+        if (t === 'PARTNER@CAPPELLA.IN') {
+          sp.setAttribute('role', 'link');
+          sp.setAttribute('tabindex', '0');
+          const mail = () => { window.location.href = 'mailto:partner@cappella.in'; };
+          sp.addEventListener('click', mail);
+          sp.addEventListener('keydown', (e) => { if (e.key === 'Enter') mail(); });
+        }
       }
     });
 
@@ -1863,11 +1874,13 @@ class Component extends DCLogic {
           '<span class="cap-menu-tag">MENU</span>' +
           '<button id="cap-menu-close">CLOSE</button>' +
         '</div>' +
+        // Main links are real page navigations; the EXPLORE row below keeps
+        // data-target in-page scrolling (its handler selects a[data-target]).
         '<nav class="cap-menu-links">' +
-          '<div class="cap-menu-mask"><a data-target="900">About Us</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="4160">Portfolio</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="6460">Team</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="7202">Contact Us</a></div>' +
+          '<div class="cap-menu-mask"><a href="about-us.html">About Us</a></div>' +
+          '<div class="cap-menu-mask"><a href="projects.html">Portfolio</a></div>' +
+          '<div class="cap-menu-mask"><a href="team.html">Team</a></div>' +
+          '<div class="cap-menu-mask"><a href="contact-us.html">Contact Us</a></div>' +
         '</nav>' +
         '<div class="cap-menu-row">' +
           '<span class="cap-menu-label">EXPLORE</span>' +
