@@ -486,13 +486,6 @@
         clip-path: inset(0 -2% 0 0); /* -2% guard for glyph overhang */
       }
 
-      /* Footer clock: the colons breathe once a second */
-      @keyframes capClockBlink {
-        50% { opacity: 0.25; }
-      }
-      .cap-clock-sep {
-        animation: capClockBlink 1s steps(1) infinite;
-      }
     }
 
     /* Magnetic menu button: translate comes from CSS vars set by JS; the
@@ -534,9 +527,6 @@
       <div style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">75 Years+</div>
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Leadership Experience</div>
     </div>
-
-    <!-- New glowing point (matches the 16 Assets point) after 135 Acres -->
-    <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
 
     <!-- Scroll-linked staircase reveal — left half only, original step size,
          entirely BELOW the zig-zag stats in the extended band (1975-2415). -->
@@ -664,35 +654,38 @@ class Component extends DCLogic {
                 }
               });
 
-              // Adjust STAY IN TOUCH and email input block relative coordinates to avoid overlap
+              // STAY IN TOUCH column — one left rail (abs 1113 = rel 1124):
+              // heading flush with the box edge, input padded 14px inside the
+              // box, arrow right-aligned and vertically centered in the box.
               const stayInTouch = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'STAY IN TOUCH');
               if (stayInTouch) {
                 stayInTouch.style.top = '300px';
-                stayInTouch.style.left = '1117px'; // Aligned horizontally (1106px + 11px container offset)
+                stayInTouch.style.left = '1124px';
               }
               const designerBox = [...el.querySelectorAll('div')].find(d => d.style.boxShadow && d.style.boxShadow.includes('inset'));
               if (designerBox) {
                 designerBox.style.top = '335px';
-                designerBox.style.left = '1124px'; // Aligned horizontally (1113px + 11px container offset)
+                designerBox.style.left = '1124px';
               }
               const emailInput = el.querySelector('input[type="email"]');
               if (emailInput) {
                 emailInput.style.top = '345px';
-                emailInput.style.left = '1124px';
+                emailInput.style.left = '1138px';
+                emailInput.style.width = '190px'; // underline ends clear of the arrow
               } else {
                 const emailSpan = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'Your Email Id');
                 if (emailSpan) {
                   emailSpan.style.top = '345px';
-                  emailSpan.style.left = '1124px';
+                  emailSpan.style.left = '1138px';
                 }
               }
               const arrowSvg = [...el.querySelectorAll('svg')].find(s => {
                 const leftVal = parseFloat(s.style.left);
-                return leftVal >= 1300 && leftVal <= 1320;
+                return leftVal >= 1300 && leftVal <= 1345;
               });
               if (arrowSvg) {
-                arrowSvg.style.top = '360px';
-                arrowSvg.style.left = '1318px'; // Aligned horizontally (1307px + 11px container offset)
+                arrowSvg.style.top = '364px';
+                arrowSvg.style.left = '1342px'; // right-aligned: box right (1377) − 14 − arrow 21
               }
             } else {
               // Determine shift based on original coordinate section
@@ -715,16 +708,16 @@ class Component extends DCLogic {
                 // Align partner logos to the exact same vertical line (relative top ~412px, absolute 7504px)
                 el.style.top = '7764px';
               } else if (orig === 8010) {
-                // Limitless logo
-                el.style.left = '1113px'; // Left-aligned with email input
-                el.style.top = '7764px';
+                // Limitless logo — below the "Designed by" caption, both
+                // clear of the STAY IN TOUCH box (box bottom ≈ 7745)
+                el.style.left = '1113px'; // column rail
+                el.style.top = '7791px';
               } else if (orig === 7983 || orig === 7978) {
-                // "Designed by" caption — sits directly ABOVE the Limitless logo
-                // (which stays at 7764). Both were pinned to 7764, so the caption
-                // printed on top of the logo; lift it into the gap below the email
-                // input (whose bottom is ~7735) so they read as caption + logo.
-                el.style.left = '1113px'; // Left-aligned with email input
-                el.style.top = '7742px';
+                // "Designed by" caption — 24px below the STAY IN TOUCH box
+                // (it previously overlapped the box's bottom border), stacked
+                // above the Limitless logo
+                el.style.left = '1113px'; // column rail
+                el.style.top = '7769px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
@@ -1449,7 +1442,7 @@ class Component extends DCLogic {
         input.type = 'email';
         input.placeholder = 'Your Email Id';
         input.style.position = 'absolute';
-        input.style.left = emailSpan.style.left || '1124px';
+        input.style.left = emailSpan.style.left || '1138px';
         input.style.top = emailSpan.style.top || '345px';
         input.style.width = emailSpan.style.width || '180px';
         input.style.height = '35px';
@@ -1804,22 +1797,6 @@ class Component extends DCLogic {
     if (!footer) return;
     const footerTopFrame = parseFloat(footer.style.top) || 7352;
 
-    // Live local-time line, OCI-editorial style
-    const clock = document.createElement('div');
-    clock.style.cssText =
-      'position:absolute; left:1117px; top:' + (footerTopFrame + 26) + 'px; z-index:5;' +
-      'font-family:"Space Mono", monospace; font-size:12px; letter-spacing:2px;' +
-      'color:rgba(255,255,255,0.75); white-space:nowrap;';
-    const tickClock = () => {
-      const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
-      // Colons wrapped so they can pulse (CSS capClockBlink, reduced-gated)
-      clock.innerHTML = 'HYDERABAD — ' +
-        t.replace(/:/g, '<span class="cap-clock-sep">:</span>') + ' IST';
-    };
-    tickClock();
-    this._clockIv = setInterval(tickClock, 1000);
-    scaler.appendChild(clock);
-
     // Underline-wipe hover on footer links
     const linkTexts = ['ABOUT US', 'PORTFOLIO', 'TEAM', 'CONTACT US', 'LINKEDIN', 'PARTNER@CAPPELLA.IN'];
     [...footer.querySelectorAll('span')].forEach(sp => {
@@ -1849,7 +1826,7 @@ class Component extends DCLogic {
     }
     const arrow = [...footer.querySelectorAll('svg')].find(sv => {
       const l = parseFloat(sv.style.left);
-      return l >= 1300 && l <= 1330;
+      return l >= 1300 && l <= 1345;
     });
     if (arrow) {
       arrow.style.transition = 'transform 0.35s var(--cap-ease-power)';
@@ -1882,9 +1859,6 @@ class Component extends DCLogic {
         staged.push(() => { el.style.opacity = '1'; });
       }
     });
-    clock.style.opacity = '0';
-    clock.style.transition = 'opacity 0.85s var(--cap-ease-expo) 0.5s';
-    staged.push(() => { clock.style.opacity = '1'; });
 
     // threshold 0.01 (not 0.25): at wide viewports the scaled footer is far
     // taller than the screen, so 25% of it may never fit in view — the reveal
@@ -1901,7 +1875,7 @@ class Component extends DCLogic {
 
     // ===== FOOTER SIBLINGS: STATIC (ghost fix) =====
     // The footer's out-of-container siblings (nav, address, designed-by, partner
-    // logos, clock) previously animated via a scroll-scrubbed "curtain" that
+    // logos) previously animated via a scroll-scrubbed "curtain" that
     // lifted them a full footer-height and scrubbed them down. That scrub was the
     // source of the reported "ghost": these siblings live OUTSIDE the footer's
     // overflow:hidden box, so while lifted they rose ABOVE the footer's top edge
@@ -1919,7 +1893,6 @@ class Component extends DCLogic {
     // fully visible, which is ghost-proof at every scale and cannot regress. The
     // footer's big-logo clip-wipe and the inner column fade (staged above) still
     // animate.
-    clock.style.zIndex = '6';
   }
 
   _setupOperatorsMarquee() {
@@ -3719,7 +3692,6 @@ class Component extends DCLogic {
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
-    if (this._clockIv) clearInterval(this._clockIv);
     if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
