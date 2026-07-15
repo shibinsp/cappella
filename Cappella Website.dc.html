@@ -2663,8 +2663,19 @@ class Component extends DCLogic {
       );
 
       if (img && label) {
+        // The bake nests cards in unstable flow parents (position:relative,
+        // offsets from a flow origin that shifts as other setups reflow the
+        // frame — and one subtree stopped painting entirely after a Figma
+        // re-export). Reparent each card into the scaler as position:absolute
+        // at its true frame coordinates: stable layout, guaranteed painting.
+        const intendedTop = parseFloat(img.style.top) || 0;
+        const intendedLeft = parseFloat(img.style.left) || 0;
+        scaler.appendChild(img);
+        img.style.position = 'absolute';
+        img.style.left = intendedLeft + 'px';
+        img.style.top = intendedTop + 'px';
+        img.style.zIndex = '5';
         img.style.overflow = 'hidden';
-        img.style.position = 'relative';
 
         // WebGL canvas — fills the card image div
         const ditherCanvas = document.createElement('canvas');
@@ -2727,6 +2738,9 @@ class Component extends DCLogic {
         cards.push({
           id: data.id, img, label, ditherCanvas, arrowBtn, detailStrip,
           webglInst,
+          // true frame coords (style.top may carry a flow-parent compensation)
+          frameLeft: intendedLeft, frameTop: intendedTop,
+          frameW: parseFloat(img.style.width) || 0,
           cities: data.cities, isHovered: false, parallaxY: 0
         });
       }
@@ -2953,11 +2967,8 @@ class Component extends DCLogic {
       if (tilesWrap || !cards.length) return tilesWrap;
       let minL = Infinity, minT = Infinity, maxR = 0;
       cards.forEach(c => {
-        const l = parseFloat(c.img.style.left) || 0;
-        const t = parseFloat(c.img.style.top) || 0;
-        const w = parseFloat(c.img.style.width) || 0;
-        minL = Math.min(minL, l); minT = Math.min(minT, t);
-        maxR = Math.max(maxR, l + w);
+        minL = Math.min(minL, c.frameLeft); minT = Math.min(minT, c.frameTop);
+        maxR = Math.max(maxR, c.frameLeft + c.frameW);
       });
       if (!isFinite(minL)) return null;
       tilesWrap = document.createElement('div');
@@ -3039,9 +3050,11 @@ class Component extends DCLogic {
       const s = sc();
       // Portfolio area center in scaled pixels (approx 4400px)
       const centerOffset = (scrollY + window.innerHeight / 2 - 4400 * s) / s;
-      
-      // Calculate parallax offset (Column 1 scrolls at different speed than Column 2)
-      const offsetVal = centerOffset * 0.12; 
+
+      // Parallax offset (Column 1 scrolls at different speed than Column 2).
+      // CLAMPED to ±40px: unclamped it reached ±474px, tearing the card grid
+      // apart — labels separated from images and Suchitra pushed off-screen.
+      const offsetVal = Math.max(-40, Math.min(40, centerOffset * 0.06));
 
       cards.forEach(c => {
         // Column 1: cards 1 & 3 (left side) -> translate up
