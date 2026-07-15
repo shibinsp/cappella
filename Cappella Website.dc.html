@@ -475,6 +475,12 @@
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Leadership Experience</div>
     </div>
 
+    <!-- 3.3 Mn SFT Total BUA stat (4th stat from the content doc) — right column, clear of the staircase -->
+    <div id="cap-bua" style="position: absolute; left: 695px; top: 1878px; z-index: 5;">
+      <div style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">3.3 Mn</div>
+      <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">SFT Total BUA</div>
+    </div>
+
     <!-- New glowing point (matches the 16 Assets point) after 135 Acres -->
     <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
 
@@ -2318,6 +2324,7 @@ class Component extends DCLogic {
   _setupReveal() {
     const reveal = document.getElementById('cap-reveal');
     const stat75 = document.getElementById('cap-75');
+    const statBua = document.getElementById('cap-bua');
     if (!reveal) return;
     const stairs = [...reveal.querySelectorAll('.cap-stair')];
     const N = stairs.length;
@@ -2350,6 +2357,11 @@ class Component extends DCLogic {
         const fp = clamp((p - 0.45) / 0.4);
         stat75.style.opacity = String(fp);
         stat75.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
+      }
+      if (statBua) {
+        const fp = clamp((p - 0.55) / 0.4); // trails 75 Years+ slightly
+        statBua.style.opacity = String(fp);
+        statBua.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
       }
     };
     this._onRevealScroll();
