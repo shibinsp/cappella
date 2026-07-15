@@ -488,12 +488,15 @@
     <!-- New glowing point (matches the 16 Assets point) after 135 Acres -->
     <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
 
-    <!-- Scroll-linked staircase reveal — left half only, starting under "135 Acres" -->
-    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1715px; width: 728px; height: 440px; z-index: 6; pointer-events: none; overflow: hidden;">
-      <div class="cap-stair" style="position: absolute; left: 0; top: 0px;   width: 25%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
-      <div class="cap-stair" style="position: absolute; left: 0; top: 110px;  width: 50%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
-      <div class="cap-stair" style="position: absolute; left: 0; top: 220px;  width: 75%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
-      <div class="cap-stair" style="position: absolute; left: 0; top: 330px;  width: 100%; height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+    <!-- Scroll-linked staircase reveal — left half only. Starts BELOW the
+         "135 Acres" block (ends ~1935) with breathing room so the white
+         steps never sweep over the stat; steps compressed to fit the band
+         bottom (2155). -->
+    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1975px; width: 728px; height: 180px; z-index: 6; pointer-events: none; overflow: hidden;">
+      <div class="cap-stair" style="position: absolute; left: 0; top: 0px;   width: 25%;  height: 45px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 45px;  width: 50%;  height: 45px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 90px;  width: 75%;  height: 45px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 135px; width: 100%; height: 45px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
     </div>
   </div>
 </div>
