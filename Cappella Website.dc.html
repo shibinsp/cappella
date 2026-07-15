@@ -2731,7 +2731,7 @@ class Component extends DCLogic {
           ].join(';');
           detailStrip.textContent =
             'EST ' + asset.est + ' · ' + asset.land + ' AC · ' + asset.bua + ' SF · ' +
-            asset.students + ' / ' + asset.capacity + ' STUDENTS';
+            asset.students + '/' + asset.capacity;
           img.appendChild(detailStrip);
         }
 
@@ -2741,6 +2741,7 @@ class Component extends DCLogic {
           // true frame coords (style.top may carry a flow-parent compensation)
           frameLeft: intendedLeft, frameTop: intendedTop,
           frameW: parseFloat(img.style.width) || 0,
+          frameH: parseFloat(img.style.height) || 0,
           cities: data.cities, isHovered: false, parallaxY: 0
         });
       }
@@ -2965,18 +2966,22 @@ class Component extends DCLogic {
     let tilesWrap = null;
     const ensureTilesWrap = () => {
       if (tilesWrap || !cards.length) return tilesWrap;
-      let minL = Infinity, minT = Infinity, maxR = 0;
+      let minL = Infinity, minT = Infinity, maxR = 0, maxB = 0;
       cards.forEach(c => {
         minL = Math.min(minL, c.frameLeft); minT = Math.min(minT, c.frameTop);
         maxR = Math.max(maxR, c.frameLeft + c.frameW);
+        maxB = Math.max(maxB, c.frameTop + c.frameH);
       });
       if (!isFinite(minL)) return null;
       tilesWrap = document.createElement('div');
       tilesWrap.id = 'cap-portfolio-tiles';
+      // Full card-region box with centered content: a city with 1-2 assets
+      // gets its tiles mid-region instead of hugging the region top edge.
       tilesWrap.style.cssText =
         'position:absolute; left:' + minL + 'px; top:' + minT + 'px;' +
-        'width:' + (maxR - minL) + 'px; z-index:6;' +
+        'width:' + (maxR - minL) + 'px; height:' + (maxB - minT) + 'px; z-index:6;' +
         'display:grid; grid-template-columns:1fr 1fr; gap:28px;' +
+        'align-content:center;' +
         'pointer-events:none;';
       scaler.appendChild(tilesWrap);
       return tilesWrap;
