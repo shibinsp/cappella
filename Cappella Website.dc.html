@@ -469,10 +469,13 @@
     <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
     <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
 
-    <!-- 3.3 Mn SFT Total BUA stat (4th stat from the content doc) on solid red -->
+    <!-- 135 Acres stat on solid red. Static by request: data-cap-odo opts out
+         of the odometer digit roll, and it has no reveal animation. The baked
+         Figma copy of this stat (black, on the staircase) is hidden in
+         _setupStatCounters to avoid duplication. -->
     <div id="cap-bua" style="position: absolute; left: 695px; top: 1360px; z-index: 5;">
-      <div style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">3.3 Mn</div>
-      <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">SFT Total BUA</div>
+      <div data-cap-odo="1" style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">135 Acres</div>
+      <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Total Land Area</div>
     </div>
 
     <!-- 75 Years+ stat beside the staircase — reveals with the stair animation -->
@@ -2242,6 +2245,19 @@ class Component extends DCLogic {
     // rolls each digit through a masked 0-9 column into place.
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
+
+    // The baked "135 Acres / Total Land Area" sits on the staircase (black,
+    // unreadable pre-reveal); the stat now lives in the #cap-bua slot on
+    // solid red — hide the baked duplicate before the odometer rebuilds it.
+    [...scaler.querySelectorAll('span, div')].forEach(el => {
+      if (el.closest('#cap-bua')) return;
+      const top = parseFloat(el.style.top) || 0;
+      if (top < 1700 || top > 2050) return;
+      const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (t === 'Total Land Area' || (/Acres$/.test(t) && parseFloat(el.style.left) < 400)) {
+        el.style.display = 'none';
+      }
+    });
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const els = [...scaler.querySelectorAll('div, span')].filter(el => {
       if (el.querySelector('*') || el.dataset.capOdo) return false;
@@ -2324,7 +2340,6 @@ class Component extends DCLogic {
   _setupReveal() {
     const reveal = document.getElementById('cap-reveal');
     const stat75 = document.getElementById('cap-75');
-    const statBua = document.getElementById('cap-bua');
     if (!reveal) return;
     const stairs = [...reveal.querySelectorAll('.cap-stair')];
     const N = stairs.length;
@@ -2353,11 +2368,6 @@ class Component extends DCLogic {
         stair.style.transform = 'scaleX(' + easedProgress + ')';
       });
 
-      if (statBua) {
-        const fp = clamp((p - 0.45) / 0.4);
-        statBua.style.opacity = String(fp);
-        statBua.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
-      }
       if (stat75) {
         const fp = clamp((p - 0.55) / 0.4); // beside the stairs — trails them slightly
         stat75.style.opacity = String(fp);
