@@ -3049,37 +3049,15 @@ class Component extends DCLogic {
       });
     });
 
-    // 6. Setup scroll parallax listener (sc() already defined at top of method)
-    this._onPortfolioScroll = () => {
-      const scrollY = window.scrollY;
-      const s = sc();
-      // Portfolio area center in scaled pixels (approx 4400px)
-      const centerOffset = (scrollY + window.innerHeight / 2 - 4400 * s) / s;
+    // (Scroll parallax removed — the design calls for a rigid card grid.
+    // parallaxY stays 0, so the card/label transforms resolve to translateY(0).)
 
-      // Parallax offset (Column 1 scrolls at different speed than Column 2).
-      // CLAMPED to ±40px: unclamped it reached ±474px, tearing the card grid
-      // apart — labels separated from images and Suchitra pushed off-screen.
-      const offsetVal = Math.max(-40, Math.min(40, centerOffset * 0.06));
-
-      cards.forEach(c => {
-        // Column 1: cards 1 & 3 (left side) -> translate up
-        // Column 2: cards 2 & 4 (right side) -> translate down
-        const isCol1 = (c.id === 1 || c.id === 3);
-        c.parallaxY = isCol1 ? -offsetVal : offsetVal;
-      });
-
-      updateCardTransforms();
-    };
-
-    window.addEventListener('scroll', this._onPortfolioScroll, { passive: true });
-    
     // Track layout resize shifts
     this._alignLogo = alignLogo;
     window.addEventListener('resize', this._alignLogo);
-    
+
     // Default to Hyderabad on load
     filterToCity('Hyderabad');
-    this._onPortfolioScroll();
     
     // Re-run hide overlays after card DOM settles (belt and suspenders)
     setTimeout(hideRedOverlays, 800);
