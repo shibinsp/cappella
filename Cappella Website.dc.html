@@ -460,28 +460,31 @@
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
-  <div id="cap-scaler" style="width: 1440px; height: 7571px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
+  <div id="cap-scaler" style="width: 1440px; height: 7882px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
     <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1440px,8372px"></x-import>
 
     <!-- Interactive DotGrid canvas over the hero -->
     <canvas id="cap-dotgrid" width="1440" height="830" style="position: absolute; left: 0; top: 0; width: 1440px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
 
-    <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
-    <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
+    <!-- Red band extension + notch fill. The baked band ends at 2155 with a
+         white staircase notch; this slab keeps it solid AND extends the band
+         to 2415 so the full-size staircase fits below all the stats.
+         Everything baked below 2158 is shifted +260 at runtime (see
+         _shiftBelowBand). -->
+    <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 700px; background: rgb(209,32,47); z-index: 4;"></div>
 
     <!-- 135 Acres, static (no animation, no odometer via data-cap-odo).
-         Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left)
-         -> staircase below. Sits in the step-1 zone (1715-1825) where the
-         step is only 182px wide, so the reveal never reaches the text at
-         x214+; the wider steps 2-4 draw in below it. The baked copy is
-         hidden in _setupStatCounters (inconsistent inherited color). -->
-    <div id="cap-135" style="position: absolute; left: 214px; top: 1720px; z-index: 5;">
+         Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left),
+         staircase fully below. The baked copy is hidden in _setupStatCounters
+         (inconsistent inherited color). -->
+    <div id="cap-135" style="position: absolute; left: 214px; top: 1835px; z-index: 5;">
       <div data-cap-odo="1" style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">135 Acres</div>
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Total Land Area</div>
     </div>
 
-    <!-- 75 Years+ stat beside the staircase — reveals with the stair animation -->
-    <div id="cap-75" style="position: absolute; left: 695px; top: 1878px; z-index: 5;">
+    <!-- 75 Years+ stat beside the staircase's narrow upper steps (182/364px
+         wide, text starts at x695) — reveals with the stair animation -->
+    <div id="cap-75" style="position: absolute; left: 695px; top: 2138px; z-index: 5;">
       <div style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">75 Years+</div>
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Leadership Experience</div>
     </div>
@@ -489,9 +492,9 @@
     <!-- New glowing point (matches the 16 Assets point) after 135 Acres -->
     <div id="cap-dot2" style="position: absolute; left: 102px; top: 1950px; width: 88px; height: 88px; z-index: 5; border-radius: 50%; background: radial-gradient(44px 44px, rgb(255,255,255) 0%, rgb(209,32,47) 55%);"></div>
 
-    <!-- Scroll-linked staircase reveal — left half only, original step size.
-         "135 Acres" sits fully ABOVE this zone so the reveal never overlaps it. -->
-    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1715px; width: 728px; height: 440px; z-index: 6; pointer-events: none; overflow: hidden;">
+    <!-- Scroll-linked staircase reveal — left half only, original step size,
+         entirely BELOW the zig-zag stats in the extended band (1975-2415). -->
+    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1975px; width: 728px; height: 440px; z-index: 6; pointer-events: none; overflow: hidden;">
       <div class="cap-stair" style="position: absolute; left: 0; top: 0px;   width: 25%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
       <div class="cap-stair" style="position: absolute; left: 0; top: 110px;  width: 50%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
       <div class="cap-stair" style="position: absolute; left: 0; top: 220px;  width: 75%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
@@ -522,15 +525,55 @@ class Component extends DCLogic {
     if (scaler) {
       const footerShiftTop = 0; // Keeping top at 7092 prevents overlap with operators section
       const footerHeight = 530;   // Compact footer height (reduced from 734px)
-      
+
+      // ===== BAND EXTENSION SHIFT =====
+      // The red stats band grew by 260px (staircase now sits below the
+      // zig-zag stats). Every baked frame element below the old band bottom
+      // moves down by 260. Idempotent via data-cap-shifted; runs before
+      // adjustFooter (whose thresholds are rebased to the shifted coords)
+      // and re-runs from the MutationObserver as the frame hydrates.
+      const CAP_BAND_SHIFT = 260;
+      const CAP_SHIFT_FROM = 2158; // old band bottom (2155) + epsilon
+      const shiftBelowBand = () => {
+        // Only shift the BAKED frame (the imported sc-host subtree). Our own
+        // injected elements are scaler-level siblings created with already-
+        // shifted coordinates — re-shifting them displaced journey dots and
+        // portfolio tiles by a second +260.
+        const frameRoot = scaler.querySelector('[class*="sc-host"]');
+        if (!frameRoot) return;
+        const els = frameRoot.querySelectorAll('*');
+        for (let i = 0; i < els.length; i++) {
+          const el = els[i];
+          if (el.getAttribute('data-cap-shifted')) continue;
+          const topVal = parseFloat(el.style.top);
+          if (!isNaN(topVal) && topVal >= CAP_SHIFT_FROM) {
+            el.style.top = (topVal + CAP_BAND_SHIFT) + 'px';
+            el.setAttribute('data-cap-shifted', '1');
+            continue;
+          }
+          // SVGs positioned via transform matrices
+          const tf = el.style.transform || '';
+          const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+          if (m) {
+            const ty = parseFloat(m[6]);
+            if (ty >= CAP_SHIFT_FROM) {
+              el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + CAP_BAND_SHIFT) + ')';
+              el.setAttribute('data-cap-shifted', '1');
+            }
+          }
+        }
+      };
+      this._shiftBelowBand = shiftBelowBand;
+
       const adjustFooter = () => {
+        shiftBelowBand();
         const allEls = scaler.querySelectorAll('*');
         for (let i = 0; i < allEls.length; i++) {
           const el = allEls[i];
           let originalTop = el.getAttribute('data-original-top');
           if (!originalTop) {
             const topVal = parseFloat(el.style.top);
-            if (!isNaN(topVal) && topVal >= 7092 && topVal <= 8372) {
+            if (!isNaN(topVal) && topVal >= 7352 && topVal <= 8632) {
               originalTop = topVal.toString();
               el.setAttribute('data-original-top', originalTop);
             }
@@ -538,8 +581,8 @@ class Component extends DCLogic {
           
           if (originalTop) {
             const orig = parseFloat(originalTop);
-            if (orig === 7092) {
-              el.style.top = (7092 - footerShiftTop) + 'px';
+            if (orig === 7352) {
+              el.style.top = (7352 - footerShiftTop) + 'px';
               el.style.height = footerHeight + 'px';
               el.style.zIndex = '2';
               
@@ -608,11 +651,11 @@ class Component extends DCLogic {
             } else {
               // Determine shift based on original coordinate section
               let shift = footerShiftTop;
-              if (orig >= 7500 && orig < 7650) {
+              if (orig >= 7760 && orig < 7910) {
                 shift = 300; // middle section elements (Connect / Stay in Touch)
-              } else if (orig >= 7650) {
+              } else if (orig >= 7910) {
                 // Shift designer credit elements by 348px instead of 378px to avoid overlaps
-                if (orig === 7723 || orig === 7750) {
+                if (orig === 7983 || orig === 8010) {
                   shift = 348;
                 } else {
                   shift = 378; // bottom section elements (Partner logos / credits)
@@ -622,26 +665,26 @@ class Component extends DCLogic {
               el.style.zIndex = '3';
 
               // Apply fine alignment corrections for shifted elements
-              if (orig === 7734 || orig === 7732 || orig === 7728) {
+              if (orig === 7994 || orig === 7992 || orig === 7988) {
                 // Align partner logos to the exact same vertical line (relative top ~412px, absolute 7504px)
-                el.style.top = '7504px';
-              } else if (orig === 7750) {
+                el.style.top = '7764px';
+              } else if (orig === 8010) {
                 // Limitless logo
                 el.style.left = '1113px'; // Left-aligned with email input
-                el.style.top = '7504px';
-              } else if (orig === 7723 || orig === 7718) {
+                el.style.top = '7764px';
+              } else if (orig === 7983 || orig === 7978) {
                 // Designed by text
                 el.style.left = '1113px'; // Left-aligned with email input
-                el.style.top = '7504px';
-              } else if (orig === 7688) {
+                el.style.top = '7764px';
+              } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
-                el.style.top = '7472px';
+                el.style.top = '7732px';
               }
             }
           }
         }
-        scaler.style.height = (7092 - footerShiftTop + footerHeight) + 'px';
+        scaler.style.height = (7352 - footerShiftTop + footerHeight) + 'px';
       };
 
       // Initial run
@@ -1211,10 +1254,10 @@ class Component extends DCLogic {
     // ===== MENU SMOOTH SCROLLING =====
     const navItems = [
       { text: 'ABOUT US', target: 900 },
-      { text: 'PROJECTS', target: 3000 },
-      { text: 'PORTFOLIO', target: 3000 },
-      { text: 'TEAM', target: 6200 },
-      { text: 'CONTACT US', target: 6942 }
+      { text: 'PROJECTS', target: 3260 },
+      { text: 'PORTFOLIO', target: 3260 },
+      { text: 'TEAM', target: 6460 },
+      { text: 'CONTACT US', target: 7202 }
     ];
 
     setTimeout(() => {
@@ -1525,9 +1568,9 @@ class Component extends DCLogic {
     const hasMatrix = (el) => ((el.getAttribute('style') || '').includes('matrix'));
 
     // ===== FOOTER REVEAL =====
-    const footer = [...scaler.querySelectorAll('div')].find(d => d.getAttribute('data-original-top') === '7092');
+    const footer = [...scaler.querySelectorAll('div')].find(d => d.getAttribute('data-original-top') === '7352');
     if (!footer) return;
-    const footerTopFrame = parseFloat(footer.style.top) || 7092;
+    const footerTopFrame = parseFloat(footer.style.top) || 7352;
 
     // Live local-time line, OCI-editorial style
     const clock = document.createElement('div');
@@ -1627,7 +1670,7 @@ class Component extends DCLogic {
         // top-most tagged elements that aren't inside the container.
         const tagged = [...scaler.querySelectorAll('[data-original-top]')].filter(el => {
           if (el === footer || footer.contains(el)) return false;
-          return parseFloat(el.getAttribute('data-original-top')) > 7092;
+          return parseFloat(el.getAttribute('data-original-top')) > 7352;
         });
         tagged.filter(el => !tagged.some(a => a !== el && a.contains(el)))
               .forEach(el => slide.push(el));
@@ -1666,7 +1709,7 @@ class Component extends DCLogic {
     [...scaler.querySelectorAll('div')].forEach(el => {
       const st = el.getAttribute('style') || '';
       const top = parseFloat(el.style.top) || 0;
-      if (top > 5560 && top < 6900 && st.includes('linear-gradient') && st.includes('209, 32, 47')) {
+      if (top > 5820 && top < 7160 && st.includes('linear-gradient') && st.includes('209, 32, 47')) {
         el.style.display = 'none';
       }
     });
@@ -1712,8 +1755,8 @@ class Component extends DCLogic {
       io.observe(band);
       rows.push(row);
     };
-    buildBand(rowAEls, 5810, -1);
-    buildBand(rowBEls, 6330, 1);
+    buildBand(rowAEls, 6070, -1);
+    buildBand(rowBEls, 6590, 1);
 
     // Shared drive loop — skips work while both bands are off-screen
     let lastT = performance.now();
@@ -1830,16 +1873,16 @@ class Component extends DCLogic {
         '</div>' +
         '<nav class="cap-menu-links">' +
           '<div class="cap-menu-mask"><a data-target="900">About Us</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="3900">Portfolio</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="6200">Team</a></div>' +
-          '<div class="cap-menu-mask"><a data-target="6942">Contact Us</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="4160">Portfolio</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="6460">Team</a></div>' +
+          '<div class="cap-menu-mask"><a data-target="7202">Contact Us</a></div>' +
         '</nav>' +
         '<div class="cap-menu-row">' +
           '<span class="cap-menu-label">EXPLORE</span>' +
           '<div class="cap-menu-info">' +
-            '<a data-target="2140">The Cappella Edge</a><br>' +
-            '<a data-target="2940">Our Journey</a><br>' +
-            '<a data-target="5200">Operators</a>' +
+            '<a data-target="2400">The Cappella Edge</a><br>' +
+            '<a data-target="3200">Our Journey</a><br>' +
+            '<a data-target="5460">Operators</a>' +
           '</div>' +
         '</div>' +
         '<div class="cap-menu-row">' +
@@ -1937,11 +1980,11 @@ class Component extends DCLogic {
     if (!scaler || scaler.querySelector('.cap-meta')) return;
     // Anchored just above each section heading (frame coordinates)
     const defs = [
-      ['01', 'THE CAPPELLA EDGE', 821, 2158, 'rgb(209,32,47)'],
-      ['02', 'OUR JOURNEY',        45, 2996, 'rgb(255,255,255)'],
-      ['03', 'OUR PORTFOLIO',     210, 4171, 'rgb(209,32,47)'],
-      ['04', 'OPERATORS',         775, 5234, 'rgb(209,32,47)'],
-      ['05', 'CONTACT',            44, 6990, 'rgb(255,255,255)']
+      ['01', 'THE CAPPELLA EDGE', 821, 2418, 'rgb(209,32,47)'],
+      ['02', 'OUR JOURNEY',        45, 3256, 'rgb(255,255,255)'],
+      ['03', 'OUR PORTFOLIO',     210, 4431, 'rgb(209,32,47)'],
+      ['04', 'OPERATORS',         775, 5494, 'rgb(209,32,47)'],
+      ['05', 'CONTACT',            44, 7250, 'rgb(255,255,255)']
     ];
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -1974,7 +2017,7 @@ class Component extends DCLogic {
     // --- 1. S-curve Drawing Animation (Keep it exactly as is) ---
     const svg = [...scaler.querySelectorAll('svg')].find(el => {
       const top = parseFloat(el.style.top) || 0;
-      return top > 2900 && top < 3000 &&
+      return top > 3160 && top < 3260 &&
         parseInt(el.getAttribute('height') || '0', 10) > 600 &&
         el.querySelectorAll('path').length === 1;
     });
@@ -2012,14 +2055,14 @@ class Component extends DCLogic {
     [...scaler.querySelectorAll('span')].forEach(s => {
       const top = parseFloat(s.style.top) || 0;
       const txt = (s.textContent || '').trim();
-      if (top > 3080 && top < 3700 && txt !== 'Our Journey') {
+      if (top > 3340 && top < 3960 && txt !== 'Our Journey') {
         s.style.display = 'none';
       }
     });
     [...scaler.querySelectorAll('div')].forEach(d => {
       const top = parseFloat(d.style.top) || 0;
       const isDot = (d.style.borderRadius || '').includes('50%') && parseFloat(d.style.width) <= 30;
-      if (top > 3080 && top < 3700 && isDot) {
+      if (top > 3340 && top < 3960 && isDot) {
         d.style.display = 'none';
       }
     });
@@ -2035,25 +2078,25 @@ class Component extends DCLogic {
     if (sweep) sweep.remove();
     sweep = document.createElement('div');
     sweep.id = 'cap-journey-sweep';
-    sweep.style.cssText = 'position:absolute; left:0; top:2959px; width:2200px; height:753px; background:linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,1) 85%, rgba(255,255,255,0) 100%); z-index:15; pointer-events:none; transform:skewX(-20deg) translateX(-110%);';
+    sweep.style.cssText = 'position:absolute; left:0; top:3219px; width:2200px; height:753px; background:linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,1) 85%, rgba(255,255,255,0) 100%); z-index:15; pointer-events:none; transform:skewX(-20deg) translateX(-110%);';
     scaler.appendChild(sweep);
 
     // Setup navigation arrows
     const arrowL = document.createElement('div');
     arrowL.className = 'cap-journey-arrow';
-    arrowL.style.cssText = 'left:45px; top:3320px;';
+    arrowL.style.cssText = 'left:45px; top:3580px;';
     arrowL.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>';
     dynamicWrap.appendChild(arrowL);
 
     const arrowR = document.createElement('div');
     arrowR.className = 'cap-journey-arrow';
-    arrowR.style.cssText = 'left:1350px; top:3320px;';
+    arrowR.style.cssText = 'left:1350px; top:3580px;';
     arrowR.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>';
     dynamicWrap.appendChild(arrowR);
 
     // Dynamic phase labels container at the bottom
     const phaseLabelWrap = document.createElement('div');
-    phaseLabelWrap.style.cssText = 'position:absolute; left:0; top:3630px; width:1440px; height:93px;';
+    phaseLabelWrap.style.cssText = 'position:absolute; left:0; top:3890px; width:1440px; height:93px;';
     dynamicWrap.appendChild(phaseLabelWrap);
 
     const phaseWord = document.createElement('span');
@@ -2072,9 +2115,9 @@ class Component extends DCLogic {
         backdropClass: "fig-asset-9943ffc227529f04-36d3d657",
         imageClass: "fig-asset-531180345e372e44-3031d3f7",
         years: [
-          { year: "2016", count: "6 Assets", desc: "Pioneered Sale and Leaseback Model", x: 693, y: 3140 },
-          { year: "2017", count: "1 Asset", desc: "", x: 474, y: 3366 },
-          { year: "2018", count: "1 Asset", desc: "", x: 188, y: 3551 }
+          { year: "2016", count: "6 Assets", desc: "Pioneered Sale and Leaseback Model", x: 693, y: 3400 },
+          { year: "2017", count: "1 Asset", desc: "", x: 474, y: 3626 },
+          { year: "2018", count: "1 Asset", desc: "", x: 188, y: 3811 }
         ]
       },
       {
@@ -2082,8 +2125,8 @@ class Component extends DCLogic {
         backdropClass: "fig-asset-9f9c83f5695a1af6",
         imageClass: "fig-asset-76ba2d1ec2162f53",
         years: [
-          { year: "2019", count: "3 Assets", desc: "3 Assets Acquired, 1 Asset Exited, Pioneered multi-structure revenue", x: 315, y: 3460 },
-          { year: "2021", count: "2 Assets", desc: "", x: 600, y: 3220 }
+          { year: "2019", count: "3 Assets", desc: "3 Assets Acquired, 1 Asset Exited, Pioneered multi-structure revenue", x: 315, y: 3720 },
+          { year: "2021", count: "2 Assets", desc: "", x: 600, y: 3480 }
         ]
       },
       {
@@ -2091,9 +2134,9 @@ class Component extends DCLogic {
         backdropClass: "fig-asset-63186349250e044c-069f3173",
         imageClass: "fig-asset-0f9374cd498a11f1-a670101d",
         years: [
-          { year: "2023", count: "1 Asset", desc: "Portfolio successfully structured/refinanced, Captive partnership secured", x: 188, y: 3551 },
-          { year: "2024", count: "1 Asset", desc: "", x: 474, y: 3366 },
-          { year: "2025", count: "3 Assets", desc: "", x: 693, y: 3140 }
+          { year: "2023", count: "1 Asset", desc: "Portfolio successfully structured/refinanced, Captive partnership secured", x: 188, y: 3811 },
+          { year: "2024", count: "1 Asset", desc: "", x: 474, y: 3626 },
+          { year: "2025", count: "3 Assets", desc: "", x: 693, y: 3400 }
         ]
       }
     ];
@@ -2249,15 +2292,18 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
 
-    // Hide the baked "135 Acres / Total Land Area": replaced by the static
-    // white #cap-135 block at the same spot (the baked copy's inherited
-    // color renders black in some browsers, unreadable on the red band).
+    // Hide the baked "135 Acres / Total Land Area" and "75 Years" stats:
+    // both are replaced by the white #cap-135 / #cap-75 blocks (the baked
+    // copies' inherited color renders black in some browsers, and they'd
+    // sit inside the relocated staircase zone).
     [...scaler.querySelectorAll('span, div')].forEach(el => {
-      if (el.closest('#cap-135')) return;
+      if (el.closest('#cap-135') || el.closest('#cap-75')) return;
       const top = parseFloat(el.style.top) || 0;
-      if (top < 1700 || top > 2050) return;
+      if (top < 1700 || top > 2200) return;
       const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
-      if (t === 'Total Land Area' || (/Acres$/.test(t) && parseFloat(el.style.left) < 400)) {
+      if (t === 'Total Land Area' || t === 'Leadership Experience' ||
+          (/Acres$/.test(t) && parseFloat(el.style.left) < 400) ||
+          (/Years\+?$/.test(t) && parseFloat(el.style.left) > 600)) {
         el.style.display = 'none';
       }
     });
@@ -2329,7 +2375,7 @@ class Component extends DCLogic {
       const sc = document.getElementById('cap-scaler');
       const m = (sc.style.transform || '').match(/scale\(([^)]+)\)/);
       const s = m ? parseFloat(m[1]) : 1;
-      const topPage = 2959 * s, hPage = 753 * s;
+      const topPage = 3219 * s, hPage = 753 * s;
       const vh = window.innerHeight;
       const prog = clamp((window.scrollY + vh - topPage) / (hPage + vh));
       const idx = prog < 0.38 ? 0 : prog < 0.68 ? 1 : 2;
@@ -2431,7 +2477,7 @@ class Component extends DCLogic {
         const style = e.getAttribute('style') || '';
         const top = parseFloat(e.style.top) || 0;
         const hasRedBg = style.includes('rgba(209,32,47') || style.includes('rgba(209, 32, 47');
-        if (top >= 3800 && top <= 5200 && hasRedBg) {
+        if (top >= 4060 && top <= 5460 && hasRedBg) {
           e.style.display = 'none';
         }
       });
@@ -3112,22 +3158,22 @@ class Component extends DCLogic {
       {
         title: 'Operator-aligned structures',
         text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield',
-        closedTop: 2315, figmaIconTop: 2335, closedDividerTop: 2386
+        closedTop: 2575, figmaIconTop: 2595, closedDividerTop: 2646
       },
       {
         title: 'Future-ready campuses',
         text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.',
-        closedTop: 2389, figmaIconTop: 2409, closedDividerTop: 2452
+        closedTop: 2649, figmaIconTop: 2669, closedDividerTop: 2712
       },
       {
         title: 'Active asset management',
         text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.',
-        closedTop: 2455, figmaIconTop: 2487, closedDividerTop: 2534, figmaShift: BAKED_SHIFT
+        closedTop: 2715, figmaIconTop: 2747, closedDividerTop: 2794, figmaShift: BAKED_SHIFT
       },
       {
         title: 'Proven, long-term investor value',
         text: 'A strong track record of delivering consistent, high-quality returns across three funds.',
-        closedTop: 2537, figmaIconTop: 2817, closedDividerTop: 2603
+        closedTop: 2797, figmaIconTop: 3077, closedDividerTop: 2863
       }
     ];
 
@@ -3225,7 +3271,7 @@ class Component extends DCLogic {
       link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
       link.addEventListener('click', () => {
         const vp = document.getElementById('cap-viewport');
-        const target = 6942 * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
+        const target = 7202 * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
         if (this._lenis) this._lenis.scrollTo(target);
         else window.scrollTo({ top: target, behavior: 'smooth' });
       });
@@ -3243,7 +3289,7 @@ class Component extends DCLogic {
       const bakedDividerTy = d.closedDividerTop + (idx >= BAKED_OPEN_INDEX ? BAKED_SHIFT : 0);
       let dividerEl = findDivider(bakedDividerTy);
       if (!dividerEl && idx === BAKED_OPEN_INDEX) {
-        const donor = findDivider(2386);
+        const donor = findDivider(2646);
         if (donor) {
           dividerEl = donor.cloneNode(true);
           donor.parentNode.appendChild(dividerEl);
