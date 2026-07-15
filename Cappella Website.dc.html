@@ -469,11 +469,12 @@
     <!-- Fill the white staircase notch in the red band with red (keeps band solid) -->
     <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 440px; background: rgb(209,32,47); z-index: 4;"></div>
 
-    <!-- 135 Acres stat on solid red. Static by request: data-cap-odo opts out
-         of the odometer digit roll, and it has no reveal animation. The baked
-         Figma copy of this stat (black, on the staircase) is hidden in
-         _setupStatCounters to avoid duplication. -->
-    <div id="cap-bua" style="position: absolute; left: 695px; top: 1360px; z-index: 5;">
+    <!-- 135 Acres at its designed bottom-left band position. Static (no
+         animation, no odometer via data-cap-odo). White like the reference;
+         the baked copy is hidden in _setupStatCounters because its inherited
+         color renders inconsistently. Sits at z5 so the staircase reveal
+         (z6) passes over it, matching the original band behaviour. -->
+    <div id="cap-135" style="position: absolute; left: 214px; top: 1835px; z-index: 5;">
       <div data-cap-odo="1" style="font-family: Montserrat, sans-serif; font-weight: 600; font-size: 60px; line-height: 1; color: rgb(255,255,255);">135 Acres</div>
       <div style="font-family: Montserrat, sans-serif; font-weight: 400; font-size: 24px; line-height: 1; color: rgb(255,255,255); margin-top: 16px;">Total Land Area</div>
     </div>
@@ -2246,11 +2247,11 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
 
-    // The baked "135 Acres / Total Land Area" sits on the staircase (black,
-    // unreadable pre-reveal); the stat now lives in the #cap-bua slot on
-    // solid red — hide the baked duplicate before the odometer rebuilds it.
+    // Hide the baked "135 Acres / Total Land Area": replaced by the static
+    // white #cap-135 block at the same spot (the baked copy's inherited
+    // color renders black in some browsers, unreadable on the red band).
     [...scaler.querySelectorAll('span, div')].forEach(el => {
-      if (el.closest('#cap-bua')) return;
+      if (el.closest('#cap-135')) return;
       const top = parseFloat(el.style.top) || 0;
       if (top < 1700 || top > 2050) return;
       const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
