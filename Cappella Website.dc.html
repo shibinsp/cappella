@@ -457,6 +457,52 @@
       transition: transform 0.45s var(--cap-ease-power);
     }
     .cap-ft-link:hover::after { transform: scaleX(1); }
+
+    /* ===== PREMIUM POLISH ===== */
+    /* Scroll progress hairline — tracks the reader's own position, so it is
+       kept under reduced motion too (feedback, not decoration). */
+    #cap-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--cap-red);
+      transform-origin: left;
+      transform: scaleX(0);
+      z-index: 95;
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      /* Section headings wipe in left→right (clip-path — no transform, so it
+         can never fight the frame's absolute positioning). Driven by the
+         same IntersectionObserver/.cap-revealed as the other reveals. */
+      .cap-wipe-reveal {
+        clip-path: inset(0 100% 0 0);
+        transition: clip-path 1s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .cap-wipe-reveal.cap-revealed {
+        clip-path: inset(0 -2% 0 0); /* -2% guard for glyph overhang */
+      }
+
+      /* Footer clock: the colons breathe once a second */
+      @keyframes capClockBlink {
+        50% { opacity: 0.25; }
+      }
+      .cap-clock-sep {
+        animation: capClockBlink 1s steps(1) infinite;
+      }
+    }
+
+    /* Magnetic menu button: translate comes from CSS vars set by JS; the
+       hover scale is folded into the same transform so the two compose. */
+    #cap-menu-btn {
+      transform: translate(var(--capMx, 0px), var(--capMy, 0px)) scale(var(--capMs, 1));
+    }
+    #cap-menu-btn:hover {
+      transform: translate(var(--capMx, 0px), var(--capMy, 0px)) scale(1.08);
+    }
   </style>
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
@@ -764,6 +810,8 @@ class Component extends DCLogic {
     // OCI reference: native cursor only — no custom cursor, ring, or spotlight
     this._setupGrain();
     this._setupMenuOverlay();
+    this._setupScrollProgress();
+    this._setupMagneticBtn();
 
     // ===== DEFERRED ANIMATIONS =====
     // Wait for the Figma frame (x-import) to hydrate its DOM before querying elements.
@@ -976,10 +1024,12 @@ class Component extends DCLogic {
       setTimeout(() => this._setupNavScramble(), 200);
       return;
     }
+    const reducedNav = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     spans.forEach((el) => {
       const target = (el.textContent || '').trim();
       el.classList.add('cap-nav'); // nowrap exception — keeps CONTACT US on one line
       el.style.cursor = 'pointer';
+      if (reducedNav) return; // keep the affordance, skip the scramble motion
       let iv = null;
       el.addEventListener('mouseenter', () => {
         let frame = 0;
@@ -995,6 +1045,65 @@ class Component extends DCLogic {
         }, 32);
       });
     });
+  }
+
+  _setupScrollProgress() {
+    // Thin brand-red hairline along the top tracking scroll position.
+    if (document.getElementById('cap-progress')) return;
+    const bar = document.createElement('div');
+    bar.id = 'cap-progress';
+    document.body.appendChild(bar);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    };
+    this._onProgressScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+    window.addEventListener('scroll', this._onProgressScroll, { passive: true });
+    window.addEventListener('resize', this._onProgressScroll);
+    update();
+  }
+
+  _setupMagneticBtn() {
+    // Magnetic pull on the circular menu button: within 110px the button
+    // leans toward the cursor (max 8px), easing back on exit. Composes with
+    // the CSS hover scale via the --capMx/--capMy/--capMs custom properties.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const btn = document.getElementById('cap-menu-btn');
+    if (!btn) {
+      if ((this._magTries = (this._magTries || 0) + 1) < 20) {
+        setTimeout(() => this._setupMagneticBtn(), 250);
+      }
+      return;
+    }
+    const RADIUS = 110;
+    const PULL = 8;
+    this._onMagneticMove = (e) => {
+      if (btn.style.opacity === '0' || btn.style.pointerEvents === 'none') return;
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < RADIUS) {
+        const f = (1 - dist / RADIUS) * PULL;
+        btn.style.setProperty('--capMx', ((dx / dist) * f || 0).toFixed(1) + 'px');
+        btn.style.setProperty('--capMy', ((dy / dist) * f || 0).toFixed(1) + 'px');
+      } else {
+        btn.style.setProperty('--capMx', '0px');
+        btn.style.setProperty('--capMy', '0px');
+      }
+    };
+    window.addEventListener('mousemove', this._onMagneticMove, { passive: true });
   }
 
   _setupHeroIntro() {
@@ -1202,13 +1311,51 @@ class Component extends DCLogic {
       const fontSize = parseFloat(style.fontSize) || 0;
       return fontSize >= 40 && txt.length > 3 && txt.length < 60;
     });
+    // The named 55px section titles get the editorial clip-wipe. IMPORTANT:
+    // clip-path zeroes the element's IntersectionObserver area (a fully
+    // clipped target never intersects), so wiped elements are revealed by a
+    // scroll-position check instead — getBoundingClientRect ignores clip.
+    const WIPE_TITLES = ['OUR JOURNEY', 'OUR PORTFOLIO', 'OPERATORS', 'THE CAPPELLA EDGE'];
+    const wipeEls = [];
+    const normTxt = (el) =>
+      (el.textContent || '').replace(/[\u2028\s]+/g, ' ').trim().toUpperCase();
+    // Look across ALL large-text candidates for the named titles (they are
+    // not reliably inside the first-20 slice used for the generic pass).
+    sectionHeadings.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return; // hero area: skip
+      if (WIPE_TITLES.includes(normTxt(el)) && !el.classList.contains('cap-wipe-reveal')) {
+        addReveal(el, 'cap-wipe-reveal');
+        wipeEls.push(el);
+      }
+    });
     sectionHeadings.slice(0, 20).forEach((el, i) => {
       // Skip elements in the hero (visible on page load)
       const r = el.getBoundingClientRect();
       if (r.top < window.innerHeight) return;
+      if (el.classList.contains('cap-wipe-reveal')) return; // wipe pass owns it
       addReveal(el, 'cap-scroll-reveal');
       io.observe(el);
     });
+    if (wipeEls.length) {
+      let wipeTick = false;
+      const checkWipes = () => {
+        wipeTick = false;
+        for (let i = wipeEls.length - 1; i >= 0; i--) {
+          const r = wipeEls[i].getBoundingClientRect();
+          if (r.top < window.innerHeight * 0.88 && r.bottom > 0) {
+            wipeEls[i].classList.add('cap-revealed');
+            wipeEls.splice(i, 1);
+          }
+        }
+        if (!wipeEls.length) window.removeEventListener('scroll', onWipeScroll);
+      };
+      const onWipeScroll = () => {
+        if (!wipeTick) { wipeTick = true; requestAnimationFrame(checkWipes); }
+      };
+      window.addEventListener('scroll', onWipeScroll, { passive: true });
+      checkWipes();
+    }
 
     // STAT NUMBERS — large metric text ($500 Mn+, 135 Acres, 16 Assets, 75 Years+)
     const statNums = [...scaler.querySelectorAll('span, div')].filter(el => {
@@ -1268,12 +1415,18 @@ class Component extends DCLogic {
       { text: 'CONTACT US', href: 'contact-us.html' }
     ];
 
-    setTimeout(() => {
+    // The frame hydrates asynchronously — retry until the nav spans exist
+    // (a one-shot timer left the nav dead on slow loads).
+    const bindNav = (tries) => {
+      let bound = 0;
       navItems.forEach(item => {
         const els = [...scaler.querySelectorAll('span')].filter(el =>
           (el.textContent || '').replace(/\s+/g, '').toUpperCase() === item.text.replace(/\s+/g, '')
         );
         els.forEach(el => {
+          if (el._capNavBound) { bound++; return; }
+          el._capNavBound = true;
+          bound++;
           el.style.cursor = 'pointer';
           el.setAttribute('role', 'link');
           el.setAttribute('tabindex', '0');
@@ -1282,7 +1435,9 @@ class Component extends DCLogic {
           el.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
         });
       });
-    }, 500);
+      if (bound < 4 && tries > 0) setTimeout(() => bindNav(tries - 1), 200);
+    };
+    setTimeout(() => bindNav(40), 500);
 
     // ===== FOOTER EMAIL INPUT =====
     setTimeout(() => {
@@ -1329,6 +1484,14 @@ class Component extends DCLogic {
 
   _setupPreloader() {
     // --- OCI-style sequential loader ---
+    // Reserve the vertical scrollbar gutter permanently: the page always
+    // scrolls once loaded, but during the preloader the scrollbar would
+    // otherwise TOGGLE as content height settles — shifting the centered
+    // lockup's layout box mid-flight and spoiling the landing.
+    // (scrollbar-gutter, unlike overflow-y:scroll, reserves the space
+    // without making the viewport scrollable early — which would break the
+    // browser's scroll restoration on refresh.)
+    document.documentElement.style.scrollbarGutter = 'stable';
     document.body.style.overflow = 'hidden';
 
     // Full-screen red background
@@ -1351,19 +1514,10 @@ class Component extends DCLogic {
       }
       el.style.transition = 'opacity 0.25s ease';
 
-      // Add logo icon to header and shift wordmark
-      if (!document.getElementById('cap-header-logo-icon')) {
-        const logoIcon = document.createElement('div');
-        logoIcon.id = 'cap-header-logo-icon';
-        logoIcon.style.cssText = 'position:absolute; left:32px; top:44px; width:34px; height:37px; background:url(./components/assets/eae7f9bdb03982f5.png) center/contain no-repeat; opacity:0; filter:brightness(0) invert(1); z-index:90;';
-        el.parentNode.appendChild(logoIcon);
-        el.style.left = '76px';
-      }
-
+      // (No separate C icon in the header — the wordmark stands alone at
+      // its baked Figma position.)
       if (preloaderFinished) {
         el.style.opacity = '1';
-        const icon = document.getElementById('cap-header-logo-icon');
-        if (icon) icon.style.opacity = '1';
       } else {
         el.style.opacity = '0';
       }
@@ -1394,6 +1548,33 @@ class Component extends DCLogic {
       'filter:brightness(0) invert(1);'; // White on red
     centerWrap.appendChild(nameImg);
 
+    // === Reduced motion: brand moment without the choreography ===
+    // Curtain + lockup appear instantly, hold briefly, then the whole
+    // preloader fades out. No pop, no flight, no curtain slide.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      logoImg.style.transition = 'none';
+      nameImg.style.transition = 'none';
+      logoImg.style.opacity = '1';
+      logoImg.style.transform = 'none';
+      nameImg.style.opacity = '1';
+      nameImg.style.transform = 'none';
+      setTimeout(() => {
+        preloaderFinished = true;
+        document.body.style.overflow = '';
+        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+        if (wm) wm.style.opacity = '1';
+        preloader.style.transition = 'opacity 0.4s ease';
+        centerWrap.style.transition = 'opacity 0.4s ease';
+        preloader.style.opacity = '0';
+        centerWrap.style.opacity = '0';
+        setTimeout(() => {
+          centerWrap.remove();
+          preloader.remove();
+        }, 450);
+      }, 700);
+      return;
+    }
+
     // === Sequential timing (no crosshair lines, no circles) ===
     // Step 1: Logo icon pops in (200ms)
     setTimeout(() => {
@@ -1407,60 +1588,108 @@ class Component extends DCLogic {
       nameImg.style.transform = 'translateY(0)';
     }, 400);
 
-    // Step 3: Exit — fly to navbar header wordmark while fading out logo and merging name (1100ms)
-    setTimeout(() => {
+    // Step 3: Exit (1100ms) — the red curtain lifts straight up while the
+    // centered lockup flies to the header and CROSSFADES into the real one.
+    // If the async frame hasn't hydrated the header targets yet, hold the
+    // curtain briefly (up to 500ms in 50ms steps) — a flight into the real
+    // header beats the fade fallback whenever it's achievable.
+    const beginExit = (retries) => {
+      const headerWordmark = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+      if (!headerWordmark && window.scrollY <= 80 && retries > 0) {
+        setTimeout(() => beginExit(retries - 1), 50);
+        return;
+      }
       document.body.style.overflow = '';
 
-      const vp = document.getElementById('cap-viewport');
-      const s = vp ? vp.clientWidth / 1440 : 1;
-      const hw = window.innerWidth / 2;
-      const hh = window.innerHeight / 2;
+      // Refresh mid-page: browsers restore the scroll position, so the header
+      // targets sit thousands of px above the viewport — a flight would shoot
+      // the lockup off-screen. Fade it out in place instead and show the
+      // header (via preloaderFinished) for when the user scrolls back up.
+      const scrolledAway = window.scrollY > 80;
 
-      const headerWordmark = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-      const logoIcon = document.getElementById('cap-header-logo-icon');
-      
-      let nameTx = 0, nameTy = 0, nameScale = 1;
-      let logoTx = 0, logoTy = 0, logoScale = 1;
-
-      if (headerWordmark && logoIcon) {
-        const nameRect = nameImg.getBoundingClientRect();
-        const wordmarkRect = headerWordmark.getBoundingClientRect();
-        nameTx = wordmarkRect.left - nameRect.left;
-        nameTy = wordmarkRect.top - nameRect.top;
-        nameScale = wordmarkRect.width / nameRect.width;
-
-        const logoRect = logoImg.getBoundingClientRect();
-        const logoIconRect = logoIcon.getBoundingClientRect();
-        logoTx = logoIconRect.left - logoRect.left;
-        logoTy = logoIconRect.top - logoRect.top;
-        logoScale = logoIconRect.height / logoRect.height;
+      if (scrolledAway || !headerWordmark) {
+        preloaderFinished = true;
+        const exitEase = 'transform 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.35s ease';
+        logoImg.style.transition = exitEase;
+        nameImg.style.transition = exitEase;
+        logoImg.style.transform = 'translateY(-14px)';
+        nameImg.style.transform = 'translateY(-14px)';
+        logoImg.style.opacity = '0';
+        nameImg.style.opacity = '0';
       } else {
-        // Fallback to absolute scale and coords if not loaded
-        const targetX = 76 * s;
-        const targetY = 44 * s;
-        nameTx = -hw + targetX + 50 * s;
-        nameTy = -hh + targetY + 16 * s;
-        nameScale = 0.48 * s;
+        // --- Exact FLIP: pivot both images at their top-left corner so the
+        // corner-to-corner deltas ARE the transform (the previous version
+        // scaled about the center, landing ~25–30px off target). Origins are
+        // switched while the transforms are identity, so nothing jumps.
+        logoImg.style.transformOrigin = '0 0';
+        nameImg.style.transformOrigin = '0 0';
 
-        const logoTargetX = 32 * s;
-        logoTx = -hw + logoTargetX + 20 * s;
-        logoTy = -hh + targetY + 16 * s;
-        logoScale = 0.15 * s;
+        // Neutralize any still-running entrance transition first: on slow
+        // loads the wordmark can be mid-rise (translateY residual) at exit
+        // time, and measuring that interpolated box would bake the residual
+        // into the landing. All of this happens before the next paint, so
+        // the snap to identity is never visible.
+        nameImg.style.transition = 'none';
+        nameImg.style.transform = 'none';
+        nameImg.style.opacity = '1';
+        logoImg.style.transition = 'none';
+        logoImg.style.transform = 'none';
+        logoImg.style.opacity = '1';
+
+        // Force the post-overflow-reset reflow, then measure and launch
+        // synchronously (an rAF here would stall in throttled/occluded
+        // renderers, freezing the lockup mid-screen). The scrollbar gutter
+        // is reserved permanently, so these rects are layout-stable.
+        void document.body.offsetHeight;
+        {
+          const nameRect = nameImg.getBoundingClientRect();
+          const wordmarkRect = headerWordmark.getBoundingClientRect();
+          // Debug/E2E hook: the exact pre-flight base box this flight was
+          // computed from (tests validate the landing without racing the
+          // animation timeline).
+          window.__capPreFlight = { x: nameRect.left, y: nameRect.top, w: nameRect.width, h: nameRect.height };
+          // Width-matched scale + top-left alignment: the CAPPELLA row of the
+          // full PNG lands exactly over the header crop; the tagline below it
+          // dissolves in the crossfade.
+          const nameScale = wordmarkRect.width / nameRect.width;
+          const nameTx = wordmarkRect.left - nameRect.left;
+          const nameTy = wordmarkRect.top - nameRect.top;
+
+          nameImg.style.transition =
+            'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.3s ease';
+          nameImg.style.transform = `translate(${nameTx}px, ${nameTy}px) scale(${nameScale})`;
+
+          // No C icon lives in the header — the centered icon rises out and
+          // fades while the wordmark makes the flight alone.
+          logoImg.style.transition =
+            'transform 0.6s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease';
+          logoImg.style.transform = 'translateY(-40px) scale(0.85)';
+          logoImg.style.opacity = '0';
+
+          // Crossfade handoff at 600ms — and RE-TARGET: the scaler's fit/font
+          // timers can reflow the header during the flight, drifting the
+          // targets a few px. The flown pair's untransformed boxes are stable
+          // (fixed overlay), so recompute against the targets' CURRENT rects
+          // and glide the final stretch into the exact fresh position while
+          // the real lockup fades in underneath.
+          setTimeout(() => {
+            const wmNow = headerWordmark.getBoundingClientRect();
+            const glide = 'transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease';
+
+            nameImg.style.transition = glide;
+            nameImg.style.transform =
+              `translate(${wmNow.left - nameRect.left}px, ${wmNow.top - nameRect.top}px) ` +
+              `scale(${wmNow.width / nameRect.width})`;
+
+            headerWordmark.style.opacity = '1';
+            nameImg.style.opacity = '0';
+          }, 600);
+        }
       }
 
-      // CAPPELLA name flies toward navbar header wordmark
-      nameImg.style.transition =
-        'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.65s ease';
-      nameImg.style.transform = `translate(${nameTx}px, ${nameTy}px) scale(${nameScale})`;
-
-      // Logo flies next to the wordmark and merges cleanly
-      logoImg.style.transition =
-        'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.85s ease';
-      logoImg.style.transform = `translate(${logoTx}px, ${logoTy}px) scale(${logoScale})`;
-      logoImg.style.opacity = '1';
-
-      // Red curtain slides off to top-left corner simultaneously
-      preloader.style.transform = 'translate(-100%, -100%)';
+      // Red curtain lifts straight up — one clean horizontal reveal edge
+      // (the old diagonal translate exposed a broken-looking corner strip).
+      preloader.style.transform = 'translateY(-100%)';
 
       // Clean up and restore header logo opacity when preloader completes.
       // Re-query instead of using the refs captured at 1100ms — on slow loads
@@ -1470,12 +1699,11 @@ class Component extends DCLogic {
         preloaderFinished = true;
         const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
         if (wm) wm.style.opacity = '1';
-        const icon = document.getElementById('cap-header-logo-icon');
-        if (icon) icon.style.opacity = '1';
         centerWrap.remove();
         preloader.remove();
-      }, 950);
-    }, 1100);
+      }, 1080); // after the 600ms retarget + 350ms glide settle
+    };
+    setTimeout(() => beginExit(10), 1100);
   }
 
   _setupHeroZoom() {
@@ -1583,8 +1811,10 @@ class Component extends DCLogic {
       'font-family:"Space Mono", monospace; font-size:12px; letter-spacing:2px;' +
       'color:rgba(255,255,255,0.75); white-space:nowrap;';
     const tickClock = () => {
-      clock.textContent = 'HYDERABAD \u2014 ' +
-        new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+      const t = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
+      // Colons wrapped so they can pulse (CSS capClockBlink, reduced-gated)
+      clock.innerHTML = 'HYDERABAD — ' +
+        t.replace(/:/g, '<span class="cap-clock-sep">:</span>') + ' IST';
     };
     tickClock();
     this._clockIv = setInterval(tickClock, 1000);
@@ -1761,17 +1991,22 @@ class Component extends DCLogic {
     buildBand(rowAEls, 6070, -1);
     buildBand(rowBEls, 6590, 1);
 
-    // Shared drive loop — skips work while both bands are off-screen
+    // Shared drive loop — skips work while both bands are off-screen.
+    // The bands respond to scroll momentum: fast scrolling whips the logos
+    // along with it (Lenis exposes velocity), easing back to the 34px/s
+    // cruise. Hover-pause still wins (targetSpeed 0 is never boosted).
     let lastT = performance.now();
     const step = (now) => {
       const dt = Math.min((now - lastT) / 1000, 0.05);
       lastT = now;
+      const vel = this._lenis ? Math.min(Math.abs(this._lenis.velocity || 0) * 0.6, 55) : 0;
       let visible = false;
       rows.forEach(row => {
         const r = row.band.getBoundingClientRect();
         if (r.bottom < -100 || r.top > window.innerHeight + 100) return;
         visible = true;
-        row.speed += (row.targetSpeed - row.speed) * 0.06; // eased pause/resume
+        const target = row.targetSpeed === 0 ? 0 : row.targetSpeed + vel;
+        row.speed += (target - row.speed) * 0.06; // eased pause/resume/boost
         row.x = (row.x + row.dir * row.speed * dt) % row.seqW;
         const offset = row.dir === -1 ? row.x : row.x - row.seqW;
         row.track.style.transform = 'translateX(' + offset.toFixed(2) + 'px)';
@@ -2395,6 +2630,12 @@ class Component extends DCLogic {
     const reveal = document.getElementById('cap-reveal');
     const stat75 = document.getElementById('cap-75');
     if (!reveal) return;
+    // Reduced motion: show the finished state immediately, no scroll scrub
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      [...reveal.querySelectorAll('.cap-stair')].forEach(s => { s.style.transform = 'scaleX(1)'; });
+      if (stat75) { stat75.style.opacity = '1'; stat75.style.transform = 'none'; }
+      return;
+    }
     const stairs = [...reveal.querySelectorAll('.cap-stair')];
     const N = stairs.length;
     const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;

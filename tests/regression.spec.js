@@ -87,13 +87,15 @@ test.describe('homepage regression', () => {
     const panel = page.locator('#cap-menu-panel');
     await expect(panel).toBeVisible();
 
-    // EXPLORE row keeps data-target in-page scroll: URL unchanged, page scrolls
+    // EXPLORE row keeps data-target in-page scroll: URL unchanged, page
+    // scrolls. The Lenis glide takes ~1.2s and runs on rAF, which parallel-
+    // suite CPU contention can throttle — poll instead of a fixed wait.
     const beforeUrl = page.url();
     await panel.locator('a[data-target="3200"]').click(); // Our Journey
-    await page.waitForTimeout(1800);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { timeout: 10000 })
+      .toBeGreaterThan(1000);
     expect(page.url()).toBe(beforeUrl);
-    const y = await page.evaluate(() => window.scrollY);
-    expect(y).toBeGreaterThan(1000);
 
     // Escape closes the overlay
     await page.locator('#cap-menu-btn').click();
@@ -117,6 +119,9 @@ test.describe('homepage regression', () => {
   });
 
   test('homepage full-page screenshot', async ({ page }, testInfo) => {
+    // Capturing the full 7,882px frame (grain + dot-grid + marquee canvases
+    // live) is heavy; give it headroom under parallel-suite CPU contention.
+    testInfo.setTimeout(90000);
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
     await fullPageShot(page, testInfo, 'homepage');
@@ -126,6 +131,9 @@ test.describe('homepage regression', () => {
 test.describe('cross-site link health', () => {
   test('every internal link on all five pages resolves 200', async ({ page, request }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'link health is viewport-independent');
+    // Crawls five pages (two heavy homepage loads at networkidle) — needs
+    // headroom beyond the 30s default under parallel-suite contention.
+    testInfo.setTimeout(90000);
 
     const targets = new Set();
     const pagesToCrawl = [HOME, ...PAGES.map((p) => `/${p.file}`)];

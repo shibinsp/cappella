@@ -5,6 +5,10 @@ module.exports = defineConfig({
   testDir: './tests',
   outputDir: './test-artifacts/results',
   fullyParallel: true,
+  // The homepage is animation-heavy (preloader, canvases, Lenis); too many
+  // concurrent instances starve the compositor and flake the timing-
+  // sensitive regression tests. Four workers is stable on this machine.
+  workers: 4,
   forbidOnly: true,
   reporter: [
     ['list'],

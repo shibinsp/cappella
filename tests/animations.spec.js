@@ -75,6 +75,156 @@ test.describe('animation system', () => {
   });
 });
 
+test.describe('homepage preloader', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+  const exitStarted = (page) =>
+    page.waitForFunction(() => {
+      const els = [...document.querySelectorAll('body > div')];
+      return els.some(
+        (d) => d.style.zIndex === '9999' && d.style.transform.includes('translateY(-100%)')
+      );
+    }, { timeout: 20000 });
+
+  test('flight lands pixel-perfect on the header lockup, then cleans up', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'geometry is asserted at desktop scale');
+    testInfo.setTimeout(60000);
+    const errors = attachErrorCapture(page);
+    // Sample the landing INSIDE the page (a CDP round-trip can race the
+    // 950ms cleanup under tracing overhead): arm a poller that detects the
+    // exit and records the rects at flight end (820ms) into window.__preGeo.
+    // The flown pair's inline transform VALUE is its destination — it never
+    // depends on how far the animation has interpolated. Capture each image's
+    // untransformed base box (while its transform is still the identity
+    // entrance state), then keep recording the latest applied transform and
+    // the latest target rects until cleanup removes the overlay. The intended
+    // landing = base ∘ transform, compared against the final target rects —
+    // fully deterministic under any CPU load.
+    await page.addInitScript(() => {
+      const rr = (r) => ({ x: r.left, y: r.top, w: r.width, h: r.height });
+      const state = {};
+      const poll = setInterval(() => {
+        const wrap = [...document.querySelectorAll('body > div')].find((d) =>
+          (d.getAttribute('style') || '').includes('10000')
+        );
+        if (!wrap) {
+          if (!state.seen) return; // overlay not created yet
+          // Overlay removed → finalize
+          clearInterval(poll);
+          const parse = (t) => {
+            const m = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\(([\d.]+)\)/.exec(t || '');
+            return m ? { tx: +m[1], ty: +m[2], s: +m[3] } : null;
+          };
+          const nt = parse(state.nameT);
+          window.__preGeo = {
+            fade: !!state.fade,
+            flightRan: !!(nt && state.nameBase),
+            // intended landing = base box transformed about origin 0 0
+            // (only the wordmark flies — the C icon fades out in place)
+            name: nt && state.nameBase
+              ? { x: state.nameBase.x + nt.tx, y: state.nameBase.y + nt.ty, w: state.nameBase.w * nt.s, h: state.nameBase.h * nt.s }
+              : null,
+            wm: state.wm || null
+          };
+          return;
+        }
+        const imgs = [...wrap.querySelectorAll('img')];
+        if (imgs.length < 2) return;
+        state.seen = true;
+        // The wordmark (imgs[1]) is the flying element; the icon just fades.
+        const t1 = imgs[1].style.transform || '';
+        if (t1.includes('translateY(-14px)')) {
+          state.fade = true; // graceful fade path (scrolled / late hydration)
+        } else if (!t1.includes('translate(')) {
+          // Pre-flight: prefer the product's own synchronously-measured base
+          // (__capPreFlight, set the instant the flight is computed — no
+          // interpolation noise); rendered-box sampling is the fallback.
+          state.nameBase = window.__capPreFlight
+            ? { x: window.__capPreFlight.x, y: window.__capPreFlight.y, w: window.__capPreFlight.w, h: window.__capPreFlight.h }
+            : rr(imgs[1].getBoundingClientRect());
+        } else {
+          if (window.__capPreFlight) {
+            state.nameBase = { x: window.__capPreFlight.x, y: window.__capPreFlight.y, w: window.__capPreFlight.w, h: window.__capPreFlight.h };
+          }
+          state.nameT = t1;
+        }
+        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+        if (wm) state.wm = rr(wm.getBoundingClientRect());
+      }, 40);
+    });
+    await page.goto(HOME);
+    await page.waitForFunction(() => window.__preGeo, { timeout: 25000 });
+    const geo = await page.evaluate(() => window.__preGeo);
+    testInfo.annotations.push({ type: 'sample', description: JSON.stringify(geo) });
+    if (geo.flightRan) {
+      // Landing budget: ≤2px positional delta, ≤2% size delta (intended
+      // landing = base box ∘ applied transform — animation-progress-proof)
+      expect(geo.wm, 'target present').toBeTruthy();
+      expect(Math.abs(geo.name.x - geo.wm.x)).toBeLessThanOrEqual(2);
+      // y budget 3px: the sampler's base box can carry ~2px of the entrance
+      // translateY easing tail under CPU load (measurement noise, not landing
+      // error — the product measures its own base synchronously).
+      expect(Math.abs(geo.name.y - geo.wm.y)).toBeLessThanOrEqual(3);
+      expect(Math.abs(geo.name.w - geo.wm.w)).toBeLessThanOrEqual(geo.wm.w * 0.02);
+    } else {
+      // Late hydration under load → the designed graceful fallback must have
+      // run: lockup fades in place (never flies), header still handed off.
+      expect(geo.fade, `neither flight nor fade ran (sample: ${JSON.stringify(geo)})`).toBe(true);
+    }
+
+    // After cleanup: flown nodes gone, real lockup visible
+    await page.waitForTimeout(400);
+    const post = await page.evaluate(() => ({
+      preloaderGone: ![...document.querySelectorAll('body > div')].some((d) => d.style.zIndex === '9999'),
+      wmOpacity: getComputedStyle(document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80')).opacity,
+      // The C icon must NOT exist in the header (removed by request)
+      iconGone: !document.getElementById('cap-header-logo-icon')
+    }));
+    expect(post.preloaderGone).toBe(true);
+    expect(post.wmOpacity).toBe('1');
+    expect(post.iconGone).toBe(true);
+    expectNoPageErrors(errors);
+  });
+
+  test('refresh while scrolled: lockup fades in place, scroll position respected', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
+    testInfo.setTimeout(60000);
+    await page.goto(HOME);
+    await page.waitForTimeout(4200); // settle fully so reload restores scroll
+    await page.evaluate(() => window.scrollTo(0, 5200));
+    await page.waitForTimeout(600);
+    await page.reload();
+    await exitStarted(page);
+    await page.waitForTimeout(250);
+
+    const mid = await page.evaluate(() => {
+      const wrap = [...document.querySelectorAll('body > div')].find((d) =>
+        (d.getAttribute('style') || '').includes('10000')
+      );
+      const img = wrap && wrap.querySelector('img');
+      const r = img && img.getBoundingClientRect();
+      return {
+        scrollY: Math.round(window.scrollY),
+        flownStaysOnScreen: r ? r.top > -60 && r.top < window.innerHeight : true
+      };
+    });
+    // Restoration applies asynchronously and can lag the exit under CPU
+    // contention — poll rather than one-shot (the product handles both
+    // orderings by design).
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY), { timeout: 8000 })
+      .toBeGreaterThan(4000);
+    expect(mid.flownStaysOnScreen, 'lockup must fade in place, not fly off-screen').toBe(true);
+
+    await page.waitForTimeout(1300);
+    const end = await page.evaluate(() => ({
+      scrollY: Math.round(window.scrollY),
+      preloaderGone: ![...document.querySelectorAll('body > div')].some((d) => d.style.zIndex === '9999')
+    }));
+    expect(end.preloaderGone).toBe(true);
+    expect(end.scrollY).toBeGreaterThan(4000);
+  });
+});
+
 test.describe('reduced motion', () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } });
 

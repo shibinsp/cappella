@@ -127,9 +127,15 @@ test.describe('projects.html', () => {
       const alt = await img.getAttribute('alt');
       expect(alt, 'photo alt must be descriptive').toBeTruthy();
       expect(alt.length).toBeGreaterThan(10);
-      // natural width > 0 → the file actually loaded
-      const loaded = await img.evaluate((el) => el.complete && el.naturalWidth > 0);
-      expect(loaded, `image ${i} loaded`).toBe(true);
+      // natural width > 0 → the file actually loaded. Lazy images can still
+      // be fetching under load, so poll instead of a one-shot read (a real
+      // 404 is caught separately by the error capture).
+      await img.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => img.evaluate((el) => el.complete && el.naturalWidth > 0), {
+          timeout: 10000
+        })
+        .toBe(true);
     }
     expectNoPageErrors(errors);
   });
