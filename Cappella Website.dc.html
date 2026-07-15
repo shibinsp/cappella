@@ -486,6 +486,84 @@
         clip-path: inset(0 -2% 0 0); /* -2% guard for glyph overhang */
       }
 
+      /* ===== Footer sibling reveal (re-hydration-proof, premium) =====
+         Keyed by the data-original-top tags adjustFooter maintains (re-
+         applied on every frame re-hydration) and gated by the one-way
+         .cap-footer-in scaler class — a re-created element automatically
+         re-acquires the correct state and can never be stranded invisible.
+         clip-path is defined in ELEMENT space (it travels with the span),
+         so clipped + translated hidden states read as true masked rises
+         with zero wrapper DOM. transition-property never includes
+         top/left, so adjustFooter's positioning writes don't animate.
+         !important on hidden props: some siblings carry inline opacity
+         from other reveal systems; the gate must win until it releases. */
+
+      /* Nav — masked line rise, cascading */
+      #cap-scaler [data-original-top="7420"] { transition: opacity 0.9s var(--cap-ease-expo) 0.10s, transform 0.9s var(--cap-ease-expo) 0.10s, clip-path 0.9s var(--cap-ease-expo) 0.10s; }
+      #cap-scaler [data-original-top="7445"] { transition: opacity 0.9s var(--cap-ease-expo) 0.18s, transform 0.9s var(--cap-ease-expo) 0.18s, clip-path 0.9s var(--cap-ease-expo) 0.18s; }
+      #cap-scaler [data-original-top="7471"] { transition: opacity 0.9s var(--cap-ease-expo) 0.26s, transform 0.9s var(--cap-ease-expo) 0.26s, clip-path 0.9s var(--cap-ease-expo) 0.26s; }
+      #cap-scaler [data-original-top="7496"] { transition: opacity 0.9s var(--cap-ease-expo) 0.34s, transform 0.9s var(--cap-ease-expo) 0.34s, clip-path 0.9s var(--cap-ease-expo) 0.34s; }
+      #cap-scaler.cap-footer-in [data-original-top="7420"],
+      #cap-scaler.cap-footer-in [data-original-top="7445"],
+      #cap-scaler.cap-footer-in [data-original-top="7471"],
+      #cap-scaler.cap-footer-in [data-original-top="7496"] { clip-path: inset(-8% 0 -8% 0); }
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7420"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7445"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7471"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7496"] {
+        opacity: 0 !important;
+        transform: translateY(16px) !important;
+        clip-path: inset(100% 0 0 0) !important;
+      }
+
+      /* Email — left→right text wipe */
+      #cap-scaler [data-original-top="7416"] { transition: opacity 0.9s var(--cap-ease-expo) 0.15s, clip-path 0.9s var(--cap-ease-expo) 0.15s; }
+      #cap-scaler.cap-footer-in [data-original-top="7416"] { clip-path: inset(-6% -2% -6% 0); }
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7416"] {
+        opacity: 0 !important;
+        clip-path: inset(-6% 100% -6% 0) !important;
+      }
+
+      /* Address — multi-line top-down unveil */
+      #cap-scaler [data-original-top="7458"] { transition: opacity 1.05s var(--cap-ease-expo) 0.25s, transform 1.05s var(--cap-ease-expo) 0.25s, clip-path 1.05s var(--cap-ease-expo) 0.25s; }
+      #cap-scaler.cap-footer-in [data-original-top="7458"] { clip-path: inset(-4% 0 -4% 0); }
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7458"] {
+        opacity: 0 !important;
+        transform: translateY(10px) !important;
+        clip-path: inset(0 0 100% 0) !important;
+      }
+
+      /* Credit labels — left→right text wipe (a letter-spacing settle was
+         tried first, but the wider tracking overflowed the spans' fixed
+         boxes and the global wrap rule broke them onto two lines mid-
+         animation; a clip wipe never changes layout) */
+      #cap-scaler [data-original-top="7948"] { transition: opacity 0.9s var(--cap-ease-expo) 0.35s, clip-path 0.9s var(--cap-ease-expo) 0.35s; }
+      #cap-scaler [data-original-top="7983"] { transition: opacity 0.9s var(--cap-ease-expo) 0.45s, clip-path 0.9s var(--cap-ease-expo) 0.45s; }
+      #cap-scaler.cap-footer-in [data-original-top="7948"],
+      #cap-scaler.cap-footer-in [data-original-top="7983"] { clip-path: inset(-6% -2% -6% 0); }
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7948"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7983"] {
+        opacity: 0 !important;
+        clip-path: inset(-6% 100% -6% 0) !important;
+      }
+
+      /* Partner + Limitless logos — draw in left→right, rising slightly */
+      #cap-scaler [data-original-top="7994"] { transition: opacity 0.9s var(--cap-ease-expo) 0.42s, transform 0.9s var(--cap-ease-expo) 0.42s, clip-path 0.9s var(--cap-ease-expo) 0.42s; }
+      #cap-scaler [data-original-top="7992"] { transition: opacity 0.9s var(--cap-ease-expo) 0.50s, transform 0.9s var(--cap-ease-expo) 0.50s, clip-path 0.9s var(--cap-ease-expo) 0.50s; }
+      #cap-scaler [data-original-top="7988"] { transition: opacity 0.9s var(--cap-ease-expo) 0.58s, transform 0.9s var(--cap-ease-expo) 0.58s, clip-path 0.9s var(--cap-ease-expo) 0.58s; }
+      #cap-scaler [data-original-top="8010"] { transition: opacity 0.9s var(--cap-ease-expo) 0.55s, transform 0.9s var(--cap-ease-expo) 0.55s, clip-path 0.9s var(--cap-ease-expo) 0.55s; }
+      #cap-scaler.cap-footer-in [data-original-top="7994"],
+      #cap-scaler.cap-footer-in [data-original-top="7992"],
+      #cap-scaler.cap-footer-in [data-original-top="7988"],
+      #cap-scaler.cap-footer-in [data-original-top="8010"] { clip-path: inset(-6% -3% -6% 0); }
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7994"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7992"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="7988"],
+      #cap-scaler:not(.cap-footer-in) [data-original-top="8010"] {
+        opacity: 0 !important;
+        transform: translateY(10px) !important;
+        clip-path: inset(-6% 100% -6% 0) !important;
+      }
     }
 
     /* Magnetic menu button: translate comes from CSS vars set by JS; the
@@ -1849,14 +1927,35 @@ class Component extends DCLogic {
       const relTop = b.top - footerTopFrame;
       const delay = 0.15 + (b.left / 1440) * 0.4 + Math.max(0, relTop / 530) * 0.15;
       if (el === bigLogo) {
+        // Big C: clip wipe + a soft scale settle
         el.style.clipPath = 'inset(0 100% 0 0)';
-        el.style.transition = 'clip-path 1.1s var(--cap-ease-expo) 0.1s';
-        staged.push(() => { el.style.clipPath = 'inset(0 0% 0 0)'; });
+        el.style.transform = 'scale(1.04)';
+        el.style.transition =
+          'clip-path 1.1s var(--cap-ease-expo) 0.1s, transform 1.1s var(--cap-ease-expo) 0.1s';
+        staged.push(() => {
+          el.style.clipPath = 'inset(0 0% 0 0)';
+          el.style.transform = 'scale(1)';
+        });
+      } else if (el.tagName.toLowerCase() === 'svg' || hasMatrix(el)) {
+        // Divider hairlines carry Figma matrix transforms — never touch
+        // transform; draw them downward via clip only. transform stays in
+        // the transition list so the arrow's hover nudge keeps easing.
+        el.style.clipPath = 'inset(0 0 100% 0)';
+        el.style.transition =
+          'clip-path 1.2s var(--cap-ease-expo) 0.2s, transform 0.35s var(--cap-ease-power)';
+        staged.push(() => { el.style.clipPath = 'inset(0 0 -2% 0)'; });
       } else {
-        // opacity-only: the curtain scrub below owns the transform channel
+        // Text/content children: fade + rise (the transform channel is free
+        // — the old curtain scrub is long gone)
         el.style.opacity = '0';
-        el.style.transition = 'opacity 0.85s var(--cap-ease-expo) ' + delay + 's';
-        staged.push(() => { el.style.opacity = '1'; });
+        el.style.transform = 'translateY(16px)';
+        el.style.transition =
+          'opacity 0.85s var(--cap-ease-expo) ' + delay + 's, ' +
+          'transform 0.85s var(--cap-ease-expo) ' + delay + 's';
+        staged.push(() => {
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        });
       }
     });
 
@@ -1869,30 +1968,40 @@ class Component extends DCLogic {
         if (!entry.isIntersecting) return;
         io.disconnect();
         staged.forEach(fn => fn());
+        // One-way flip: releases the CSS-held hidden state of the footer's
+        // out-of-container siblings (staggered rise, see the stylesheet)
+        scaler.classList.add('cap-footer-in');
       });
     }, { threshold: 0.01 });
     io.observe(footer);
+    // Belt & braces: a plain scroll-position check backs up the observer so
+    // the footer can never stay hidden (idempotent with the IO flip; fires
+    // only when the footer actually enters the viewport, so the reveal is
+    // never spent off-screen).
+    const flipOnScroll = () => {
+      const r = footer.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0) {
+        scaler.classList.add('cap-footer-in');
+        window.removeEventListener('scroll', flipOnScroll);
+      }
+    };
+    window.addEventListener('scroll', flipOnScroll, { passive: true });
+    flipOnScroll();
 
-    // ===== FOOTER SIBLINGS: STATIC (ghost fix) =====
-    // The footer's out-of-container siblings (nav, address, designed-by, partner
-    // logos) previously animated via a scroll-scrubbed "curtain" that
-    // lifted them a full footer-height and scrubbed them down. That scrub was the
-    // source of the reported "ghost": these siblings live OUTSIDE the footer's
-    // overflow:hidden box, so while lifted they rose ABOVE the footer's top edge
-    // into the white section above — white nav text over white read as a faded
-    // duplicate. It was worst at wide viewports, where the higher scale factor
-    // makes the lift span more of the screen, and where the scrub (whose
-    // start/end were captured before the scaled canvas recomputed its height)
-    // never even reached rest, leaving the footer blank/half-lifted.
+    // ===== FOOTER SIBLINGS: CSS-CLASS REVEAL (re-hydration-proof) =====
+    // History: a scroll-scrubbed "curtain" ghosted these siblings above the
+    // footer, and per-element inline hide-then-show reveals raced the DC
+    // frame's RE-HYDRATION (which replaces the footer DOM after setup) and
+    // could strand the footer invisible.
     //
-    // Animated alternatives (one-shot slide, rise-from-below + fade) were all
-    // defeated by the same root cause: the DC frame RE-HYDRATES and replaces the
-    // footer DOM after this setup runs, so any hide-then-show reveal — which must
-    // start at opacity:0 — races the rebuild and can strand the footer invisible.
-    // These siblings are therefore left STATIC: always at their resting position,
-    // fully visible, which is ghost-proof at every scale and cannot regress. The
-    // footer's big-logo clip-wipe and the inner column fade (staged above) still
-    // animate.
+    // The current mechanism cannot strand: the hidden state lives in CSS,
+    // keyed off the data-original-top tags that adjustFooter re-applies on
+    // every re-hydration, gated by #cap-scaler:not(.cap-footer-in). The
+    // .cap-footer-in flip (in the reveal IO above, backed by a scroll
+    // check) is one-way and global — a re-created element automatically
+    // re-acquires whichever state is current. Transforms are translateY
+    // only and never cross the footer's top edge, so the old ghost is
+    // impossible too.
   }
 
   _setupOperatorsMarquee() {
