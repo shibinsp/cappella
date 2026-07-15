@@ -673,9 +673,12 @@ class Component extends DCLogic {
                 el.style.left = '1113px'; // Left-aligned with email input
                 el.style.top = '7764px';
               } else if (orig === 7983 || orig === 7978) {
-                // Designed by text
+                // "Designed by" caption — sits directly ABOVE the Limitless logo
+                // (which stays at 7764). Both were pinned to 7764, so the caption
+                // printed on top of the logo; lift it into the gap below the email
+                // input (whose bottom is ~7735) so they read as caption + logo.
                 el.style.left = '1113px'; // Left-aligned with email input
-                el.style.top = '7764px';
+                el.style.top = '7742px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
@@ -1642,51 +1645,40 @@ class Component extends DCLogic {
     clock.style.transition = 'opacity 0.85s var(--cap-ease-expo) 0.5s';
     staged.push(() => { clock.style.opacity = '1'; });
 
+    // threshold 0.01 (not 0.25): at wide viewports the scaled footer is far
+    // taller than the screen, so 25% of it may never fit in view — the reveal
+    // would then never fire and the footer would stay invisible. Firing on the
+    // first visible pixel guarantees the staged fade always completes.
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
         io.disconnect();
         staged.forEach(fn => fn());
       });
-    }, { threshold: 0.25 });
+    }, { threshold: 0.01 });
     io.observe(footer);
 
-    // ===== CURTAIN REVEAL =====
-    // The footer container becomes a clipped window; its content is offset
-    // one footer-height up and scrubs to rest as the window scrolls in, so
-    // the footer reads as a fixed surface being uncovered by the page.
-    if (window.gsap && window.ScrollTrigger) {
-      footer.style.overflow = 'hidden';
-      clock.style.zIndex = '6';
-      // Capture slide targets AFTER the deferred footer-email setup (runs
-      // ~500ms later) replaces the placeholder span with the real input —
-      // otherwise the input is left out and stays static during the scrub
-      setTimeout(() => {
-        const slide = [...footer.children].filter(el => !(parseFloat(el.style.width) > 1400));
-        // Part of the footer's content (email, address, designed-by, partner
-        // logos) lives OUTSIDE the container in the Figma DOM — without them
-        // the curtain shears the footer apart mid-scrub. adjustFooter tagged
-        // everything in the footer region with data-original-top; take the
-        // top-most tagged elements that aren't inside the container.
-        const tagged = [...scaler.querySelectorAll('[data-original-top]')].filter(el => {
-          if (el === footer || footer.contains(el)) return false;
-          return parseFloat(el.getAttribute('data-original-top')) > 7352;
-        });
-        tagged.filter(el => !tagged.some(a => a !== el && a.contains(el)))
-              .forEach(el => slide.push(el));
-        slide.push(clock); // static clock would overlap sliding text mid-scrub
-        window.gsap.fromTo(slide, { y: -420 }, {
-          y: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: footer,
-            start: 'top bottom',
-            end: 'bottom bottom',
-            scrub: true
-          }
-        });
-      }, 700);
-    }
+    // ===== FOOTER SIBLINGS: STATIC (ghost fix) =====
+    // The footer's out-of-container siblings (nav, address, designed-by, partner
+    // logos, clock) previously animated via a scroll-scrubbed "curtain" that
+    // lifted them a full footer-height and scrubbed them down. That scrub was the
+    // source of the reported "ghost": these siblings live OUTSIDE the footer's
+    // overflow:hidden box, so while lifted they rose ABOVE the footer's top edge
+    // into the white section above — white nav text over white read as a faded
+    // duplicate. It was worst at wide viewports, where the higher scale factor
+    // makes the lift span more of the screen, and where the scrub (whose
+    // start/end were captured before the scaled canvas recomputed its height)
+    // never even reached rest, leaving the footer blank/half-lifted.
+    //
+    // Animated alternatives (one-shot slide, rise-from-below + fade) were all
+    // defeated by the same root cause: the DC frame RE-HYDRATES and replaces the
+    // footer DOM after this setup runs, so any hide-then-show reveal — which must
+    // start at opacity:0 — races the rebuild and can strand the footer invisible.
+    // These siblings are therefore left STATIC: always at their resting position,
+    // fully visible, which is ghost-proof at every scale and cannot regress. The
+    // footer's big-logo clip-wipe and the inner column fade (staged above) still
+    // animate.
+    clock.style.zIndex = '6';
   }
 
   _setupOperatorsMarquee() {
