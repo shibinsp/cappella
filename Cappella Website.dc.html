@@ -2883,7 +2883,8 @@ class Component extends DCLogic {
         if (isMatch) {
           c.img.style.pointerEvents = 'auto';
           c.img.style.opacity = '1';
-          
+          c.label.style.opacity = '1'; // restore after a non-match filter hid it
+
           // Don't CSS-scale the card image itself — WebGL handles zoom internally via u_zoom
           c.img.style.transform = `translateY(${c.parallaxY}px)`;
           c.label.style.transform = `translateY(${c.parallaxY}px)`;
