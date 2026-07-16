@@ -1237,7 +1237,7 @@ function Frame4(_p = {}) {
       top: 4207,
       width: 419,
       height: 75,
-      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
       fontWeight: 800,
       fontSize: 48,
       whiteSpace: "pre-wrap",
