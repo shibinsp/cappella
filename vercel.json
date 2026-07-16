@@ -1,4 +1,8 @@
 {
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/", "destination": "/Cappella%20Website.dc.html" }
   ]
