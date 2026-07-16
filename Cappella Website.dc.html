@@ -681,9 +681,18 @@ class Component extends DCLogic {
 
       const adjustFooter = () => {
         shiftBelowBand();
+        // Journey band gap (pinned journey): shift everything below the
+        // band, hide the old band content. jd() offsets every fixed footer
+        // coordinate below.
+        if (this._shiftJourney) this._shiftJourney();
+        const jd = () => (this._jDelta || 0);
         const allEls = scaler.querySelectorAll('*');
         for (let i = 0; i < allEls.length; i++) {
           const el = allEls[i];
+          // Journey-shifted elements and our own injected elements (whose
+          // coordinates are already final) are never footer family
+          if (el.getAttribute('data-jorig-top') !== null) continue;
+          if (el.getAttribute('data-cap-own') !== null) continue;
           let originalTop = el.getAttribute('data-original-top');
           if (!originalTop) {
             const topVal = parseFloat(el.style.top);
@@ -696,7 +705,7 @@ class Component extends DCLogic {
           if (originalTop) {
             const orig = parseFloat(originalTop);
             if (orig === 7352) {
-              el.style.top = (7352 - footerShiftTop) + 'px';
+              el.style.top = (7352 - footerShiftTop + jd()) + 'px';
               el.style.height = footerHeight + 'px';
               el.style.zIndex = '2';
               
@@ -778,33 +787,33 @@ class Component extends DCLogic {
                   shift = 378; // bottom section elements (Partner logos / credits)
                 }
               }
-              el.style.top = (orig - shift) + 'px';
+              el.style.top = (orig - shift + jd()) + 'px';
               el.style.zIndex = '3';
 
               // Apply fine alignment corrections for shifted elements
               if (orig === 7994 || orig === 7992 || orig === 7988) {
                 // Align partner logos to the exact same vertical line (relative top ~412px, absolute 7504px)
-                el.style.top = '7764px';
+                el.style.top = (7764 + jd()) + 'px';
               } else if (orig === 8010) {
                 // Limitless logo — below the "Designed by" caption, both
                 // clear of the STAY IN TOUCH box (box bottom ≈ 7745)
                 el.style.left = '1113px'; // column rail
-                el.style.top = '7791px';
+                el.style.top = (7791 + jd()) + 'px';
               } else if (orig === 7983 || orig === 7978) {
                 // "Designed by" caption — 24px below the STAY IN TOUCH box
                 // (it previously overlapped the box's bottom border), stacked
                 // above the Limitless logo
                 el.style.left = '1113px'; // column rail
-                el.style.top = '7769px';
+                el.style.top = (7769 + jd()) + 'px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
-                el.style.top = '7732px';
+                el.style.top = (7732 + jd()) + 'px';
               }
             }
           }
         }
-        scaler.style.height = (7352 - footerShiftTop + footerHeight) + 'px';
+        scaler.style.height = (7352 - footerShiftTop + footerHeight + jd()) + 'px';
       };
 
       // Initial run
@@ -823,6 +832,7 @@ class Component extends DCLogic {
         if (this._fit) this._fit();
         observer.observe(scaler, OBS_CFG);
       };
+      this._runAdjust = runAdjust; // journey band re-runs this after delta changes
       const observer = new MutationObserver((muts) => {
         if (muts.some(mu => mu.type === 'childList')) {
           clearTimeout(styleSettleT);
@@ -893,15 +903,18 @@ class Component extends DCLogic {
       const safe = (fn, name) => {
         try { fn(); } catch (e) { console.error('[cappella] ' + name + ' failed:', e); }
       };
+      // Journey band FIRST: it opens the scroll gap (shifting everything
+      // below) and mounts the pinned experience — later setups classify
+      // from live (post-shift) positions.
+      safe(() => this._setupJourneyBand(), 'journeyBand');
+      safe(() => this._setupJourneyPinned(), 'journeyPinned');
       safe(() => this._setupScrollReveals(), 'scrollReveals');
       safe(() => this._setupStatCounters(), 'statCounters');
       safe(() => this._setupPortfolioInteraction(), 'portfolio');
       safe(() => this._setupAccordion(), 'accordion');
       // this._setupMetaLabels();
-      safe(() => this._setupJourneyStory(), 'journeyStory');
       safe(() => this._setupFooterAnimations(), 'footer');
       safe(() => this._setupOperatorsMarquee(), 'marquee');
-      safe(() => this._setupDitherEntries(), 'ditherEntries');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1569,7 +1582,21 @@ class Component extends DCLogic {
     const preloader = document.createElement('div');
     preloader.style.cssText =
       'position:fixed; inset:0; background:rgb(209,32,47); z-index:9999;' +
-      'transition:transform 1.0s cubic-bezier(0.77,0,0.175,1);';
+      // Exit is a TRAVELING diagonal fade — the panel never moves. A 3×-
+      // viewport gradient mask (transparent toward the top-right, opaque
+      // toward the bottom-left, wide soft feather between) slides diagonally
+      // via mask-position, so every region fades exactly as the band passes
+      // it: the dissolve visibly sweeps right → left the whole second. The
+      // late opacity fade is a safety net for the final state.
+      'transition:mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
+      '-webkit-mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
+      'opacity 0.4s ease 0.7s;' +
+      'mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
+      '-webkit-mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
+      'mask-size:300% 300%; -webkit-mask-size:300% 300%;' +
+      'mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat;' +
+      'mask-position:0% 100%; -webkit-mask-position:0% 100%;' +
+      'will-change:mask-position, opacity;';
     document.body.appendChild(preloader);
 
     // Hide the actual header logo on page initially so we don't see double.
@@ -1659,8 +1686,9 @@ class Component extends DCLogic {
       nameImg.style.transform = 'translateY(0)';
     }, 400);
 
-    // Step 3: Exit (1100ms) — the red curtain lifts straight up while the
-    // centered lockup flies to the header and CROSSFADES into the real one.
+    // Step 3: Exit (1100ms) — the red curtain wipes away diagonally (top-
+    // right → bottom-left) with a fade while the centered lockup flies to
+    // the header and CROSSFADES into the real one.
     // If the async frame hasn't hydrated the header targets yet, hold the
     // curtain briefly (up to 500ms in 50ms steps) — a flight into the real
     // header beats the fade fallback whenever it's achievable.
@@ -1680,13 +1708,17 @@ class Component extends DCLogic {
 
       if (scrolledAway || !headerWordmark) {
         preloaderFinished = true;
-        const exitEase = 'transform 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.35s ease';
+        const exitEase =
+          'transform 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.35s ease, filter 0.4s ease';
         logoImg.style.transition = exitEase;
         nameImg.style.transition = exitEase;
         logoImg.style.transform = 'translateY(-14px)';
         nameImg.style.transform = 'translateY(-14px)';
         logoImg.style.opacity = '0';
         nameImg.style.opacity = '0';
+        // Release the invert as the curtain fades under the lockup.
+        logoImg.style.filter = 'none';
+        nameImg.style.filter = 'none';
       } else {
         // --- Exact FLIP: pivot both images at their top-left corner so the
         // corner-to-corner deltas ARE the transform (the previous version
@@ -1726,16 +1758,21 @@ class Component extends DCLogic {
           const nameTx = wordmarkRect.left - nameRect.left;
           const nameTy = wordmarkRect.top - nameRect.top;
 
+          // The curtain fades during the flight, so release the white-on-red
+          // invert filter in step — the wordmark darkens to its natural color
+          // as the page lightens underneath (never white-on-white).
           nameImg.style.transition =
-            'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.3s ease';
+            'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.3s ease, filter 0.5s ease';
           nameImg.style.transform = `translate(${nameTx}px, ${nameTy}px) scale(${nameScale})`;
+          nameImg.style.filter = 'none';
 
           // No C icon lives in the header — the centered icon rises out and
           // fades while the wordmark makes the flight alone.
           logoImg.style.transition =
-            'transform 0.6s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease';
+            'transform 0.6s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease, filter 0.5s ease';
           logoImg.style.transform = 'translateY(-40px) scale(0.85)';
           logoImg.style.opacity = '0';
+          logoImg.style.filter = 'none';
 
           // Crossfade handoff at 600ms — and RE-TARGET: the scaler's fit/font
           // timers can reflow the header during the flight, drifting the
@@ -1758,9 +1795,14 @@ class Component extends DCLogic {
         }
       }
 
-      // Red curtain lifts straight up — one clean horizontal reveal edge
-      // (the old diagonal translate exposed a broken-looking corner strip).
-      preloader.style.transform = 'translateY(-100%)';
+      // Diagonal traveling fade: sliding the mask from its opaque bottom-left
+      // corner to its transparent top-right corner sweeps the feathered
+      // dissolve band across the screen from the top-RIGHT corner to the
+      // bottom-LEFT. The mask moves; the panel itself stays put (a moving
+      // diagonal panel previously exposed a broken-looking corner strip).
+      preloader.style.maskPosition = '100% 0%';
+      preloader.style.webkitMaskPosition = '100% 0%';
+      preloader.style.opacity = '0';
 
       // Clean up and restore header logo opacity when preloader completes.
       // Re-query instead of using the refs captured at 1100ms — on slow loads
@@ -2033,6 +2075,9 @@ class Component extends DCLogic {
     const rows = [];
     const buildBand = (els, top, dir) => {
       const band = document.createElement('div');
+      // data-cap-own: OUR injected element with final coordinates —
+      // adjustFooter's footer-capture window must never adopt it.
+      band.setAttribute('data-cap-own', '1');
       band.style.cssText =
         'position:absolute; left:0; top:' + top + 'px; width:1440px; height:170px;' +
         'overflow:hidden; z-index:3; opacity:0; transition: opacity 1s var(--cap-ease-expo);';
@@ -2070,8 +2115,8 @@ class Component extends DCLogic {
       io.observe(band);
       rows.push(row);
     };
-    buildBand(rowAEls, 6070, -1);
-    buildBand(rowBEls, 6590, 1);
+    buildBand(rowAEls, 6070 + (this._jDelta || 0), -1);
+    buildBand(rowBEls, 6590 + (this._jDelta || 0), 1);
 
     // Shared drive loop — skips work while both bands are off-screen.
     // The bands respond to scroll momentum: fast scrolling whips the logos
@@ -2096,76 +2141,6 @@ class Component extends DCLogic {
       this._mqRaf = requestAnimationFrame(step);
     };
     this._mqRaf = requestAnimationFrame(step);
-  }
-
-  _setupDitherEntries() {
-    // OCI-style photo entries: the image sits as a red duotone Bayer dither
-    // and resolves to full colour as it scrolls into view. Applied to the
-    // journey backdrop and the journey building photo (the Edge image and
-    // portfolio cards already have their own dither behaviours).
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler || this._ditherEntriesDone) return;
-    this._ditherEntriesDone = true;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const TARGETS = [
-      'fig-asset-9943ffc227529f04-36d3d657',  // journey full-width backdrop
-      'fig-asset-531180345e372e44-3031d3f7'   // journey building photo
-    ];
-    const bayer = [[0,12,3,15],[8,4,11,7],[2,14,1,13],[10,6,9,5]];
-
-    TARGETS.forEach(cls => {
-      const el = scaler.querySelector('.' + CSS.escape(cls));
-      if (!el) return;
-      const bg = window.getComputedStyle(el).backgroundImage;
-      if (!bg || bg === 'none') return;
-
-      el.style.overflow = 'hidden';
-      const canvas = document.createElement('canvas');
-      canvas.style.cssText =
-        'position:absolute; left:0; top:0; width:100%; height:100%;' +
-        'pointer-events:none; opacity:0; transition: opacity 0.9s var(--cap-ease-power) 0.2s;';
-      el.appendChild(canvas);
-
-      const tempImg = new Image();
-      tempImg.crossOrigin = 'anonymous';
-      tempImg.src = bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
-      tempImg.onload = () => {
-        try {
-          const w = 190, h = Math.round((tempImg.height / tempImg.width) * w);
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(tempImg, 0, 0, w, h);
-          const imgData = ctx.getImageData(0, 0, w, h);
-          const px = imgData.data;
-          for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-              const i4 = (y * w + x) * 4;
-              const gray = 0.299 * px[i4] + 0.587 * px[i4 + 1] + 0.114 * px[i4 + 2];
-              const light = gray > ((bayer[y % 4][x % 4] + 0.5) / 16) * 255;
-              px[i4] = light ? 255 : 209;
-              px[i4 + 1] = light ? 235 : 32;
-              px[i4 + 2] = light ? 235 : 47;
-            }
-          }
-          ctx.putImageData(imgData, 0, 0);
-        } catch (e) { canvas.remove(); return; }
-
-        // Dithered until the photo scrolls in, then resolve to full colour
-        canvas.style.transition = 'none';
-        canvas.style.opacity = '1';
-        void canvas.offsetHeight;
-        canvas.style.transition = 'opacity 0.9s var(--cap-ease-power) 0.2s';
-        const io = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            io.disconnect();
-            canvas.style.opacity = '0';
-          });
-        }, { threshold: 0.3 });
-        io.observe(el);
-      };
-    });
   }
 
   _setupMenuOverlay() {
@@ -2267,7 +2242,9 @@ class Component extends DCLogic {
     // Section links: close, then glide to the target (frame px -> page px)
     [...overlay.querySelectorAll('a[data-target]')].forEach(a => {
       a.addEventListener('click', () => {
-        const frameTop = parseFloat(a.dataset.target);
+        let frameTop = parseFloat(a.dataset.target);
+        // Targets below the journey band gap shift with it
+        if (frameTop > 3889) frameTop += (this._jDelta || 0);
         const vp = document.getElementById('cap-viewport');
         const target = frameTop * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
         close();
@@ -2328,283 +2305,494 @@ class Component extends DCLogic {
     });
   }
 
-  _setupJourneyStory() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // Hard dependency on GSAP + ScrollTrigger (curve draw, slider transitions);
-    // bail cleanly if the libs failed to load rather than throwing mid-setup.
-    if (!window.gsap || !window.ScrollTrigger) return;
+  _setupJourneyBand() {
+    // Opens a dynamic scroll gap in the frame for the pinned journey and
+    // hides the old baked journey band [3140, 3890). The gap (delta, frame
+    // px) makes room for JOURNEY_VH viewport-heights of scrub:
+    // delta = hostFramePx - 750. jorig bookkeeping keeps the shift
+    // idempotent AND recomputable on resize; re-runs from the adjustFooter
+    // observer pipeline so newly hydrated elements are handled too.
     const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
+    const vp = document.getElementById('cap-viewport');
+    if (!scaler || !vp || this._journeyBandDone) return;
+    this._journeyBandDone = true;
 
-    // --- 1. S-curve Drawing Animation (Keep it exactly as is) ---
-    const svg = [...scaler.querySelectorAll('svg')].find(el => {
-      const top = parseFloat(el.style.top) || 0;
-      return top > 3160 && top < 3260 &&
-        parseInt(el.getAttribute('height') || '0', 10) > 600 &&
-        el.querySelectorAll('path').length === 1;
-    });
-    if (svg) {
-      const path = svg.querySelector('path');
-      const stroked = path && window.getComputedStyle(path).stroke !== 'none';
-      if (stroked) {
-        const len = path.getTotalLength();
-        path.style.strokeDasharray = len;
-        window.gsap.fromTo(path, { strokeDashoffset: len }, {
-          strokeDashoffset: len * 2,
-          ease: 'none',
-          scrollTrigger: { trigger: svg, start: 'top 82%', end: 'bottom 45%', scrub: true }
+    const JBAND_TOP = 3140;    // frame-y where the old journey band starts
+    const JBAND_BOTTOM = 3890; // first content below the old band
+    this._jBandTop = JBAND_TOP;
+    this._jVH = 4.3;           // host height in viewport-heights
+
+    const computeDelta = () => {
+      const s = vp.clientWidth / 1440;
+      const hostFrame = (this._jVH * window.innerHeight) / s;
+      return Math.max(0, Math.round(hostFrame - (JBAND_BOTTOM - JBAND_TOP)));
+    };
+    this._jComputeDelta = computeDelta;
+    this._jDelta = computeDelta();
+
+    const shiftJourney = () => {
+      const frameRoot = scaler.querySelector('[class*="sc-host"]');
+      if (!frameRoot) return;
+      const d = this._jDelta || 0;
+      // The frame's root container carries the baked design height (8372)
+      // WITH overflow:hidden — grow it by the delta or everything shifted
+      // past 8372 (the footer!) is clipped invisible.
+      const wraps = [frameRoot, ...frameRoot.querySelectorAll('div')];
+      for (let i = 0; i < wraps.length; i++) {
+        const w = wraps[i];
+        let oh = w.getAttribute('data-jorig-h');
+        oh = oh !== null ? parseFloat(oh) : parseFloat(w.style.height);
+        if (!isNaN(oh) && oh >= 8300 && oh <= 8450) {
+          if (w.getAttribute('data-jorig-h') === null) {
+            w.setAttribute('data-jorig-h', String(oh));
+          }
+          w.style.height = (oh + d) + 'px';
+        }
+      }
+
+      const els = frameRoot.querySelectorAll('*');
+      for (let i = 0; i < els.length; i++) {
+        const el = els[i];
+        // top-positioned elements
+        let orig = el.getAttribute('data-jorig-top');
+        orig = orig !== null ? parseFloat(orig) : parseFloat(el.style.top);
+        if (!isNaN(orig)) {
+          if (orig >= JBAND_TOP + 10 && orig < JBAND_BOTTOM) {
+            if (!el.getAttribute('data-jhidden')) {
+              el.setAttribute('data-jhidden', '1');
+              el.style.display = 'none';
+            }
+            continue;
+          }
+          // Footer family (>= 7300) stays: adjustFooter positions it with
+          // the delta itself.
+          if (orig >= JBAND_BOTTOM && orig < 7300) {
+            if (el.getAttribute('data-jorig-top') === null) {
+              el.setAttribute('data-jorig-top', String(orig));
+            }
+            el.style.top = (orig + d) + 'px';
+            continue;
+          }
+        }
+        // matrix-positioned SVGs
+        const tf = el.style.transform || '';
+        const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+        if (m) {
+          let ty = el.getAttribute('data-jorig-ty');
+          ty = ty !== null ? parseFloat(ty) : parseFloat(m[6]);
+          if (ty >= JBAND_TOP + 10 && ty < JBAND_BOTTOM) {
+            if (!el.getAttribute('data-jhidden')) {
+              el.setAttribute('data-jhidden', '1');
+              el.style.display = 'none';
+            }
+          } else if (ty >= JBAND_BOTTOM && ty < 7300) {
+            if (el.getAttribute('data-jorig-ty') === null) {
+              el.setAttribute('data-jorig-ty', String(ty));
+            }
+            el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + d) + ')';
+          }
+        }
+      }
+      // Journey photos can bleed above the band cut — hide them by class
+      ['fig-asset-9943ffc227529f04', 'fig-asset-531180345e372e44'].forEach((c) => {
+        frameRoot.querySelectorAll('[class*="' + c + '"]').forEach((el) => {
+          el.style.display = 'none';
         });
-      } else {
-        window.gsap.fromTo(svg, { clipPath: 'inset(0 0 100% 0)' }, {
-          clipPath: 'inset(0 0 0% 0)',
-          ease: 'none',
-          scrollTrigger: { trigger: svg, start: 'top 82%', end: 'bottom 45%', scrub: true }
+      });
+    };
+    this._shiftJourney = shiftJourney;
+    shiftJourney();
+    if (this._runAdjust) this._runAdjust();
+    if (this._fit) this._fit();
+  }
+
+  _setupJourneyPinned() {
+    // The pinned 3-phase journey (client-supplied design). Lives at BODY
+    // level: the scaler's transform breaks position:sticky, and
+    // #cap-viewport's overflow:hidden would hijack the sticky container —
+    // body/html have visible overflow, so the pin sticks to the window
+    // scroll. Positioned absolutely over the band gap that
+    // _setupJourneyBand opened (page-level coordinates via the viewport's
+    // document offset).
+    const vp = document.getElementById('cap-viewport');
+    if (!vp || document.getElementById('cap-journey') || !this._journeyBandDone) return;
+
+    const RED = 'rgb(209,32,47)';
+    const A = './components/assets/journey/';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const css = document.createElement('style');
+    css.id = 'cap-journey-css';
+    css.textContent =
+      '#cap-journey .cap-j-marker { white-space: nowrap; font-family: Montserrat, sans-serif; }' +
+      '#cap-journey .cap-j-rail { cursor: pointer; }';
+    document.head.appendChild(css);
+
+    const host = document.createElement('div');
+    host.id = 'cap-journey';
+    host.style.cssText = 'position:absolute; left:0; width:100%; z-index:40;';
+
+    const phaseHtml = (i, img, imgStyle, markers, wordA, wordB, dots) =>
+      '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
+        '<img class="cap-j-building" src="' + A + img + '" alt="" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% 100%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
+        '<svg class="cap-j-svg" viewBox="0 0 1600 820" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
+          '<path class="cap-j-path" d="M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670 C 207 732 243 812 240 840" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
+          dots.map((th) => {
+            const pts = { '0.26': [776, 210], '0.57': [560, 470], '0.82': [260, 670] };
+            const p = pts[th];
+            return '<circle class="cap-j-dot" data-th="' + th + '" cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
+          }).join('') +
+        '</svg>' +
+        markers +
+        '<div class="cap-j-word" style="position:absolute;right:40px;bottom:26px;font-family:Montserrat,sans-serif;font-size:112px;line-height:1;color:#fff;letter-spacing:-.01em;text-shadow:0 4px 24px rgba(50,65,80,.22);"><span style="font-weight:800;">' + wordA + '</span> <span style="font-weight:300;">' + wordB + '</span></div>' +
+      '</div>';
+
+    const marker = (th, left, top, year, assets, note, countTo) =>
+      '<div class="cap-j-marker" data-th="' + th + '" style="position:absolute;left:' + left + 'px;top:' + top + 'px;">' +
+        '<div style="font-size:42px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
+        '<div style="font-size:30px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
+        (note ? '<div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
+      '</div>';
+
+    host.innerHTML =
+      '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
+        '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:1600px;height:820px;transform:translate(-50%,-50%);transform-origin:center center;">' +
+          '<img src="' + A + 'sky.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;pointer-events:none;">' +
+          '<div class="cap-j-tint" style="position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
+          '<div style="position:absolute;left:120px;top:78px;font-family:Montserrat,sans-serif;font-size:64px;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
+          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:112px;width:900px;',
+            marker('0.26', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
+            marker('0.57', 596, 442, '2017', '1 Asset', '', 0) +
+            marker('0.82', 296, 642, '2018', '1 Asset', '', 0),
+            'Foundation', 'Phase', ['0.26', '0.57', '0.82']) +
+          phaseHtml(1, 'growth.png', 'right:-20px;bottom:55px;width:1040px;',
+            marker('0.26', 806, 180, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
+            marker('0.82', 296, 642, '2021', 'Assets', '', 2),
+            'Growth', 'Phase', ['0.26', '0.82']) +
+          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-40px;width:940px;',
+            marker('0.26', 806, 180, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
+            marker('0.57', 596, 442, '2024', '1 Asset', '', 0) +
+            marker('0.82', 296, 642, '2025', 'Assets', 'Expansion to Dubai', 3),
+            'Expansion', 'Phase', ['0.26', '0.57', '0.82']) +
+        '</div>' +
+        '<div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 52%, rgba(18,26,36,0.20) 100%);"></div>' +
+        '<div class="cap-j-railbox" style="position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:8;">' +
+          '<div class="cap-j-rail" data-i="0" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
+          '<div class="cap-j-rail" data-i="1" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
+          '<div class="cap-j-rail" data-i="2" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(host);
+
+    const pin = host.querySelector('.cap-j-pin');
+    const stage = host.querySelector('.cap-j-stage');
+    const phases = Array.from(host.querySelectorAll('.cap-j-phase'));
+    const rails = Array.from(host.querySelectorAll('.cap-j-rail'));
+    const skyTints = Array.from(host.querySelectorAll('.cap-j-tint'));
+    const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+    const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+
+    // curve dash init
+    phases.forEach((ph) => {
+      const path = ph.querySelector('.cap-j-path');
+      const len = path.getTotalLength();
+      path.dataset.len = len;
+      path.style.strokeDasharray = len;
+      path.style.strokeDashoffset = len;
+    });
+
+    // extras: pulse rings, glow tip, shimmer, ground shadow, word sweep
+    const NS = 'http://www.w3.org/2000/svg';
+    phases.forEach((ph) => {
+      const svg = ph.querySelector('.cap-j-svg');
+      const dots = Array.from(ph.querySelectorAll('.cap-j-dot'));
+      ph._rings = dots.map((d) => {
+        const ring = document.createElementNS(NS, 'circle');
+        ring.setAttribute('cx', d.getAttribute('cx'));
+        ring.setAttribute('cy', d.getAttribute('cy'));
+        ring.setAttribute('r', '9');
+        ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', '#ffffff');
+        ring.setAttribute('stroke-width', '2.5');
+        ring.style.opacity = '0';
+        svg.insertBefore(ring, d);
+        return ring;
+      });
+      const tip = document.createElementNS(NS, 'circle');
+      tip.setAttribute('r', '6');
+      tip.setAttribute('fill', '#ffffff');
+      tip.style.filter = 'drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(255,255,255,.55))';
+      tip.style.opacity = '0';
+      svg.appendChild(tip);
+      const sh = document.createElement('div');
+      sh.style.cssText = 'position:absolute;border-radius:50%;background:radial-gradient(ellipse at center, rgba(28,38,50,.42) 0%, rgba(28,38,50,.15) 46%, rgba(28,38,50,0) 72%);filter:blur(7px);pointer-events:none;z-index:0;opacity:0;transform-origin:center bottom;';
+      ph.insertBefore(sh, ph.firstChild);
+      const shim = document.createElementNS(NS, 'circle');
+      shim.setAttribute('r', '5');
+      shim.setAttribute('fill', '#ffffff');
+      shim.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,.9))';
+      shim.style.opacity = '0';
+      svg.appendChild(shim);
+
+      ph._tip = tip;
+      ph._shimmer = shim;
+      ph._path = ph.querySelector('.cap-j-path');
+      ph._len = parseFloat(ph._path.dataset.len);
+      ph._dots = dots;
+      ph._markers = Array.from(ph.querySelectorAll('.cap-j-marker'));
+      ph._counts = Array.from(ph.querySelectorAll('.cap-j-count'));
+      ph._building = ph.querySelector('.cap-j-building');
+      ph._shadow = sh;
+      ph._svg = svg;
+      ph._word = ph.querySelector('.cap-j-word');
+      ph._wordSpans = ph._word ? Array.from(ph._word.querySelectorAll('span')) : [];
+      if (!reduce) {
+        ph._wordSpans.forEach((sp) => {
+          sp.style.backgroundImage = 'linear-gradient(105deg,#fff 0%,#fff 42%,rgba(255,255,255,.32) 50%,#fff 58%,#fff 100%)';
+          sp.style.backgroundSize = '260% 100%';
+          sp.style.backgroundPositionX = '150%';
+          sp.style.webkitBackgroundClip = 'text';
+          sp.style.backgroundClip = 'text';
+          sp.style.webkitTextFillColor = 'transparent';
         });
       }
-    }
-
-    // --- 2. Dynamic Journey Slider Setup ---
-    const backdrop = scaler.querySelector('.fig-asset-9943ffc227529f04-36d3d657');
-    const building = scaler.querySelector('.fig-asset-531180345e372e44-3031d3f7');
-    if (!backdrop || !building) {
-      if ((this._journeyTries = (this._journeyTries || 0) + 1) < 40) {
-        setTimeout(() => this._setupJourneyStory(), 100);
-      }
-      return;
-    }
-
-    // Hide original Figma nodes/spans in the journey block (top 3080 to 3700)
-    [...scaler.querySelectorAll('span')].forEach(s => {
-      const top = parseFloat(s.style.top) || 0;
-      const txt = (s.textContent || '').trim();
-      if (top > 3340 && top < 3960 && txt !== 'Our Journey') {
-        s.style.display = 'none';
-      }
-    });
-    [...scaler.querySelectorAll('div')].forEach(d => {
-      const top = parseFloat(d.style.top) || 0;
-      const isDot = (d.style.borderRadius || '').includes('50%') && parseFloat(d.style.width) <= 30;
-      if (top > 3340 && top < 3960 && isDot) {
-        d.style.display = 'none';
+      const positionShadow = () => {
+        const b = ph._building;
+        if (!b || !sh || !b.offsetWidth) return;
+        const w = b.offsetWidth, h = b.offsetHeight;
+        const cx = b.offsetLeft + w * 0.5;
+        const baseY = b.offsetTop + h * 0.9;
+        const sw = w * 0.8, shh = 46;
+        sh.dataset.baseTop = (baseY - shh / 2);
+        sh.style.width = sw + 'px';
+        sh.style.height = shh + 'px';
+        sh.style.left = (cx - sw / 2) + 'px';
+        sh.style.top = (baseY - shh / 2) + 'px';
+      };
+      if (ph._building) {
+        if (ph._building.complete) positionShadow();
+        ph._building.addEventListener('load', positionShadow);
       }
     });
 
-    // Create dynamic content wrapper and sweep transition mask
-    let dynamicWrap = document.getElementById('cap-journey-dynamic-wrap');
-    if (dynamicWrap) dynamicWrap.remove();
-    dynamicWrap = document.createElement('div');
-    dynamicWrap.id = 'cap-journey-dynamic-wrap';
-    scaler.appendChild(dynamicWrap);
+    // geometry: host over the band gap (page coordinates — the host is a
+    // body child); stage scaled to the pin
+    const layout = () => {
+      const s = vp.clientWidth / 1440;
+      const vpPageTop = vp.getBoundingClientRect().top + window.scrollY;
+      host.style.top = Math.round(vpPageTop + this._jBandTop * s) + 'px';
+      host.style.height = Math.round(this._jVH * window.innerHeight) + 'px';
+      const w = pin.clientWidth, h = pin.clientHeight;
+      const scale = Math.min(w / 1600, h / 820);
+      stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+    };
 
-    let sweep = document.getElementById('cap-journey-sweep');
-    if (sweep) sweep.remove();
-    sweep = document.createElement('div');
-    sweep.id = 'cap-journey-sweep';
-    sweep.style.cssText = 'position:absolute; left:0; top:3219px; width:2200px; height:753px; background:linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 15%, rgba(255,255,255,1) 85%, rgba(255,255,255,0) 100%); z-index:15; pointer-events:none; transform:skewX(-20deg) translateX(-110%);';
-    scaler.appendChild(sweep);
+    let mx = 0, my = 0;
+    let curG = 0, targetG = 0;
+    let inView = true;
+    const smooth = 0.09;
 
-    // Setup navigation arrows
-    const arrowL = document.createElement('div');
-    arrowL.className = 'cap-journey-arrow';
-    arrowL.style.cssText = 'left:45px; top:3580px;';
-    arrowL.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>';
-    dynamicWrap.appendChild(arrowL);
+    const onScroll = () => {
+      const rect = host.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const total = host.offsetHeight - vh;
+      targetG = total > 0 ? clamp(-rect.top / total, 0, 1) : 0;
+      inView = rect.bottom > -300 && rect.top < vh + 300;
+    };
 
-    const arrowR = document.createElement('div');
-    arrowR.className = 'cap-journey-arrow';
-    arrowR.style.cssText = 'left:1350px; top:3580px;';
-    arrowR.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-    dynamicWrap.appendChild(arrowR);
+    const update = (g) => {
+      const t = g * 3;
+      const now = performance.now();
+      let active = 0, best = -1;
+      phases.forEach((ph, i) => {
+        const local = t - i;
+        const inLeft = clamp((local + 0.22) / 0.40, 0, 1);
+        const outRight = clamp((1.22 - local) / 0.40, 0, 1);
+        const op = Math.min(inLeft, outRight);
+        ph.style.opacity = op.toFixed(3);
+        ph.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
+        if (op > best) { best = op; active = i; }
 
-    // Dynamic phase labels container at the bottom
-    const phaseLabelWrap = document.createElement('div');
-    phaseLabelWrap.style.cssText = 'position:absolute; left:0; top:3890px; width:1440px; height:93px;';
-    dynamicWrap.appendChild(phaseLabelWrap);
+        const lc = clamp(local, 0, 1);
+        const zoomP = clamp(local / 0.6, 0, 1);
+        const zEase = reduce ? zoomP : easeOutBack(zoomP);
+        const s = 1.14 - 0.14 * zEase;
+        const ty = (1 - zoomP) * 26;
+        const drift = reduce ? 0 : (lc - 0.5) * -34;
+        const pbx = reduce ? 0 : mx * -16;
+        const pby = reduce ? 0 : my * -9;
+        const b = ph._building;
+        if (b) b.style.transform = 'translate(' + pbx.toFixed(1) + 'px, ' + (ty + drift + pby).toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+        if (ph._svg) ph._svg.style.transform = reduce ? '' : 'translate(' + (mx * 8).toFixed(1) + 'px, ' + (my * 5).toFixed(1) + 'px)';
 
-    const phaseWord = document.createElement('span');
-    phaseWord.style.cssText = 'position:absolute; left:1183px; top:0; font-family:Montserrat; font-weight:400; font-size:85px; color:#fff;';
-    phaseWord.textContent = 'Phase';
-    phaseLabelWrap.appendChild(phaseWord);
+        const sh = ph._shadow;
+        if (sh) {
+          const baseTop = parseFloat(sh.dataset.baseTop || '0');
+          sh.style.top = (baseTop + ty + drift).toFixed(1) + 'px';
+          sh.style.transform = 'scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
+          sh.style.opacity = (op * 0.55).toFixed(3);
+        }
 
-    const phaseTitle = document.createElement('span');
-    phaseTitle.style.cssText = 'position:absolute; left:637px; top:0; width:534px; font-family:Montserrat; font-weight:800; font-size:85px; color:#fff; text-align:right; cursor:pointer; pointer-events:auto;';
-    phaseLabelWrap.appendChild(phaseTitle);
+        const drawT = clamp(local / 0.72, 0, 1);
+        const path = ph._path, len = ph._len;
+        path.style.strokeDashoffset = (len * (1 - drawT)).toFixed(1);
 
-    // Slider Data
-    const JOURNEY_DATA = [
-      {
-        phase: "Foundation",
-        backdropClass: "fig-asset-9943ffc227529f04-36d3d657",
-        imageClass: "fig-asset-531180345e372e44-3031d3f7",
-        years: [
-          { year: "2016", count: "6 Assets", desc: "Pioneered Sale and Leaseback Model", x: 693, y: 3400 },
-          { year: "2017", count: "1 Asset", desc: "", x: 474, y: 3626 },
-          { year: "2018", count: "1 Asset", desc: "", x: 188, y: 3811 }
-        ]
-      },
-      {
-        phase: "Growth",
-        backdropClass: "fig-asset-9f9c83f5695a1af6",
-        imageClass: "fig-asset-76ba2d1ec2162f53",
-        years: [
-          { year: "2019", count: "3 Assets", desc: "3 Assets Acquired, 1 Asset Exited, Pioneered multi-structure revenue", x: 315, y: 3720 },
-          { year: "2021", count: "2 Assets", desc: "", x: 600, y: 3480 }
-        ]
-      },
-      {
-        phase: "Expansion",
-        backdropClass: "fig-asset-63186349250e044c-069f3173",
-        imageClass: "fig-asset-0f9374cd498a11f1-a670101d",
-        years: [
-          { year: "2023", count: "1 Asset", desc: "Portfolio successfully structured/refinanced, Captive partnership secured", x: 188, y: 3811 },
-          { year: "2024", count: "1 Asset", desc: "", x: 474, y: 3626 },
-          { year: "2025", count: "3 Assets", desc: "", x: 693, y: 3400 }
-        ]
-      }
-    ];
+        const tip = ph._tip;
+        if (tip) {
+          if (drawT > 0.002 && drawT < 0.997 && op > 0.05) {
+            const pt = path.getPointAtLength(len * drawT);
+            tip.setAttribute('cx', pt.x.toFixed(1));
+            tip.setAttribute('cy', pt.y.toFixed(1));
+            const fade = clamp(drawT / 0.05, 0, 1) * clamp((1 - drawT) / 0.08, 0, 1);
+            tip.style.opacity = (fade * op).toFixed(3);
+          } else {
+            tip.style.opacity = '0';
+          }
+        }
 
-    let activePhase = 0;
-    let activeYear = "";
-    let isTransitioning = false;
-
-    const renderSlide = (phaseIdx, yearValOpt = "") => {
-      // Clear year elements
-      const oldYears = [...dynamicWrap.querySelectorAll('.cap-dyn-year-item')];
-      oldYears.forEach(el => el.remove());
-
-      const data = JOURNEY_DATA[phaseIdx];
-      phaseTitle.textContent = data.phase;
-
-      // Select active year node (defaults to first in the list)
-      const yrData = data.years;
-      const targetYearData = yrData.find(y => y.year === yearValOpt) || yrData[0];
-      activeYear = targetYearData.year;
-
-      const animatedElements = [];
-
-      yrData.forEach(y => {
-        // Create Dot Node on S-curve
-        const dot = document.createElement('div');
-        dot.className = 'cap-journey-dot cap-dyn-year-item' + (y.year === activeYear ? ' cap-dot-active' : '');
-        dot.style.left = y.x + 'px';
-        dot.style.top = y.y + 'px';
-        dot.addEventListener('click', () => {
-          if (isTransitioning) return;
-          if (y.year !== activeYear) {
-            activeYear = y.year;
-            renderSlide(phaseIdx, y.year);
+        ph._dots.forEach((d, di) => {
+          const th = parseFloat(d.dataset.th);
+          const rev = clamp((drawT - (th - 0.04)) / 0.06, 0, 1);
+          d.style.opacity = rev.toFixed(3);
+          const ring = ph._rings[di];
+          if (drawT >= th && op > 0.2) {
+            if (!d._landed) d._landed = now;
+          } else if (drawT < th - 0.03) {
+            d._landed = null;
+            if (ring) ring.style.opacity = '0';
+          }
+          if (d._landed && ring) {
+            const e = (now - d._landed) / 640;
+            if (e < 1) {
+              ring.setAttribute('r', (9 + e * 22).toFixed(1));
+              ring.setAttribute('stroke-width', (2.5 * (1 - e) + 0.4).toFixed(2));
+              ring.style.opacity = ((1 - e) * 0.55 * op).toFixed(3);
+            } else {
+              ring.style.opacity = '0';
+            }
+            const de = (now - d._landed) / 320;
+            const ds = de < 1 ? 1 + 0.55 * (1 - de) * Math.sin(Math.min(de, 1) * Math.PI) : 1;
+            d.setAttribute('r', (9 * ds).toFixed(2));
+          } else if (d) {
+            d.setAttribute('r', '9');
           }
         });
-        dynamicWrap.appendChild(dot);
 
-        // Compute relative positions for details
-        const isLeftCurve = y.x < 400;
-        const textOffsetLeft = isLeftCurve ? 28 : 27; // Shift labels right of the node
-        const lx = y.x + textOffsetLeft;
-        const ly = y.y - 14;
-
-        // Year Text
-        const yearTxt = document.createElement('span');
-        yearTxt.className = 'cap-dyn-year-item';
-        yearTxt.style.cssText = `position:absolute; left:${lx}px; top:${ly}px; font-family:Montserrat; font-weight:800; font-size:36px; color:#fff; cursor:pointer; pointer-events:auto; line-height:100%;`;
-        yearTxt.textContent = y.year;
-        yearTxt.addEventListener('click', () => {
-          if (isTransitioning) return;
-          if (y.year !== activeYear) {
-            activeYear = y.year;
-            renderSlide(phaseIdx, y.year);
+        ph._markers.forEach((m) => {
+          const th = parseFloat(m.dataset.th);
+          const r = clamp((drawT - (th - 0.06)) / 0.10, 0, 1);
+          const e = easeOut(r);
+          m.style.opacity = e.toFixed(3);
+          m.style.transform = 'translateY(' + ((1 - e) * 16).toFixed(1) + 'px)';
+        });
+        ph._counts.forEach((c) => {
+          const mk = c.closest('.cap-j-marker');
+          const th = parseFloat(mk.dataset.th);
+          if (drawT >= th - 0.02 && op > 0.3) {
+            if (!c._counting && !c._done) c._counting = now;
+          } else if (op < 0.1) {
+            c._counting = null; c._done = false;
+          }
+          if (c._counting) {
+            const to = parseInt(c.dataset.to, 10);
+            const e = clamp((now - c._counting) / 720, 0, 1);
+            c.textContent = Math.round(to * easeOut(e));
+            if (e >= 1) { c._done = true; c._counting = null; }
           }
         });
-        dynamicWrap.appendChild(yearTxt);
-        animatedElements.push(yearTxt);
 
-        // Asset Count
-        const countTxt = document.createElement('span');
-        countTxt.className = 'cap-dyn-year-item';
-        countTxt.style.cssText = `position:absolute; left:${lx}px; top:${ly + 38}px; font-family:Montserrat; font-weight:400; font-size:24px; color:rgb(0,0,0); line-height:100%;`;
-        countTxt.textContent = y.count;
-        dynamicWrap.appendChild(countTxt);
-        animatedElements.push(countTxt);
+        if (ph._word) {
+          const wp = easeOut(clamp((local - 0.02) / 0.38, 0, 1));
+          ph._word.style.clipPath = reduce ? 'none' : 'inset(0 ' + ((1 - wp) * 100).toFixed(1) + '% 0 0)';
+          if (!reduce) {
+            if (wp >= 0.99 && op > 0.6) {
+              if (!ph._sweepStart) ph._sweepStart = now;
+            } else if (op < 0.2) { ph._sweepStart = null; }
+            if (ph._sweepStart) {
+              const e = (now - ph._sweepStart) / 950;
+              const posx = e < 1 ? (150 - e * 210) : -60;
+              ph._wordSpans.forEach((sp) => { sp.style.backgroundPositionX = posx.toFixed(0) + '%'; });
+            }
+          }
+        }
 
-        // Description Text (only show if it is the active highlighted node and has description)
-        if (y.year === activeYear && y.desc) {
-          const descTxt = document.createElement('span');
-          descTxt.className = 'cap-dyn-year-item';
-          descTxt.style.cssText = `position:absolute; left:${lx}px; top:${ly + 74}px; width:280px; font-family:Montserrat; font-weight:700; font-size:12px; color:rgb(0,0,0); line-height:140%; opacity:0;`;
-          descTxt.textContent = y.desc;
-          dynamicWrap.appendChild(descTxt);
-          animatedElements.push(descTxt);
+        const shim = ph._shimmer;
+        if (shim) {
+          if (!reduce && drawT >= 0.995 && op > 0.35) {
+            const sp = (now % 1500) / 1500;
+            const pt = path.getPointAtLength(len * sp);
+            shim.setAttribute('cx', pt.x.toFixed(1));
+            shim.setAttribute('cy', pt.y.toFixed(1));
+            shim.style.opacity = (Math.sin(sp * Math.PI) * 0.6 * op).toFixed(3);
+          } else {
+            shim.style.opacity = '0';
+          }
         }
       });
 
-      // Animate details fade and slide-up
-      window.gsap.fromTo(animatedElements, 
-        { opacity: 0, y: 15 }, 
-        { opacity: (i, el) => el.style.color === 'rgb(0,0,0)' ? 0.95 : 1, y: 0, duration: 0.65, stagger: 0.08, ease: 'power2.out' }
-      );
-    };
-
-    const transitionToPhase = (targetIdx, yearValOpt = "") => {
-      if (isTransitioning) return;
-      isTransitioning = true;
-
-      // 1. Start sweep diagonal wipe
-      window.gsap.set(sweep, { transform: 'skewX(-20deg) translateX(-110%)' });
-      window.gsap.to(sweep, {
-        transform: 'skewX(-20deg) translateX(110%)',
-        duration: 0.95,
-        ease: 'power3.inOut'
+      skyTints.forEach((tn) => { tn.style.opacity = (clamp(g, 0, 1) * 0.85).toFixed(3); });
+      rails.forEach((rl, i) => {
+        const on = i === active;
+        rl.style.opacity = on ? '1' : '0.4';
+        rl.style.transform = on ? 'scale(1.5)' : 'scale(1)';
       });
-
-      // 2. Perform swap at mid-wipe (450ms)
-      setTimeout(() => {
-        // Swap Backdrop class
-        backdrop.className = JOURNEY_DATA[targetIdx].backdropClass;
-        // Swap Building Class
-        building.className = JOURNEY_DATA[targetIdx].imageClass;
-
-        // Render target phase content
-        activePhase = targetIdx;
-        renderSlide(targetIdx, yearValOpt);
-
-        // Build image entrance slide
-        window.gsap.fromTo(building, { opacity: 0.2, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.8, ease: 'power2.out' });
-      }, 450);
-
-      // 3. Reset sweep overlay at the end
-      setTimeout(() => {
-        window.gsap.set(sweep, { transform: 'skewX(-20deg) translateX(-110%)' });
-        isTransitioning = false;
-      }, 1000);
     };
 
-    const prevPhase = () => {
-      const prevIdx = (activePhase - 1 + JOURNEY_DATA.length) % JOURNEY_DATA.length;
-      transitionToPhase(prevIdx);
-    };
-
-    const nextPhase = () => {
-      const nextIdx = (activePhase + 1) % JOURNEY_DATA.length;
-      transitionToPhase(nextIdx);
-    };
-
-    // Bind event listeners to arrows
-    arrowL.addEventListener('click', prevPhase);
-    arrowR.addEventListener('click', nextPhase);
-    phaseTitle.addEventListener('click', nextPhase);
-
-    // Initial render
-    renderSlide(0);
-
-    // Also support clicking a different phase's year from other parts if needed,
-    // and make our dynamic wrapper animate in smoothly when scroll triggers first enter.
-    window.ScrollTrigger.create({
-      trigger: backdrop,
-      start: 'top 80%',
-      onEnter: () => {
-        window.gsap.fromTo('.cap-dyn-year-item', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: 'expo.out' });
+    const tick = () => {
+      // Off-screen: skip ALL journey work (lerp + per-frame path math) —
+      // the page runs several rAF systems and this one is the heaviest.
+      if (inView) {
+        curG += (targetG - curG) * (reduce ? 1 : smooth);
+        if (Math.abs(targetG - curG) < 0.00006) curG = targetG;
+        update(curG);
+      } else {
+        curG = targetG; // arrive settled when scrolled back into view
       }
-    });
+      this._jRaf = requestAnimationFrame(tick);
+    };
+
+    rails.forEach((rl) => rl.addEventListener('click', () => {
+      const i = parseInt(rl.dataset.i, 10);
+      const total = host.offsetHeight - window.innerHeight;
+      const y = window.scrollY + host.getBoundingClientRect().top + ((i + 0.5) / 3) * total;
+      window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+    }));
+
+    if (!reduce) {
+      pin.addEventListener('mousemove', (e) => {
+        const r = pin.getBoundingClientRect();
+        mx = clamp(((e.clientX - r.left) / r.width - 0.5) * 2, -1, 1);
+        my = clamp(((e.clientY - r.top) / r.height - 0.5) * 2, -1, 1);
+      });
+      pin.addEventListener('mouseleave', () => { mx = 0; my = 0; });
+    }
+
+    const onResize = () => {
+      if (this._jComputeDelta) {
+        const nd = this._jComputeDelta();
+        if (nd !== this._jDelta) {
+          this._jDelta = nd;
+          if (this._shiftJourney) this._shiftJourney();
+          if (this._runAdjust) this._runAdjust();
+          if (this._fit) this._fit();
+        }
+      }
+      layout();
+      onScroll();
+    };
+
+    layout();
+    onScroll();
+    update(targetG);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    this._jRaf = requestAnimationFrame(tick);
+    this._jCleanup = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      if (this._jRaf) cancelAnimationFrame(this._jRaf);
+    };
   }
 
   _setupStatCounters() {
@@ -2686,26 +2874,6 @@ class Component extends DCLogic {
       }, { threshold: 0.4 });
       io.observe(el);
     });
-  }
-
-  _setupJourneyDISABLED() {
-    const j = document.getElementById('cap-journey');
-    if (!j) return;
-    const phases = [...j.querySelectorAll('.cap-phase')];
-    const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
-    this._onJourney = () => {
-      const sc = document.getElementById('cap-scaler');
-      const m = (sc.style.transform || '').match(/scale\(([^)]+)\)/);
-      const s = m ? parseFloat(m[1]) : 1;
-      const topPage = 3219 * s, hPage = 753 * s;
-      const vh = window.innerHeight;
-      const prog = clamp((window.scrollY + vh - topPage) / (hPage + vh));
-      const idx = prog < 0.38 ? 0 : prog < 0.68 ? 1 : 2;
-      phases.forEach((p, i) => { p.style.opacity = i === idx ? '1' : '0'; });
-    };
-    this._onJourney();
-    window.addEventListener('scroll', this._onJourney, { passive: true });
-    window.addEventListener('resize', this._onJourney);
   }
 
   _setupReveal() {
@@ -2805,7 +2973,7 @@ class Component extends DCLogic {
         const style = e.getAttribute('style') || '';
         const top = parseFloat(e.style.top) || 0;
         const hasRedBg = style.includes('rgba(209,32,47') || style.includes('rgba(209, 32, 47');
-        if (top >= 4060 && top <= 5460 && hasRedBg) {
+        if (top >= 4060 + (this._jDelta || 0) && top <= 5460 + (this._jDelta || 0) && hasRedBg) {
           e.style.display = 'none';
         }
       });
@@ -3802,6 +3970,7 @@ class Component extends DCLogic {
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
+    if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
       window.removeEventListener('resize', this._onRevealScroll);

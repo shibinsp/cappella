@@ -19,9 +19,18 @@ async function gotoHome(page) {
     .locator('span[role="link"]', { hasText: 'ABOUT US' })
     .first()
     .waitFor({ state: 'attached', timeout: 15000 });
+  // The journey band setup (deferred ~1.6s) reorganizes the whole page
+  // (shifts every element below the band) — clicking before it lands races
+  // moving targets. The #cap-journey host appears only after that reorg.
+  await page.waitForSelector('#cap-journey', { timeout: 15000 });
+  await page.waitForTimeout(300); // one settle beat for the reflow
 }
 
 test.describe('homepage regression', () => {
+  // Each of these loads the full ~11k-px animated homepage; under parallel-
+  // suite CPU contention they slow down without being broken — give the
+  // whole group headroom instead of racing the 30s default.
+  test.describe.configure({ timeout: 90000 });
   test('smoke: loads at /, hero renders, no console errors or failed assets', async ({ page }) => {
     const errors = attachErrorCapture(page);
     await page.goto('/', { waitUntil: 'networkidle' });
@@ -111,9 +120,25 @@ test.describe('homepage regression', () => {
 
   test('footer spans navigate (PORTFOLIO → projects)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'nav interaction covered at desktop scale');
+    // The page is much taller with the pinned journey gap — scrolling to the
+    // footer and binding retries need headroom under parallel load.
+    testInfo.setTimeout(60000);
     await gotoHome(page);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(1500);
+    // Wait for the footer reveal flip, re-nudging the scroll each poll (the
+    // flip listens to scroll; under heavy CPU contention a single programmatic
+    // jump can land before the listener registers).
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+            return document.getElementById('cap-scaler').classList.contains('cap-footer-in');
+          }),
+        { timeout: 25000 }
+      )
+      .toBe(true);
+    // …then let the staggered entrance finish so the click target is stable.
+    await page.waitForTimeout(1800);
     await page.locator('span[role="link"]', { hasText: 'PORTFOLIO' }).first().click();
     await expect(page).toHaveURL(/projects\.html$/);
   });

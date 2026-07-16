@@ -77,11 +77,17 @@ test.describe('animation system', () => {
 
 test.describe('homepage preloader', () => {
   const HOME = '/Cappella%20Website.dc.html';
+  // The curtain exits via a traveling diagonal gradient-mask fade (the panel
+  // itself never moves) — detect the inline exit values on the 9999 div.
   const exitStarted = (page) =>
     page.waitForFunction(() => {
       const els = [...document.querySelectorAll('body > div')];
       return els.some(
-        (d) => d.style.zIndex === '9999' && d.style.transform.includes('translateY(-100%)')
+        (d) =>
+          d.style.zIndex === '9999' &&
+          d.style.opacity === '0' &&
+          (d.style.maskPosition || d.style.webkitMaskPosition || '').includes('100%') &&
+          !d.style.transform.includes('translateY(-100%)')
       );
     }, { timeout: 20000 });
 
@@ -117,6 +123,7 @@ test.describe('homepage preloader', () => {
           const nt = parse(state.nameT);
           window.__preGeo = {
             fade: !!state.fade,
+            wipe: !!state.wipe,
             flightRan: !!(nt && state.nameBase),
             // intended landing = base box transformed about origin 0 0
             // (only the wordmark flies — the C icon fades out in place)
@@ -149,6 +156,16 @@ test.describe('homepage preloader', () => {
         }
         const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
         if (wm) state.wm = rr(wm.getBoundingClientRect());
+        // Curtain exit must be the traveling diagonal mask fade — never the
+        // old slide-up transform.
+        const curtain = [...document.querySelectorAll('body > div')].find(
+          (d) => d.style.zIndex === '9999'
+        );
+        if (curtain && curtain.style.opacity === '0') {
+          state.wipe =
+            (curtain.style.maskPosition || curtain.style.webkitMaskPosition || '').includes('100%') &&
+            !curtain.style.transform.includes('translateY(-100%)');
+        }
       }, 40);
     });
     await page.goto(HOME);
@@ -170,6 +187,9 @@ test.describe('homepage preloader', () => {
       // run: lockup fades in place (never flies), header still handed off.
       expect(geo.fade, `neither flight nor fade ran (sample: ${JSON.stringify(geo)})`).toBe(true);
     }
+    // Whichever lockup path ran, the curtain itself must have exited via the
+    // diagonal wipe + fade, not the old slide-up.
+    expect(geo.wipe, 'curtain exited via clip-path wipe + fade').toBe(true);
 
     // After cleanup: flown nodes gone, real lockup visible
     await page.waitForTimeout(400);
@@ -222,6 +242,81 @@ test.describe('homepage preloader', () => {
     }));
     expect(end.preloaderGone).toBe(true);
     expect(end.scrollY).toBeGreaterThan(4000);
+  });
+});
+
+test.describe('pinned journey', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+
+  test('pin sticks and phases progress with scroll', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+
+    const geom = await page.evaluate(() => {
+      const host = document.getElementById('cap-journey');
+      return {
+        top: window.scrollY + host.getBoundingClientRect().top,
+        total: host.offsetHeight - window.innerHeight
+      };
+    });
+    expect(geom.total).toBeGreaterThan(1000); // real scrub room
+
+    for (let i = 0; i < 3; i++) {
+      const y = geom.top + ((i + 0.5) / 3) * geom.total;
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      // Lerp smoothing (0.09/frame) needs time to settle
+      await expect
+        .poll(
+          () => page.evaluate((i) => +document.querySelectorAll('.cap-j-phase')[i].style.opacity, i),
+          { timeout: 8000 }
+        )
+        .toBeGreaterThan(0.9);
+      // The pin must be filling the viewport
+      const pin = await page.evaluate(() => {
+        const r = document.querySelector('.cap-j-pin').getBoundingClientRect();
+        return { top: Math.round(r.top), h: Math.round(r.height) };
+      });
+      expect(pin.top).toBe(0);
+      expect(pin.h).toBe(await page.evaluate(() => window.innerHeight));
+    }
+
+    // Old journey band content must be hidden
+    const hidden = await page.evaluate(
+      () => document.querySelectorAll('#cap-scaler [data-jhidden]').length
+    );
+    expect(hidden).toBeGreaterThan(5);
+    expectNoPageErrors(errors);
+  });
+
+  test('content below the pin is shifted and reachable', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'geometry asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+
+    // The frame opened a gap: elements below the band carry jorig bookkeeping
+    const shift = await page.evaluate(() => {
+      const els = [...document.querySelectorAll('#cap-scaler [data-jorig-top]')];
+      if (!els.length) return null;
+      const el = els[0];
+      return {
+        count: els.length,
+        delta: parseFloat(el.style.top) - parseFloat(el.getAttribute('data-jorig-top'))
+      };
+    });
+    expect(shift.count).toBeGreaterThan(30);
+    expect(shift.delta).toBeGreaterThan(500);
+
+    // Footer still lands at the very bottom and is fully composed
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(2500);
+    const wm = page.locator('.fig-asset-7cb777f5a65019d1-0d894d80');
+    await expect
+      .poll(() => wm.evaluate((el) => getComputedStyle(el).opacity), { timeout: 8000 })
+      .toBe('1');
   });
 });
 
