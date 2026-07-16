@@ -164,9 +164,22 @@ a {
 }
 
 /* ---------- Header ---------- */
+/* Sticky: pinned to the top on scroll. z-index must beat the menu backdrop
+   (55) — the mobile nav panel is a fixed CHILD of the header, so it lives in
+   the header's stacking context and would otherwise be trapped under the
+   backdrop. No transform/filter here ever: either would become the containing
+   block for that fixed panel. */
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
   border-bottom: 1px solid var(--cap-hairline);
   background: var(--cap-white);
+  transition: box-shadow 0.35s ease;
+}
+
+.site-header.is-scrolled {
+  box-shadow: 0 12px 32px rgba(17, 17, 17, 0.08);
 }
 
 .site-header .container {
@@ -332,8 +345,9 @@ a {
     pointer-events: auto;
   }
 
-  .js body.menu-open,
-  body.menu-open {
+  /* Scroll lock on <html>, NOT <body>: body overflow:hidden would become
+     the sticky header's scrollport and un-stick it while the menu is open. */
+  html.menu-open {
     overflow: hidden;
   }
 }

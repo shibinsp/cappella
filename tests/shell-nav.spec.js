@@ -83,6 +83,36 @@ for (const pageDef of PAGES) {
   });
 }
 
+test.describe('sticky header', () => {
+  for (const pageDef of PAGES) {
+    test(`${pageDef.file}: header stays pinned to the top while scrolled`, async ({ page }) => {
+      await page.goto(`/${pageDef.file}`);
+      await page.waitForTimeout(400);
+      // Re-nudge inside the poll (an early scrollTo can be swallowed while
+      // Lenis registers), and poll the is-scrolled class too — the scroll
+      // event that sets it fires a frame AFTER scrollTo, so a one-shot read
+      // races it under parallel-suite CPU contention.
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() => {
+              window.scrollTo(0, 900);
+              return (
+                window.scrollY > 300 &&
+                document.querySelector('.site-header').classList.contains('is-scrolled')
+              );
+            }),
+          { timeout: 10000 }
+        )
+        .toBe(true);
+      const top = await page.evaluate(() =>
+        Math.round(document.querySelector('.site-header').getBoundingClientRect().top)
+      );
+      expect(top, 'header pinned at viewport top').toBe(0);
+    });
+  }
+});
+
 test.describe('mobile menu behavior', () => {
   test('opens, closes via button/Escape/backdrop, restores focus, locks scroll', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'desktop', 'panel exists only <900px (tablet + mobile projects)');
@@ -100,11 +130,12 @@ test.describe('mobile menu behavior', () => {
     await expect(nav).toBeInViewport();
     // Focus moved into the panel
     await expect(nav.locator('a').first()).toBeFocused();
-    // Body scroll locked
-    const bodyOverflow = await page.evaluate(
-      () => getComputedStyle(document.body).overflow
+    // Scroll locked — on <html>, not <body> (body overflow:hidden would
+    // un-stick the sticky header while the menu is open)
+    const rootOverflow = await page.evaluate(
+      () => getComputedStyle(document.documentElement).overflow
     );
-    expect(bodyOverflow).toBe('hidden');
+    expect(rootOverflow).toBe('hidden');
 
     // Escape closes and returns focus to the toggle
     await page.keyboard.press('Escape');

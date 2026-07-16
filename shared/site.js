@@ -62,6 +62,10 @@
       nav.classList.add('is-open');
       if (backdrop) backdrop.classList.add('is-open');
       toggle.setAttribute('aria-expanded', 'true');
+      // Scroll lock lives on <html>: overflow:hidden on <body> would make
+      // body the sticky header's scrollport and un-stick it (taking the
+      // close toggle off-screen with it).
+      document.documentElement.classList.add('menu-open');
       document.body.classList.add('menu-open');
       if (lenis) lenis.stop();
       var first = nav.querySelector('a');
@@ -72,6 +76,7 @@
       nav.classList.remove('is-open');
       if (backdrop) backdrop.classList.remove('is-open');
       toggle.setAttribute('aria-expanded', 'false');
+      document.documentElement.classList.remove('menu-open');
       document.body.classList.remove('menu-open');
       if (lenis) lenis.start();
       if (restoreFocus !== false && lastFocused && lastFocused.focus) {
@@ -459,9 +464,24 @@
     });
   }
 
+  /* =====================================================================
+     Sticky header: soft shadow once the page is scrolled (the pinning
+     itself is pure CSS — position: sticky on .site-header).
+     ===================================================================== */
+  function initStickyHeader() {
+    var header = document.querySelector('.site-header');
+    if (!header) return;
+    var update = function () {
+      header.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+  }
+
   /* ===================================================================== */
   initLenis();
   initMenu();
+  initStickyHeader();
   initEnter();
   initHeroText(); // before initReveals so char mode is set when .is-in lands
   initReveals();
