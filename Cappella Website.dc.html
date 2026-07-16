@@ -667,13 +667,14 @@ class Component extends DCLogic {
             el.setAttribute('data-cap-shifted', '1');
             continue;
           }
-          // SVGs positioned via transform matrices
+          // SVGs positioned via transform matrices (tolerate appended terms
+          // like a reveal system's trailing scaleX — see shiftJourney)
           const tf = el.style.transform || '';
-          const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+          const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)(.*)$/);
           if (m) {
             const ty = parseFloat(m[6]);
             if (ty >= CAP_SHIFT_FROM) {
-              el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + CAP_BAND_SHIFT) + ')';
+              el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + CAP_BAND_SHIFT) + ')' + (m[7] || '');
               el.setAttribute('data-cap-shifted', '1');
             }
           }
@@ -917,7 +918,8 @@ class Component extends DCLogic {
       // this._setupMetaLabels();
       safe(() => this._setupFooterAnimations(), 'footer');
       safe(() => this._setupFooterWordmark(), 'footerWordmark');
-      safe(() => this._setupOperatorsMarquee(), 'marquee');
+      // (Operators marquee removed per client feedback 2026-07-16 — the
+      // baked static logo grid + triangle decorations render as designed.)
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -1262,10 +1264,15 @@ class Component extends DCLogic {
 
     // 1. VERTICAL GRID LINES REVEAL (scales scaleX from 0 to 1 for rotated 90deg SVGs)
     const svgs = [...scaler.querySelectorAll('svg')].filter(el => {
-      const top = parseFloat(el.style.top) || 0;
-      if (top > 1000) return false;
       const transform = el.style.transform || '';
-      return transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0');
+      if (!(transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0'))) return false;
+      // Rotated svgs are positioned by the matrix ty, NOT style.top — the
+      // old `style.top || 0` default adopted the portfolio's red rail lines
+      // (3,700px down the page) and the appended scaleX then broke the
+      // journey band's anchored matrix shift, stranding them off-position.
+      const mm = transform.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*[-\d.]+,\s*([-\d.]+)\)/);
+      const y = mm ? parseFloat(mm[1]) : (parseFloat(el.style.top) || 0);
+      return y <= 1000;
     });
 
     svgs.forEach((el, idx) => {
@@ -2123,103 +2130,6 @@ class Component extends DCLogic {
     // top edge, so the old ghost is impossible too.
   }
 
-  _setupOperatorsMarquee() {
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler || this._mqBuilt) return;
-    this._mqBuilt = true;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // Operator logos (fig-asset background divs) measured from the frame
-    const ROW_A = ['fig-asset-79356d431474ada0', 'fig-asset-91ee4f07ef1ea5a8',
-                   'fig-asset-620dc3d6704178dd', 'fig-asset-1ec5ca333db94fc0'];
-    const ROW_B = ['fig-asset-1e639ffbc0aca215', 'fig-asset-1462c629c4c2879d',
-                   'fig-asset-55a8dd7666421f70-d65f9521'];
-    const rowAEls = ROW_A.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
-    const rowBEls = ROW_B.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
-    if (rowAEls.length < 3 || rowBEls.length < 2) return; // frame changed — keep the grid
-
-    // Hide the static grid + the triangle decorations woven between the rows
-    [...rowAEls, ...rowBEls].forEach(el => { el.style.display = 'none'; });
-    [...scaler.querySelectorAll('div')].forEach(el => {
-      const st = el.getAttribute('style') || '';
-      const top = parseFloat(el.style.top) || 0;
-      if (top > 5820 && top < 7160 && st.includes('linear-gradient') && st.includes('209, 32, 47')) {
-        el.style.display = 'none';
-      }
-    });
-
-    // Build a marquee band: [row of cells]x(repeats), translated on rAF
-    const rows = [];
-    const buildBand = (els, top, dir) => {
-      const band = document.createElement('div');
-      // data-cap-own: OUR injected element with final coordinates —
-      // adjustFooter's footer-capture window must never adopt it.
-      band.setAttribute('data-cap-own', '1');
-      band.style.cssText =
-        'position:absolute; left:0; top:' + top + 'px; width:1440px; height:170px;' +
-        'overflow:hidden; z-index:3; opacity:0; transition: opacity 1s var(--cap-ease-expo);';
-      const track = document.createElement('div');
-      track.style.cssText =
-        'display:flex; align-items:center; height:100%; width:max-content;' +
-        'will-change:transform;';
-      const GAP = 150;
-      const seqW = els.reduce((sum, el) => sum + (parseFloat(el.style.width) || 180) + GAP, 0);
-      const repeats = Math.max(3, Math.ceil((1440 + seqW) / seqW) + 1);
-      for (let rep = 0; rep < repeats; rep++) {
-        els.forEach(el => {
-          const cell = el.cloneNode(true);
-          cell.style.display = 'block';
-          cell.style.position = 'static';
-          cell.style.left = 'auto';
-          cell.style.top = 'auto';
-          cell.style.transform = 'none';
-          cell.style.margin = '0 ' + (GAP / 2) + 'px';
-          cell.style.flex = '0 0 auto';
-          cell.style.transition = 'transform 0.5s var(--cap-ease-expo)';
-          cell.addEventListener('mouseenter', () => { cell.style.transform = 'translateY(-6px)'; });
-          cell.addEventListener('mouseleave', () => { cell.style.transform = 'translateY(0)'; });
-          track.appendChild(cell);
-        });
-      }
-      band.appendChild(track);
-      scaler.appendChild(band);
-      const row = { band, track, seqW, dir, x: 0, speed: 0, targetSpeed: 34 };
-      band.addEventListener('mouseenter', () => { row.targetSpeed = 0; });
-      band.addEventListener('mouseleave', () => { row.targetSpeed = 34; });
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => { if (entry.isIntersecting) { band.style.opacity = '1'; io.disconnect(); } });
-      }, { threshold: 0.3 });
-      io.observe(band);
-      rows.push(row);
-    };
-    buildBand(rowAEls, 6070 + (this._jDelta || 0), -1);
-    buildBand(rowBEls, 6590 + (this._jDelta || 0), 1);
-
-    // Shared drive loop — skips work while both bands are off-screen.
-    // The bands respond to scroll momentum: fast scrolling whips the logos
-    // along with it (Lenis exposes velocity), easing back to the 34px/s
-    // cruise. Hover-pause still wins (targetSpeed 0 is never boosted).
-    let lastT = performance.now();
-    const step = (now) => {
-      const dt = Math.min((now - lastT) / 1000, 0.05);
-      lastT = now;
-      const vel = this._lenis ? Math.min(Math.abs(this._lenis.velocity || 0) * 0.6, 55) : 0;
-      let visible = false;
-      rows.forEach(row => {
-        const r = row.band.getBoundingClientRect();
-        if (r.bottom < -100 || r.top > window.innerHeight + 100) return;
-        visible = true;
-        const target = row.targetSpeed === 0 ? 0 : row.targetSpeed + vel;
-        row.speed += (target - row.speed) * 0.06; // eased pause/resume/boost
-        row.x = (row.x + row.dir * row.speed * dt) % row.seqW;
-        const offset = row.dir === -1 ? row.x : row.x - row.seqW;
-        row.track.style.transform = 'translateX(' + offset.toFixed(2) + 'px)';
-      });
-      this._mqRaf = requestAnimationFrame(step);
-    };
-    this._mqRaf = requestAnimationFrame(step);
-  }
-
   _setupMenuOverlay() {
     if (document.getElementById('cap-menu-btn')) return;
 
@@ -2451,9 +2361,11 @@ class Component extends DCLogic {
             continue;
           }
         }
-        // matrix-positioned SVGs
+        // matrix-positioned SVGs. Tolerate appended terms (e.g. a reveal
+        // system's trailing scaleX) — an anchored match would silently skip
+        // the element and strand it at its unshifted position.
         const tf = el.style.transform || '';
-        const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+        const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)(.*)$/);
         if (m) {
           let ty = el.getAttribute('data-jorig-ty');
           ty = ty !== null ? parseFloat(ty) : parseFloat(m[6]);
@@ -2466,7 +2378,7 @@ class Component extends DCLogic {
             if (el.getAttribute('data-jorig-ty') === null) {
               el.setAttribute('data-jorig-ty', String(ty));
             }
-            el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + d) + ')';
+            el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + d) + ')' + (m[7] || '');
           }
         }
       }
@@ -2476,6 +2388,22 @@ class Component extends DCLogic {
           el.style.display = 'none';
         });
       });
+      // The left red rail's upper segment was baked to start 82px below the
+      // old journey band (its counterpart lived inside the band). With the
+      // pinned journey that offset reads as a floating gap — anchor the
+      // segment's top to the band bottom (3890) and stretch it so its lower
+      // end stays put (485 → 567). Idempotent: jorig-ty then feeds every
+      // later pass, and the tolerant matrix rewrite preserves the scaleX.
+      const rail = [...frameRoot.querySelectorAll('svg[width="485"]')].find((el) =>
+        /^matrix\(0,\s*1,\s*-1,\s*0,\s*178,\s*[-\d.]+\)/.test(el.style.transform || '')
+      );
+      if (rail && !rail.getAttribute('data-cap-rail')) {
+        rail.setAttribute('data-cap-rail', '1');
+        rail.setAttribute('data-jorig-ty', '3890');
+        rail.style.transformOrigin = '0 0';
+        rail.style.transform =
+          'matrix(0, 1, -1, 0, 178, ' + (3890 + d) + ') scaleX(' + (567 / 485).toFixed(5) + ')';
+      }
     };
     this._shiftJourney = shiftJourney;
     shiftJourney();
@@ -3637,13 +3565,28 @@ class Component extends DCLogic {
       wrap.innerHTML = '';
       if (cityName === 'Hyderabad') return; // photo cards own this city
       const assets = PORTFOLIO_DATA.filter(a => a.city === cityName);
+      // Placeholder height adapts to city density: Bangalore's 2×3 grid has
+      // to fit the same card region as a 1-2 asset city.
+      const phH = assets.length >= 5 ? 150 : 210;
       assets.forEach(a => {
         const tile = document.createElement('div');
         tile.style.cssText =
           'background:rgb(255,255,255); border:1px solid rgba(209,32,47,0.3);' +
-          'border-top:3px solid rgb(209,32,47); padding:30px 28px 26px;' +
-          'pointer-events:auto; opacity:0;';
+          'border-top:3px solid rgb(209,32,47);' +
+          'pointer-events:auto; opacity:0; overflow:hidden;';
         tile.innerHTML =
+          // Image placeholder: brand mark on the red field with a faint
+          // dot-grid texture (no photography exists for these assets — no
+          // stock imagery invented, the C mark holds the slot)
+          '<div style="height:' + phH + 'px; background:rgb(209,32,47);' +
+            'background-image:radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.6px);' +
+            'background-size:14px 14px;' +
+            'display:flex; align-items:center; justify-content:center;' +
+            'border-bottom:1px solid rgba(209,32,47,0.3);">' +
+            '<img src="./components/assets/eae7f9bdb03982f5.png" alt="" ' +
+              'style="width:64px; height:auto; filter:brightness(0) invert(1); opacity:0.92;">' +
+          '</div>' +
+          '<div style="padding:24px 28px 26px;">' +
           '<div style="font-family:Montserrat,sans-serif; font-weight:600; font-size:26px;' +
             'line-height:1.25; color:rgb(0,0,0);">' + a.name + '</div>' +
           '<div style="font-family:\'Space Mono\',monospace; font-size:12px; letter-spacing:1.5px;' +
@@ -3655,10 +3598,13 @@ class Component extends DCLogic {
               '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">SF BUA</div></div>' +
             '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.students + ' / ' + a.capacity + '</div>' +
               '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">STUDENTS</div></div>' +
+          '</div>' +
           '</div>';
         wrap.appendChild(tile);
         // Scramble hover on the school name, matching the photo-card labels
-        scrambleText(tile.firstChild, a.name);
+        // (the name div now lives inside the padded text block, after the
+        // placeholder)
+        scrambleText(tile.children[1].firstChild, a.name);
       });
       const tiles = [...wrap.children];
       if (window.gsap) {
@@ -4099,7 +4045,6 @@ class Component extends DCLogic {
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
-    if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
     if (this._fwRaf) cancelAnimationFrame(this._fwRaf);
     if (this._jCleanup) this._jCleanup();
