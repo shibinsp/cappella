@@ -3616,8 +3616,59 @@ class Component extends DCLogic {
       });
     });
 
-    // (Scroll parallax removed — the design calls for a rigid card grid.
-    // parallaxY stays 0, so the card/label transforms resolve to translateY(0).)
+    // --- Counter-scroll columns: as the section moves through the viewport
+    // the LEFT card column rises while the RIGHT column sinks, so the grid
+    // continuously slides past itself. Scrubbed off scroll position (fully
+    // reversible) with lerp smoothing. Drives c.parallaxY (already consumed
+    // by updateCardTransforms); the rAF writes transforms directly each
+    // frame for visible cards — a transform transition would smear per-frame
+    // motion, so the guard strips it — and idles while the section is
+    // off-screen (journey precedent: no background rAF work).
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && cards.length) {
+      let minT = Infinity, maxB = 0, minL = Infinity, maxR = 0;
+      cards.forEach(c => {
+        minT = Math.min(minT, c.frameTop); maxB = Math.max(maxB, c.frameTop + c.frameH);
+        minL = Math.min(minL, c.frameLeft); maxR = Math.max(maxR, c.frameLeft + c.frameW);
+      });
+      const midL = (minL + maxR) / 2;
+      const isRight = c => c.frameLeft + c.frameW / 2 > midL;
+      const AMP = 100; // px of column travel each way, in screen px
+      let cur = 0;
+      const tick = () => {
+        this._pfRaf = requestAnimationFrame(tick);
+        const s = sc();
+        const scalerRect = scaler.getBoundingClientRect();
+        const topPage = scalerRect.top + minT * s;
+        const botPage = scalerRect.top + maxB * s;
+        const vh = window.innerHeight;
+        if (botPage < -300 || topPage > vh + 300) { cur = 0; return; }
+        const mid = (topPage + botPage) / 2 - vh / 2; // grid centre vs viewport centre
+        const target = Math.max(-1, Math.min(1, -mid / (vh * 0.9)));
+        cur += (target - cur) * 0.1; // lenis-style glide
+        cards.forEach(c => {
+          // drift computed in screen px, applied in frame px (inside scaler)
+          c.parallaxY = (isRight(c) ? cur : -cur) * AMP / s;
+          // Filter-hidden cards keep their exit transform + transition
+          if (!c.cities.includes(currentCityName)) return;
+          if ((c.img.style.transition || '').indexOf('transform') !== -1) {
+            c.img.style.transition = 'opacity 0.4s ease';
+            c.label.style.transition = 'opacity 0.4s ease';
+          }
+          const t = `translateY(${c.parallaxY.toFixed(2)}px)`;
+          c.img.style.transform = t;
+          c.label.style.transform = t;
+        });
+        // City tiles (non-Hyderabad views): 2-column grid, auto-flow row —
+        // even children sit in the left column, odd in the right.
+        if (tilesWrap && tilesWrap.children.length) {
+          [...tilesWrap.children].forEach((tile, i) => {
+            const d = ((i % 2 === 1 ? cur : -cur) * AMP * 0.7 / s).toFixed(2);
+            tile.style.transform = `translateY(${d}px)`;
+          });
+        }
+      };
+      tick();
+    }
 
     // Track layout resize shifts
     this._alignLogo = alignLogo;
@@ -3970,6 +4021,7 @@ class Component extends DCLogic {
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
+    if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);

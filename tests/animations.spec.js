@@ -344,3 +344,84 @@ test.describe('reduced motion', () => {
     for (const o of opacities) expect(o).toBe('1');
   });
 });
+
+test.describe('portfolio counter-scroll columns', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+  const CARD_L = '.fig-asset-3f58066ce9ef777c-b69ac725'; // left column
+  const CARD_R = '.fig-asset-016a31a2601bd9e3'; // right column
+
+  test('columns move oppositely and the motion reverses across centre', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.waitForTimeout(500);
+
+    const cardDocY = await page.evaluate(
+      (sel) => document.querySelector(sel).getBoundingClientRect().top + window.scrollY,
+      CARD_L
+    );
+    const read = () =>
+      page.evaluate(
+        ([l, r]) => {
+          const ty = (sel) => {
+            const m = /translateY\((-?[\d.]+)px\)/.exec(
+              document.querySelector(sel).style.transform || ''
+            );
+            return m ? +m[1] : null;
+          };
+          return { l: ty(l), r: ty(r) };
+        },
+        [CARD_L, CARD_R]
+      );
+
+    // Entering from below: columns must be split in opposite directions.
+    // Poll — the lerp (0.1/frame) needs frames to approach its target.
+    await page.evaluate((y) => window.scrollTo(0, y - 750), cardDocY);
+    await expect
+      .poll(async () => {
+        const s = await read();
+        return s.l !== null && s.r !== null && Math.sign(s.l) !== Math.sign(s.r) && Math.abs(s.l) > 20;
+      }, { timeout: 10000 })
+      .toBe(true);
+    const A = await read();
+
+    // Well past centre: the split must flip sign (fully scrubbed + reversible)
+    await page.evaluate((y) => window.scrollTo(0, y + 450), cardDocY);
+    await expect
+      .poll(async () => {
+        const s = await read();
+        return s.l !== null && Math.abs(s.l) > 20 && Math.sign(s.l) !== Math.sign(A.l);
+      }, { timeout: 10000 })
+      .toBe(true);
+    expectNoPageErrors(errors);
+  });
+
+  test('reduced motion: cards carry no counter-scroll transform', async ({ browser }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
+    testInfo.setTimeout(90000);
+    const ctx = await browser.newContext({
+      reducedMotion: 'reduce',
+      viewport: { width: 1440, height: 900 }
+    });
+    const page = await ctx.newPage();
+    await page.goto(`http://127.0.0.1:8788${HOME}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(2500);
+    const cardDocY = await page.evaluate(
+      (sel) => document.querySelector(sel).getBoundingClientRect().top + window.scrollY,
+      CARD_L
+    );
+    await page.evaluate((y) => window.scrollTo(0, y - 500), cardDocY);
+    await page.waitForTimeout(800);
+    const t = await page.evaluate(
+      (sel) => document.querySelector(sel).style.transform || '',
+      CARD_L
+    );
+    // updateCardTransforms writes translateY(0px) (parallaxY stays 0) — any
+    // non-zero translateY means the scrub engine ran under reduced motion.
+    const m = /translateY\((-?[\d.]+)px\)/.exec(t);
+    expect(m ? Math.abs(+m[1]) : 0).toBeLessThan(0.01);
+    await ctx.close();
+  });
+});
