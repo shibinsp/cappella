@@ -1,0 +1,17 @@
+# Dev/test harness — not part of the served site
+tests/
+scripts/
+playwright.config.js
+playwright-report/
+test-artifacts/
+test-results/
+screenshots/
+node_modules/
+uploads/
+
+# Source material / docs — not for public hosting
+Scroll animation request/
+*.docx
+*.pdf
+rules.md
+README.md

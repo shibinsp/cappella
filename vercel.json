@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/Cappella%20Website.dc.html" }
+  ]
+}
