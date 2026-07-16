@@ -920,11 +920,72 @@ class Component extends DCLogic {
       safe(() => this._setupFooterWordmark(), 'footerWordmark');
       // (Operators marquee removed per client feedback 2026-07-16 — the
       // baked static logo grid + triangle decorations render as designed.)
+      safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
     this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
     this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
+  }
+
+  _setupOperatorsGridStitch() {
+    // Client feedback: the Lighthouse logo floats free of the operators
+    // hairline grid (the baked design gives every other logo a crossing
+    // line) and sits slightly off the grid axes. Stitch it in:
+    //  - a design-matching hairline across its row, spanning the section's
+    //    two verticals (x 448 → 1019), rendered behind the logos exactly
+    //    like Saint Mary's own dash
+    //  - align the logo to ISP's column axis and Saint Mary's row axis
+    // The hairline is injected with PRE-SHIFT coordinates and no
+    // data-cap-own, so the band shift (+260) and journey delta adopt it
+    // like any baked frame element — correct on every viewport and resize.
+    const scaler = document.getElementById('cap-scaler');
+    // The segments must live INSIDE the imported frame subtree: both
+    // shiftBelowBand and shiftJourney only walk frameRoot, so a scaler-
+    // level child would never be shifted into place.
+    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
+    const lh = scaler && scaler.querySelector('.fig-asset-55a8dd7666421f70-d65f9521');
+    const sm = scaler && scaler.querySelector('.fig-asset-1ec5ca333db94fc0');
+    const isp = scaler && scaler.querySelector('.fig-asset-620dc3d6704178dd');
+    if (!lh || !sm || !isp || !frameRoot) {
+      if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
+      return;
+    }
+    if (document.getElementById('cap-op-stitch')) return;
+
+    // Row axis = Saint Mary's vertical centre, in the post-band-shift
+    // domain the journey bookkeeping stores (jorig = baked + 260).
+    const jorigOf = (el) => parseFloat(el.getAttribute('data-jorig-top') || el.style.top) || 0;
+    const smCenter = jorigOf(sm) + (parseFloat(sm.style.height) || 0) / 2;
+
+    // Align Lighthouse: row axis via jorig (the journey shift re-derives
+    // style.top from it on every pass), column axis via left (untouched by
+    // the shift machinery).
+    const lhH = parseFloat(lh.style.height) || 0;
+    lh.setAttribute('data-jorig-top', String(smCenter - lhH / 2));
+    const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
+    lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
+
+    // Hairlines: two segments abutting the logo (the design's lines touch
+    // logos, never cross them) — left to the x448 vertical, right to the
+    // x1019 vertical. Injected at pre-shift coords (jorig domain − 260) and
+    // adopted by the observer-driven runAdjust like baked frame elements.
+    const lhLeft = parseFloat(lh.style.left) || 0;
+    const lhRight = lhLeft + (parseFloat(lh.style.width) || 0);
+    const segs = [
+      { left: 448, width: (lhLeft - 18) - 448 },
+      { left: lhRight + 18, width: 1019 - (lhRight + 18) }
+    ];
+    segs.forEach((g, i) => {
+      const line = document.createElement('div');
+      if (i === 0) line.id = 'cap-op-stitch';
+      line.style.cssText =
+        'position:absolute; left:' + g.left + 'px; width:' + g.width + 'px; height:1px;' +
+        'top:' + (smCenter - 260) + 'px;' +
+        'background:rgb(209,32,47); opacity:0.35; z-index:0; pointer-events:none;';
+      frameRoot.appendChild(line);
+    });
+    if (this._runAdjust) this._runAdjust();
   }
 
   _setupFooterWordmark() {
