@@ -921,11 +921,53 @@ class Component extends DCLogic {
       // (Operators marquee removed per client feedback 2026-07-16 — the
       // baked static logo grid + triangle decorations render as designed.)
       safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
+      safe(() => this._setupBandGrid(), 'bandGrid');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
     this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
     this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
+  }
+
+  _setupBandGrid() {
+    // Client ("not fixed"): the stats band's rail grid must run the FULL
+    // extended band. The baked vertical rails predate the +260 band
+    // extension — they stop at ~2140, stranding 135 Acres / 75 Years+ and
+    // the staircase outside the grid. Stretch both rails to the band
+    // bottom (2675); scaleX composes with the hero draw-in transition, so
+    // they simply draw further down. Also add the missing crossing dash
+    // above 135 Acres (a clone of the baked AUM dash, same gray).
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler || this._bandGridDone) return;
+    const rails = [...scaler.querySelectorAll('svg')].filter(el =>
+      /^matrix\(0,\s*1,\s*-1,\s*0,\s*(181|1078),\s*(830|888)\)/.test(el.style.transform || '')
+    );
+    const dash = [...scaler.querySelectorAll('svg')].find(el =>
+      (el.style.transform || '').replace(/\s/g, '') === 'matrix(-1,0,0,-1,558,1793)'
+    );
+    if (rails.length < 2 || !dash) {
+      if ((this._bgTries = (this._bgTries || 0) + 1) < 40) setTimeout(() => this._setupBandGrid(), 250);
+      return;
+    }
+    this._bandGridDone = true;
+    const BAND_BOTTOM = 2675;
+    rails.forEach(el => {
+      const mm = /matrix\(0,\s*1,\s*-1,\s*0,\s*([\d.]+),\s*([\d.]+)\)/.exec(el.style.transform);
+      const len = parseFloat(el.getAttribute('width')) || 1;
+      const ty = parseFloat(mm[2]);
+      el.style.transformOrigin = '0 0';
+      el.style.transform =
+        'matrix(0, 1, -1, 0, ' + mm[1] + ', ' + ty + ') scaleX(' + ((BAND_BOTTOM - ty) / len).toFixed(5) + ')';
+      // Above the band-extension slab (z-4) — same layer as the stats (z-5);
+      // without this the slab paints over everything below frame y 1715.
+      el.style.zIndex = '5';
+    });
+    dash.style.zIndex = '5';
+    const d2 = dash.cloneNode(true);
+    d2.setAttribute('data-cap-own', '1');
+    d2.style.transform = 'matrix(-1, 0, 0, -1, 558, 2078)';
+    d2.style.zIndex = '5';
+    dash.parentElement.appendChild(d2);
   }
 
   _setupOperatorsGridStitch() {
