@@ -548,6 +548,27 @@ a {
   transform-origin: left;
 }
 
+.team-card .team-head {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 26px);
+}
+
+.team-card .portrait {
+  width: clamp(104px, 11vw, 148px);
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: top;
+  flex: 0 0 auto;
+  filter: grayscale(1);
+  transition: filter 0.5s ease;
+}
+
+.team-card:hover .portrait {
+  filter: none;
+}
+
+.team-card h2,
 .team-card h3 {
   font-size: clamp(24px, 2.5vw, 36px);
   font-weight: 600;
