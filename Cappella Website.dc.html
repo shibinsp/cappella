@@ -638,7 +638,9 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (scaler) {
       const footerShiftTop = 0; // Keeping top at 7092 prevents overlap with operators section
-      const footerHeight = 530;   // Compact footer height (reduced from 734px)
+      // 530 = compact footer content; +190 opens the giant-wordmark row at
+      // the band bottom (type-on letters, see _setupFooterWordmark)
+      const footerHeight = 720;
 
       // ===== BAND EXTENSION SHIFT =====
       // The red stats band grew by 260px (staircase now sits below the
@@ -665,13 +667,14 @@ class Component extends DCLogic {
             el.setAttribute('data-cap-shifted', '1');
             continue;
           }
-          // SVGs positioned via transform matrices
+          // SVGs positioned via transform matrices (tolerate appended terms
+          // like a reveal system's trailing scaleX — see shiftJourney)
           const tf = el.style.transform || '';
-          const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+          const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)(.*)$/);
           if (m) {
             const ty = parseFloat(m[6]);
             if (ty >= CAP_SHIFT_FROM) {
-              el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + CAP_BAND_SHIFT) + ')';
+              el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + CAP_BAND_SHIFT) + ')' + (m[7] || '');
               el.setAttribute('data-cap-shifted', '1');
             }
           }
@@ -914,12 +917,138 @@ class Component extends DCLogic {
       safe(() => this._setupAccordion(), 'accordion');
       // this._setupMetaLabels();
       safe(() => this._setupFooterAnimations(), 'footer');
-      safe(() => this._setupOperatorsMarquee(), 'marquee');
+      safe(() => this._setupFooterWordmark(), 'footerWordmark');
+      // (Operators marquee removed per client feedback 2026-07-16 — the
+      // baked static logo grid + triangle decorations render as designed.)
+      safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
     this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
     this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
+  }
+
+  _setupOperatorsGridStitch() {
+    // Client feedback: the Lighthouse logo floats free of the operators
+    // hairline grid (the baked design gives every other logo a crossing
+    // line) and sits slightly off the grid axes. Stitch it in:
+    //  - a design-matching hairline across its row, spanning the section's
+    //    two verticals (x 448 → 1019), rendered behind the logos exactly
+    //    like Saint Mary's own dash
+    //  - align the logo to ISP's column axis and Saint Mary's row axis
+    // The hairline is injected with PRE-SHIFT coordinates and no
+    // data-cap-own, so the band shift (+260) and journey delta adopt it
+    // like any baked frame element — correct on every viewport and resize.
+    const scaler = document.getElementById('cap-scaler');
+    // The segments must live INSIDE the imported frame subtree: both
+    // shiftBelowBand and shiftJourney only walk frameRoot, so a scaler-
+    // level child would never be shifted into place.
+    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
+    const lh = scaler && scaler.querySelector('.fig-asset-55a8dd7666421f70-d65f9521');
+    const sm = scaler && scaler.querySelector('.fig-asset-1ec5ca333db94fc0');
+    const isp = scaler && scaler.querySelector('.fig-asset-620dc3d6704178dd');
+    if (!lh || !sm || !isp || !frameRoot) {
+      if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
+      return;
+    }
+    if (document.getElementById('cap-op-stitch')) return;
+
+    // Row axis = Saint Mary's vertical centre, in the post-band-shift
+    // domain the journey bookkeeping stores (jorig = baked + 260).
+    const jorigOf = (el) => parseFloat(el.getAttribute('data-jorig-top') || el.style.top) || 0;
+    const smCenter = jorigOf(sm) + (parseFloat(sm.style.height) || 0) / 2;
+
+    // Align Lighthouse: row axis via jorig (the journey shift re-derives
+    // style.top from it on every pass), column axis via left (untouched by
+    // the shift machinery).
+    const lhH = parseFloat(lh.style.height) || 0;
+    lh.setAttribute('data-jorig-top', String(smCenter - lhH / 2));
+    const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
+    lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
+
+    // Hairlines: two segments abutting the logo (the design's lines touch
+    // logos, never cross them) — left to the x448 vertical, right to the
+    // x1019 vertical. Injected at pre-shift coords (jorig domain − 260) and
+    // adopted by the observer-driven runAdjust like baked frame elements.
+    const lhLeft = parseFloat(lh.style.left) || 0;
+    const lhRight = lhLeft + (parseFloat(lh.style.width) || 0);
+    const segs = [
+      { left: 448, width: (lhLeft - 18) - 448 },
+      { left: lhRight + 18, width: 1019 - (lhRight + 18) }
+    ];
+    segs.forEach((g, i) => {
+      const line = document.createElement('div');
+      if (i === 0) line.id = 'cap-op-stitch';
+      line.style.cssText =
+        'position:absolute; left:' + g.left + 'px; width:' + g.width + 'px; height:1px;' +
+        'top:' + (smCenter - 260) + 'px;' +
+        'background:rgb(209,32,47); opacity:0.35; z-index:0; pointer-events:none;';
+      frameRoot.appendChild(line);
+    });
+    if (this._runAdjust) this._runAdjust();
+  }
+
+  _setupFooterWordmark() {
+    // Giant CAPPELLA across the footer's bottom row — letters type on
+    // strictly left → right (fade + rise), scrubbed to scroll and fully
+    // reversible. Injected with data-cap-own so adjustFooter's capture and
+    // the footer reveal gate never adopt it; the footer band extension
+    // (footerHeight 530 → 720) is its reserved row.
+    const scaler = document.getElementById('cap-scaler');
+    const band = scaler && scaler.querySelector('[data-original-top="7352"]');
+    if (!band) {
+      if ((this._fwTries = (this._fwTries || 0) + 1) < 40) setTimeout(() => this._setupFooterWordmark(), 250);
+      return;
+    }
+    if (band.querySelector('.cap-fw')) return;
+
+    const row = document.createElement('div');
+    row.className = 'cap-fw';
+    row.setAttribute('data-cap-own', '1');
+    row.style.cssText =
+      'position:absolute; left:63px; width:1314px; top:524px; height:170px;' +
+      'display:flex; justify-content:space-between; align-items:flex-end;' +
+      'overflow:hidden; pointer-events:none; z-index:4;';
+    'CAPPELLA'.split('').forEach(ch => {
+      const s = document.createElement('span');
+      s.setAttribute('data-cap-own', '1');
+      s.textContent = ch;
+      s.style.cssText =
+        'font-family:Montserrat, sans-serif; font-weight:800; font-size:150px;' +
+        'line-height:1; color:rgb(255,255,255); display:inline-block;' +
+        'opacity:0; will-change:opacity, transform;';
+      row.appendChild(s);
+    });
+    band.appendChild(row);
+    const letters = [...row.children];
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      letters.forEach(s => { s.style.opacity = '1'; s.style.transform = 'none'; });
+      return;
+    }
+
+    const STAG = 0.16; // per-letter offset of the master progress
+    let cur = 0;
+    const tick = () => {
+      this._fwRaf = requestAnimationFrame(tick);
+      const r = band.getBoundingClientRect();
+      const vh = window.innerHeight;
+      if (r.bottom < -200 || r.top > vh + 200) return; // off-screen: idle
+      // Progress = how far the band has entered, relative to its visible
+      // height (rect-based, so it reaches 1 at page bottom on every scale).
+      const target = Math.max(0, Math.min(1, (vh - r.top) / Math.min(r.height, vh * 0.85)));
+      cur += (target - cur) * 0.1;
+      if (Math.abs(target - cur) < 0.0005) cur = target;
+      letters.forEach((s, i) => {
+        const local = Math.max(0, Math.min(1, cur * (1 + letters.length * STAG) - i * STAG));
+        const e = +(1 - Math.pow(1 - local, 3)).toFixed(3);
+        if (s._capE === e) return; // skip no-op writes (observer + layout noise)
+        s._capE = e;
+        s.style.opacity = String(e);
+        s.style.transform = 'translateY(' + ((1 - e) * 44).toFixed(1) + 'px)';
+      });
+    };
+    tick();
   }
 
   _setupDotGrid() {
@@ -1196,10 +1325,15 @@ class Component extends DCLogic {
 
     // 1. VERTICAL GRID LINES REVEAL (scales scaleX from 0 to 1 for rotated 90deg SVGs)
     const svgs = [...scaler.querySelectorAll('svg')].filter(el => {
-      const top = parseFloat(el.style.top) || 0;
-      if (top > 1000) return false;
       const transform = el.style.transform || '';
-      return transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0');
+      if (!(transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0'))) return false;
+      // Rotated svgs are positioned by the matrix ty, NOT style.top — the
+      // old `style.top || 0` default adopted the portfolio's red rail lines
+      // (3,700px down the page) and the appended scaleX then broke the
+      // journey band's anchored matrix shift, stranding them off-position.
+      const mm = transform.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*[-\d.]+,\s*([-\d.]+)\)/);
+      const y = mm ? parseFloat(mm[1]) : (parseFloat(el.style.top) || 0);
+      return y <= 1000;
     });
 
     svgs.forEach((el, idx) => {
@@ -1968,67 +2102,77 @@ class Component extends DCLogic {
       const b = frameBox(el);
       const relTop = b.top - footerTopFrame;
       const delay = 0.15 + (b.left / 1440) * 0.4 + Math.max(0, relTop / 530) * 0.15;
+      // Each element gets a show/hide PAIR so the choreography is two-way:
+      // it retracts once the footer leaves the viewport and replays on the
+      // next visit (hide() is also the initial state).
       if (el === bigLogo) {
         // Big C: clip wipe + a soft scale settle
-        el.style.clipPath = 'inset(0 100% 0 0)';
-        el.style.transform = 'scale(1.04)';
         el.style.transition =
           'clip-path 1.1s var(--cap-ease-expo) 0.1s, transform 1.1s var(--cap-ease-expo) 0.1s';
-        staged.push(() => {
-          el.style.clipPath = 'inset(0 0% 0 0)';
-          el.style.transform = 'scale(1)';
+        staged.push({
+          show() { el.style.clipPath = 'inset(0 0% 0 0)'; el.style.transform = 'scale(1)'; },
+          hide() { el.style.clipPath = 'inset(0 100% 0 0)'; el.style.transform = 'scale(1.04)'; }
         });
       } else if (el.tagName.toLowerCase() === 'svg' || hasMatrix(el)) {
         // Divider hairlines carry Figma matrix transforms — never touch
         // transform; draw them downward via clip only. transform stays in
         // the transition list so the arrow's hover nudge keeps easing.
-        el.style.clipPath = 'inset(0 0 100% 0)';
         el.style.transition =
           'clip-path 1.2s var(--cap-ease-expo) 0.2s, transform 0.35s var(--cap-ease-power)';
-        staged.push(() => { el.style.clipPath = 'inset(0 0 -2% 0)'; });
+        staged.push({
+          show() { el.style.clipPath = 'inset(0 0 -2% 0)'; },
+          hide() { el.style.clipPath = 'inset(0 0 100% 0)'; }
+        });
       } else {
         // Text/content children: fade + rise (the transform channel is free
         // — the old curtain scrub is long gone)
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(16px)';
         el.style.transition =
           'opacity 0.85s var(--cap-ease-expo) ' + delay + 's, ' +
           'transform 0.85s var(--cap-ease-expo) ' + delay + 's';
-        staged.push(() => {
-          el.style.opacity = '1';
-          el.style.transform = 'translateY(0)';
+        staged.push({
+          show() { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; },
+          hide() { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }
         });
       }
     });
+    staged.forEach(p => p.hide()); // arm the entrance
 
-    // threshold 0.01 (not 0.25): at wide viewports the scaled footer is far
-    // taller than the screen, so 25% of it may never fit in view — the reveal
-    // would then never fire and the footer would stay invisible. Firing on the
-    // first visible pixel guarantees the staged fade always completes.
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        io.disconnect();
-        staged.forEach(fn => fn());
-        // One-way flip: releases the CSS-held hidden state of the footer's
-        // out-of-container siblings (staggered rise, see the stylesheet)
+    // Two-way gate with hysteresis: the choreography plays on the first
+    // visible sliver of the footer and RETRACTS once the footer has fully
+    // left the viewport — so the entrance replays on every visit (reverse
+    // is armed off-screen, never mid-view, so it can't flicker). Show fires
+    // on ~2% of the footer's visible height (a few px — at wide viewports
+    // the scaled footer is far taller than the screen, so percentage-of-
+    // element thresholds can never be large).
+    let footerShown = false;
+    const setShown = (on) => {
+      if (on === footerShown) return;
+      footerShown = on;
+      if (on) {
+        staged.forEach(p => p.show());
+        // Releases the CSS-held hidden state of the footer's out-of-container
+        // siblings (staggered rise, see the stylesheet)
         scaler.classList.add('cap-footer-in');
-      });
-    }, { threshold: 0.01 });
-    io.observe(footer);
-    // Belt & braces: a plain scroll-position check backs up the observer so
-    // the footer can never stay hidden (idempotent with the IO flip; fires
-    // only when the footer actually enters the viewport, so the reveal is
-    // never spent off-screen).
-    const flipOnScroll = () => {
-      const r = footer.getBoundingClientRect();
-      if (r.top < window.innerHeight && r.bottom > 0) {
-        scaler.classList.add('cap-footer-in');
-        window.removeEventListener('scroll', flipOnScroll);
+      } else {
+        staged.forEach(p => p.hide());
+        scaler.classList.remove('cap-footer-in');
       }
     };
-    window.addEventListener('scroll', flipOnScroll, { passive: true });
-    flipOnScroll();
+    const gate = () => {
+      const r = footer.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const overlap = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      const frac = overlap / Math.min(r.height || 1, vh);
+      if (!footerShown && frac > 0.02) setShown(true);
+      else if (footerShown && frac <= 0) setShown(false);
+    };
+    this._footerGate = gate;
+    window.addEventListener('scroll', gate, { passive: true });
+    // IO backs up the scroll listener (e.g. programmatic jumps that land
+    // without further scroll events)
+    const io = new IntersectionObserver(gate, { threshold: [0, 0.01, 0.05] });
+    io.observe(footer);
+    gate();
 
     // ===== FOOTER SIBLINGS: CSS-CLASS REVEAL (re-hydration-proof) =====
     // History: a scroll-scrubbed "curtain" ghosted these siblings above the
@@ -2039,108 +2183,12 @@ class Component extends DCLogic {
     // The current mechanism cannot strand: the hidden state lives in CSS,
     // keyed off the data-original-top tags that adjustFooter re-applies on
     // every re-hydration, gated by #cap-scaler:not(.cap-footer-in). The
-    // .cap-footer-in flip (in the reveal IO above, backed by a scroll
-    // check) is one-way and global — a re-created element automatically
-    // re-acquires whichever state is current. Transforms are translateY
-    // only and never cross the footer's top edge, so the old ghost is
-    // impossible too.
-  }
-
-  _setupOperatorsMarquee() {
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler || this._mqBuilt) return;
-    this._mqBuilt = true;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // Operator logos (fig-asset background divs) measured from the frame
-    const ROW_A = ['fig-asset-79356d431474ada0', 'fig-asset-91ee4f07ef1ea5a8',
-                   'fig-asset-620dc3d6704178dd', 'fig-asset-1ec5ca333db94fc0'];
-    const ROW_B = ['fig-asset-1e639ffbc0aca215', 'fig-asset-1462c629c4c2879d',
-                   'fig-asset-55a8dd7666421f70-d65f9521'];
-    const rowAEls = ROW_A.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
-    const rowBEls = ROW_B.map(c => scaler.querySelector('.' + CSS.escape(c))).filter(Boolean);
-    if (rowAEls.length < 3 || rowBEls.length < 2) return; // frame changed — keep the grid
-
-    // Hide the static grid + the triangle decorations woven between the rows
-    [...rowAEls, ...rowBEls].forEach(el => { el.style.display = 'none'; });
-    [...scaler.querySelectorAll('div')].forEach(el => {
-      const st = el.getAttribute('style') || '';
-      const top = parseFloat(el.style.top) || 0;
-      if (top > 5820 && top < 7160 && st.includes('linear-gradient') && st.includes('209, 32, 47')) {
-        el.style.display = 'none';
-      }
-    });
-
-    // Build a marquee band: [row of cells]x(repeats), translated on rAF
-    const rows = [];
-    const buildBand = (els, top, dir) => {
-      const band = document.createElement('div');
-      // data-cap-own: OUR injected element with final coordinates —
-      // adjustFooter's footer-capture window must never adopt it.
-      band.setAttribute('data-cap-own', '1');
-      band.style.cssText =
-        'position:absolute; left:0; top:' + top + 'px; width:1440px; height:170px;' +
-        'overflow:hidden; z-index:3; opacity:0; transition: opacity 1s var(--cap-ease-expo);';
-      const track = document.createElement('div');
-      track.style.cssText =
-        'display:flex; align-items:center; height:100%; width:max-content;' +
-        'will-change:transform;';
-      const GAP = 150;
-      const seqW = els.reduce((sum, el) => sum + (parseFloat(el.style.width) || 180) + GAP, 0);
-      const repeats = Math.max(3, Math.ceil((1440 + seqW) / seqW) + 1);
-      for (let rep = 0; rep < repeats; rep++) {
-        els.forEach(el => {
-          const cell = el.cloneNode(true);
-          cell.style.display = 'block';
-          cell.style.position = 'static';
-          cell.style.left = 'auto';
-          cell.style.top = 'auto';
-          cell.style.transform = 'none';
-          cell.style.margin = '0 ' + (GAP / 2) + 'px';
-          cell.style.flex = '0 0 auto';
-          cell.style.transition = 'transform 0.5s var(--cap-ease-expo)';
-          cell.addEventListener('mouseenter', () => { cell.style.transform = 'translateY(-6px)'; });
-          cell.addEventListener('mouseleave', () => { cell.style.transform = 'translateY(0)'; });
-          track.appendChild(cell);
-        });
-      }
-      band.appendChild(track);
-      scaler.appendChild(band);
-      const row = { band, track, seqW, dir, x: 0, speed: 0, targetSpeed: 34 };
-      band.addEventListener('mouseenter', () => { row.targetSpeed = 0; });
-      band.addEventListener('mouseleave', () => { row.targetSpeed = 34; });
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => { if (entry.isIntersecting) { band.style.opacity = '1'; io.disconnect(); } });
-      }, { threshold: 0.3 });
-      io.observe(band);
-      rows.push(row);
-    };
-    buildBand(rowAEls, 6070 + (this._jDelta || 0), -1);
-    buildBand(rowBEls, 6590 + (this._jDelta || 0), 1);
-
-    // Shared drive loop — skips work while both bands are off-screen.
-    // The bands respond to scroll momentum: fast scrolling whips the logos
-    // along with it (Lenis exposes velocity), easing back to the 34px/s
-    // cruise. Hover-pause still wins (targetSpeed 0 is never boosted).
-    let lastT = performance.now();
-    const step = (now) => {
-      const dt = Math.min((now - lastT) / 1000, 0.05);
-      lastT = now;
-      const vel = this._lenis ? Math.min(Math.abs(this._lenis.velocity || 0) * 0.6, 55) : 0;
-      let visible = false;
-      rows.forEach(row => {
-        const r = row.band.getBoundingClientRect();
-        if (r.bottom < -100 || r.top > window.innerHeight + 100) return;
-        visible = true;
-        const target = row.targetSpeed === 0 ? 0 : row.targetSpeed + vel;
-        row.speed += (target - row.speed) * 0.06; // eased pause/resume/boost
-        row.x = (row.x + row.dir * row.speed * dt) % row.seqW;
-        const offset = row.dir === -1 ? row.x : row.x - row.seqW;
-        row.track.style.transform = 'translateX(' + offset.toFixed(2) + 'px)';
-      });
-      this._mqRaf = requestAnimationFrame(step);
-    };
-    this._mqRaf = requestAnimationFrame(step);
+    // .cap-footer-in gate (see setShown above) is global and two-way with
+    // hysteresis — shown while any sliver of the footer is on screen,
+    // retracted only once it has fully left, so it replays per visit and a
+    // re-created element automatically re-acquires whichever state is
+    // current. Transforms are translateY only and never cross the footer's
+    // top edge, so the old ghost is impossible too.
   }
 
   _setupMenuOverlay() {
@@ -2374,9 +2422,11 @@ class Component extends DCLogic {
             continue;
           }
         }
-        // matrix-positioned SVGs
+        // matrix-positioned SVGs. Tolerate appended terms (e.g. a reveal
+        // system's trailing scaleX) — an anchored match would silently skip
+        // the element and strand it at its unshifted position.
         const tf = el.style.transform || '';
-        const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)$/);
+        const m = tf.match(/^matrix\(([^,]+),([^,]+),([^,]+),([^,]+),\s*([-\d.]+),\s*([-\d.]+)\)(.*)$/);
         if (m) {
           let ty = el.getAttribute('data-jorig-ty');
           ty = ty !== null ? parseFloat(ty) : parseFloat(m[6]);
@@ -2389,7 +2439,7 @@ class Component extends DCLogic {
             if (el.getAttribute('data-jorig-ty') === null) {
               el.setAttribute('data-jorig-ty', String(ty));
             }
-            el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + d) + ')';
+            el.style.transform = 'matrix(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + m[4] + ',' + m[5] + ',' + (ty + d) + ')' + (m[7] || '');
           }
         }
       }
@@ -2399,6 +2449,22 @@ class Component extends DCLogic {
           el.style.display = 'none';
         });
       });
+      // The left red rail's upper segment was baked to start 82px below the
+      // old journey band (its counterpart lived inside the band). With the
+      // pinned journey that offset reads as a floating gap — anchor the
+      // segment's top to the band bottom (3890) and stretch it so its lower
+      // end stays put (485 → 567). Idempotent: jorig-ty then feeds every
+      // later pass, and the tolerant matrix rewrite preserves the scaleX.
+      const rail = [...frameRoot.querySelectorAll('svg[width="485"]')].find((el) =>
+        /^matrix\(0,\s*1,\s*-1,\s*0,\s*178,\s*[-\d.]+\)/.test(el.style.transform || '')
+      );
+      if (rail && !rail.getAttribute('data-cap-rail')) {
+        rail.setAttribute('data-cap-rail', '1');
+        rail.setAttribute('data-jorig-ty', '3890');
+        rail.style.transformOrigin = '0 0';
+        rail.style.transform =
+          'matrix(0, 1, -1, 0, 178, ' + (3890 + d) + ') scaleX(' + (567 / 485).toFixed(5) + ')';
+      }
     };
     this._shiftJourney = shiftJourney;
     shiftJourney();
@@ -3281,29 +3347,14 @@ class Component extends DCLogic {
         arrowBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(209,32,47)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>`;
         img.appendChild(arrowBtn);
 
-        // Asset detail strip (Est · Land · BUA · Students) — slides up on hover
-        const asset = PORTFOLIO_DATA.find(a => a.name === data.assetName);
-        let detailStrip = null;
-        if (asset) {
-          detailStrip = document.createElement('div');
-          detailStrip.style.cssText = [
-            'position:absolute', 'left:0', 'bottom:0', 'right:55px',
-            'padding:10px 14px',
-            'background:rgba(209,32,47,0.92)', 'color:rgb(255,255,255)',
-            'font-family:"Space Mono", monospace', 'font-size:11px', 'letter-spacing:0.5px',
-            'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
-            'pointer-events:none',
-            'transition:transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.45s ease',
-            'transform:translateY(100%)', 'opacity:0'
-          ].join(';');
-          detailStrip.textContent =
-            'EST ' + asset.est + ' · ' + asset.land + ' AC · ' + asset.bua + ' SF · ' +
-            asset.students + '/' + asset.capacity;
-          img.appendChild(detailStrip);
-        }
+        // (Asset detail strip removed per client feedback 2026-07-16: the
+        // per-asset stats live on the separate portfolio page — the hover
+        // arrow below navigates there.)
+        img.style.cursor = 'pointer';
+        img.addEventListener('click', () => { window.location.href = 'projects.html'; });
 
         cards.push({
-          id: data.id, img, label, ditherCanvas, arrowBtn, detailStrip,
+          id: data.id, img, label, ditherCanvas, arrowBtn,
           webglInst,
           // true frame coords (style.top may carry a flow-parent compensation)
           frameLeft: intendedLeft, frameTop: intendedTop,
@@ -3483,17 +3534,9 @@ class Component extends DCLogic {
           if (c.isHovered) {
             c.arrowBtn.style.opacity = '1';
             c.arrowBtn.style.transform = 'translate(0, 0)';
-            if (c.detailStrip) {
-              c.detailStrip.style.opacity = '1';
-              c.detailStrip.style.transform = 'translateY(0)';
-            }
           } else {
             c.arrowBtn.style.opacity = '0';
             c.arrowBtn.style.transform = 'translate(100%, 100%)';
-            if (c.detailStrip) {
-              c.detailStrip.style.opacity = '0';
-              c.detailStrip.style.transform = 'translateY(100%)';
-            }
           }
         } else {
           c.img.style.pointerEvents = 'none';
@@ -3506,10 +3549,6 @@ class Component extends DCLogic {
           if (c.webglInst) c.webglInst.showDither();
           c.arrowBtn.style.opacity = '0';
           c.arrowBtn.style.transform = 'translate(100%, 100%)';
-          if (c.detailStrip) {
-            c.detailStrip.style.opacity = '0';
-            c.detailStrip.style.transform = 'translateY(100%)';
-          }
         }
       });
     };
@@ -3560,13 +3599,28 @@ class Component extends DCLogic {
       wrap.innerHTML = '';
       if (cityName === 'Hyderabad') return; // photo cards own this city
       const assets = PORTFOLIO_DATA.filter(a => a.city === cityName);
+      // Placeholder height adapts to city density: Bangalore's 2×3 grid has
+      // to fit the same card region as a 1-2 asset city.
+      const phH = assets.length >= 5 ? 150 : 210;
       assets.forEach(a => {
         const tile = document.createElement('div');
         tile.style.cssText =
           'background:rgb(255,255,255); border:1px solid rgba(209,32,47,0.3);' +
-          'border-top:3px solid rgb(209,32,47); padding:30px 28px 26px;' +
-          'pointer-events:auto; opacity:0;';
+          'border-top:3px solid rgb(209,32,47);' +
+          'pointer-events:auto; opacity:0; overflow:hidden;';
         tile.innerHTML =
+          // Image placeholder: brand mark on the red field with a faint
+          // dot-grid texture (no photography exists for these assets — no
+          // stock imagery invented, the C mark holds the slot)
+          '<div style="height:' + phH + 'px; background:rgb(209,32,47);' +
+            'background-image:radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.6px);' +
+            'background-size:14px 14px;' +
+            'display:flex; align-items:center; justify-content:center;' +
+            'border-bottom:1px solid rgba(209,32,47,0.3);">' +
+            '<img src="./components/assets/eae7f9bdb03982f5.png" alt="" ' +
+              'style="width:64px; height:auto; filter:brightness(0) invert(1); opacity:0.92;">' +
+          '</div>' +
+          '<div style="padding:24px 28px 26px;">' +
           '<div style="font-family:Montserrat,sans-serif; font-weight:600; font-size:26px;' +
             'line-height:1.25; color:rgb(0,0,0);">' + a.name + '</div>' +
           '<div style="font-family:\'Space Mono\',monospace; font-size:12px; letter-spacing:1.5px;' +
@@ -3578,10 +3632,13 @@ class Component extends DCLogic {
               '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">SF BUA</div></div>' +
             '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.students + ' / ' + a.capacity + '</div>' +
               '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">STUDENTS</div></div>' +
+          '</div>' +
           '</div>';
         wrap.appendChild(tile);
         // Scramble hover on the school name, matching the photo-card labels
-        scrambleText(tile.firstChild, a.name);
+        // (the name div now lives inside the padded text block, after the
+        // placeholder)
+        scrambleText(tile.children[1].firstChild, a.name);
       });
       const tiles = [...wrap.children];
       if (window.gsap) {
@@ -3632,7 +3689,7 @@ class Component extends DCLogic {
       });
       const midL = (minL + maxR) / 2;
       const isRight = c => c.frameLeft + c.frameW / 2 > midL;
-      const AMP = 100; // px of column travel each way, in screen px
+      const AMP = 58; // px of column travel each way, in screen px
       let cur = 0;
       const tick = () => {
         this._pfRaf = requestAnimationFrame(tick);
@@ -3643,8 +3700,10 @@ class Component extends DCLogic {
         const vh = window.innerHeight;
         if (botPage < -300 || topPage > vh + 300) { cur = 0; return; }
         const mid = (topPage + botPage) / 2 - vh / 2; // grid centre vs viewport centre
-        const target = Math.max(-1, Math.min(1, -mid / (vh * 0.9)));
-        cur += (target - cur) * 0.1; // lenis-style glide
+        // Wide normalization (1.35×vh) spreads the travel over more scroll
+        // distance — the columns glide rather than race.
+        const target = Math.max(-1, Math.min(1, -mid / (vh * 1.35)));
+        cur += (target - cur) * 0.08; // lenis-style glide, soft
         cards.forEach(c => {
           // drift computed in screen px, applied in frame px (inside scaler)
           c.parallaxY = (isRight(c) ? cur : -cur) * AMP / s;
@@ -4020,8 +4079,8 @@ class Component extends DCLogic {
     clearTimeout(this._t1); clearTimeout(this._t2);
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
-    if (this._mqRaf) cancelAnimationFrame(this._mqRaf);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
+    if (this._fwRaf) cancelAnimationFrame(this._fwRaf);
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);

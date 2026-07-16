@@ -144,9 +144,9 @@ test.describe('homepage regression', () => {
   });
 
   test('homepage full-page screenshot', async ({ page }, testInfo) => {
-    // Capturing the full 7,882px frame (grain + dot-grid + marquee canvases
+    // Capturing the full ~8,000px frame (grain + dot-grid + marquee canvases
     // live) is heavy; give it headroom under parallel-suite CPU contention.
-    testInfo.setTimeout(90000);
+    testInfo.setTimeout(150000);
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
     await fullPageShot(page, testInfo, 'homepage');

@@ -387,8 +387,10 @@ test.describe('portfolio counter-scroll columns', () => {
       .toBe(true);
     const A = await read();
 
-    // Well past centre: the split must flip sign (fully scrubbed + reversible)
-    await page.evaluate((y) => window.scrollTo(0, y + 450), cardDocY);
+    // Well past centre: the split must flip sign (fully scrubbed + reversible).
+    // Deeper checkpoint: the slowed scrub (1.35×vh normalization) needs more
+    // scroll distance to build a >20px split on the far side.
+    await page.evaluate((y) => window.scrollTo(0, y + 800), cardDocY);
     await expect
       .poll(async () => {
         const s = await read();
@@ -423,5 +425,94 @@ test.describe('portfolio counter-scroll columns', () => {
     const m = /translateY\((-?[\d.]+)px\)/.exec(t);
     expect(m ? Math.abs(+m[1]) : 0).toBeLessThan(0.01);
     await ctx.close();
+  });
+});
+
+test.describe('footer wordmark type-on', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+
+  test('letters appear left to right and all land at the bottom', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.waitForSelector('.cap-fw span', { timeout: 20000 });
+
+    // Mid-entry: opacities must be non-increasing left → right with a real
+    // spread (the cascade), polled while the lerp converges.
+    await page.evaluate(() =>
+      window.scrollTo(0, document.body.scrollHeight - window.innerHeight * 1.45)
+    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const o = [...document.querySelectorAll('.cap-fw span')].map(
+              (s) => +s.style.opacity || 0
+            );
+            const ordered = o.every((v, i) => i === 0 || v <= o[i - 1] + 0.001);
+            return ordered && o[0] > 0.5 && o[0] - o[o.length - 1] > 0.3;
+          }),
+        { timeout: 10000 }
+      )
+      .toBe(true);
+
+    // Page bottom: every letter fully landed
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() =>
+            [...document.querySelectorAll('.cap-fw span')].every(
+              (s) => +s.style.opacity === 1
+            )
+          ),
+        { timeout: 10000 }
+      )
+      .toBe(true);
+    expectNoPageErrors(errors);
+  });
+});
+
+test.describe('footer reveal replays', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+
+  test('choreography retracts off-screen and replays on the next visit', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.waitForTimeout(400);
+
+    const state = () =>
+      page.evaluate(() => ({
+        cls: document.getElementById('cap-scaler').classList.contains('cap-footer-in'),
+        logoClip: (document.querySelector('.fig-asset-c9d8f12cf6e90c99') || {}).style?.clipPath || ''
+      }));
+    const scrollBottom = () =>
+      page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+    // Visit 1: revealed
+    await expect
+      .poll(async () => { await scrollBottom(); return (await state()).cls; }, { timeout: 15000 })
+      .toBe(true);
+
+    // Leave: retracted (class dropped, big C re-clipped) once fully off-screen
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        const s = await state();
+        return !s.cls && s.logoClip.includes('100%');
+      }, { timeout: 15000 })
+      .toBe(true);
+
+    // Visit 2: replays
+    await expect
+      .poll(async () => { await scrollBottom(); return (await state()).cls; }, { timeout: 15000 })
+      .toBe(true);
+    expectNoPageErrors(errors);
   });
 });

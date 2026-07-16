@@ -1,4 +1,5 @@
-// Phase 3 gate: Projects page — both portfolio tables, every row, exact values.
+// Phase 3 gate: Projects page — both portfolio asset GRIDS (client-requested
+// card format, replacing the original tables), every card, exact values.
 const { test, expect } = require('@playwright/test');
 const {
   attachErrorCapture,
@@ -7,112 +8,93 @@ const {
   fullPageShot
 } = require('./helpers');
 
-const GCC_ROWS = [
-  ['Hartland International School', 'Dubai', '2015', '9.03', '278k', '1,947 / 2,400'],
-  ['North London Collegiate School', 'Dubai', '2017', '9.44', '420k', '1,820 / 2,100']
+// [name, 'Location — Est. year', land, bua, students]
+const GCC_CARDS = [
+  ['Hartland International School', 'Dubai — Est. 2015', '9.03', '278k', '1,947 / 2,400'],
+  ['North London Collegiate School', 'Dubai — Est. 2017', '9.44', '420k', '1,820 / 2,100']
 ];
 
-const INDIA_ROWS = [
-  ['St. Andrews, Suchitra', 'Hyderabad', '1987', '9.0', '208k', '5,255 / 5,300'],
-  ['St. Andrews, Keesara', 'Hyderabad', '2012', '7.6', '88k', '1,732 / 2,300'],
-  ['St. Michael’s', 'Hyderabad', '2004', '2.7', '132k', '2,908 / 3,600'],
-  ['Sancta Maria International School', 'Hyderabad', '2010', '5.0', '193k', '1,500 / 1,500'],
-  ['The Shri Ram Universal School', 'Chennai', '2020', '2.0', '183k', '1,450 / 2,600'],
-  ['Billabong High International School', 'Pune', '2019', '2.1', '69k', '773 / 1,350'],
-  ['Jain International Residential School', 'Bangalore', '1999', '58.4', '1,200k', '690 / 1,000'],
-  ['Jain Public School', 'Bengaluru', '2013', '6.3', '66k', '1,226 / 1,575'],
-  ['Jain Public School', 'Bengaluru', '2012', '3.5', '70k', '928 / 1,240'],
-  ['Jain Public School', 'Korba', '2012', '2.8', '55k', '438 / 1,050'],
-  ['Jain Public School', 'Kadiri', '2012', '3.5', '64k', '795 / 1,050'],
-  ['IFIM – Student Housing', 'Bangalore', '1995', '2.5', '73k', '400 / 440'],
-  ['JU-SET Hostel', 'Bangalore', '1990', '10.8', '271k', '1,100 / 1,100']
+const INDIA_CARDS = [
+  ['St. Andrews, Suchitra', 'Hyderabad — Est. 1987', '9.0', '208k', '5,255 / 5,300'],
+  ['St. Andrews, Keesara', 'Hyderabad — Est. 2012', '7.6', '88k', '1,732 / 2,300'],
+  ['St. Michael’s', 'Hyderabad — Est. 2004', '2.7', '132k', '2,908 / 3,600'],
+  ['Sancta Maria International School', 'Hyderabad — Est. 2010', '5.0', '193k', '1,500 / 1,500'],
+  ['The Shri Ram Universal School', 'Chennai — Est. 2020', '2.0', '183k', '1,450 / 2,600'],
+  ['Billabong High International School', 'Pune — Est. 2019', '2.1', '69k', '773 / 1,350'],
+  ['Jain International Residential School', 'Bangalore — Est. 1999', '58.4', '1,200k', '690 / 1,000'],
+  ['Jain Public School', 'Bengaluru — Est. 2013', '6.3', '66k', '1,226 / 1,575'],
+  ['Jain Public School', 'Bengaluru — Est. 2012', '3.5', '70k', '928 / 1,240'],
+  ['Jain Public School', 'Korba — Est. 2012', '2.8', '55k', '438 / 1,050'],
+  ['Jain Public School', 'Kadiri — Est. 2012', '3.5', '64k', '795 / 1,050'],
+  ['IFIM – Student Housing', 'Bangalore — Est. 1995', '2.5', '73k', '400 / 440'],
+  ['JU-SET Hostel', 'Bangalore — Est. 1990', '10.8', '271k', '1,100 / 1,100']
 ];
 
-const COLUMNS = ['Asset', 'Location', 'Est.', 'Land (acre)', 'BUA (sf)', 'Students (Current / Capacity)'];
+const STAT_LABELS = ['Land (acre)', 'BUA (sf)', 'Students (Current / Capacity)'];
+
+async function expectGrid(page, region, cards) {
+  const items = page.locator(`[aria-labelledby="${region}-grid-caption"] .asset-card`);
+  await expect(items).toHaveCount(cards.length);
+  for (let i = 0; i < cards.length; i++) {
+    const [name, meta, land, bua, students] = cards[i];
+    const card = items.nth(i);
+    await expect(card.locator('h3')).toHaveText(name);
+    await expect(card.locator('.asset-meta')).toHaveText(meta);
+    const values = card.locator('.asset-stats b');
+    await expect(values.nth(0)).toHaveText(land);
+    await expect(values.nth(1)).toHaveText(bua);
+    await expect(values.nth(2)).toHaveText(students);
+    const labels = card.locator('.asset-stats span');
+    for (let l = 0; l < STAT_LABELS.length; l++) {
+      await expect(labels.nth(l)).toHaveText(STAT_LABELS[l]);
+    }
+  }
+}
 
 test.describe('projects.html', () => {
-  test('h1, sections, captions and column headers', async ({ page }) => {
+  test('h1, sections, captions and grid structure', async ({ page }) => {
     const errors = attachErrorCapture(page);
     await page.goto('/projects.html');
 
     await expect(page.locator('h1')).toHaveText('Our Portfolio');
 
-    // Two clearly labelled tables
-    await expect(page.locator('#gcc-table-caption')).toContainText('GCC — Dubai (K-12 Schools)');
-    await expect(page.locator('#india-table-caption')).toContainText('India — Portfolio Assets');
+    // Two clearly labelled asset grids
+    await expect(page.locator('#gcc-grid-caption')).toContainText('GCC — Dubai (K-12 Schools)');
+    await expect(page.locator('#india-grid-caption')).toContainText('India — Portfolio Assets');
     await expect(page.locator('#gcc-heading')).toContainText('GCC — Dubai');
     await expect(page.locator('#india-heading')).toHaveText('India');
 
-    // 6 column headers per table, correct labels
+    // Grids are lists labelled by their captions
     for (const region of ['gcc', 'india']) {
-      const ths = page.locator(`[aria-labelledby="${region}-table-caption"] thead th[scope="col"]`);
-      await expect(ths).toHaveCount(6);
-      for (let i = 0; i < COLUMNS.length; i++) {
-        await expect(ths.nth(i)).toHaveText(COLUMNS[i]);
-      }
+      const grid = page.locator(`ul[aria-labelledby="${region}-grid-caption"]`);
+      await expect(grid).toHaveCount(1);
     }
 
     await assertNoHorizontalOverflow(page);
     expectNoPageErrors(errors);
   });
 
-  test('GCC table: every row, exact values', async ({ page }) => {
+  test('GCC grid: every card, exact values', async ({ page }) => {
     await page.goto('/projects.html');
-    const rows = page.locator('[aria-labelledby="gcc-table-caption"] tbody tr');
-    await expect(rows).toHaveCount(GCC_ROWS.length);
-    for (let r = 0; r < GCC_ROWS.length; r++) {
-      const cells = rows.nth(r).locator('th, td');
-      for (let c = 0; c < GCC_ROWS[r].length; c++) {
-        await expect(cells.nth(c)).toHaveText(GCC_ROWS[r][c]);
-      }
-    }
+    await expectGrid(page, 'gcc', GCC_CARDS);
   });
 
-  test('India table: every row, exact values', async ({ page }) => {
+  test('India grid: every card, exact values', async ({ page }) => {
     await page.goto('/projects.html');
-    const rows = page.locator('[aria-labelledby="india-table-caption"] tbody tr');
-    await expect(rows).toHaveCount(INDIA_ROWS.length);
-    for (let r = 0; r < INDIA_ROWS.length; r++) {
-      const cells = rows.nth(r).locator('th, td');
-      for (let c = 0; c < INDIA_ROWS[r].length; c++) {
-        await expect(cells.nth(c)).toHaveText(INDIA_ROWS[r][c]);
-      }
-    }
+    await expectGrid(page, 'india', INDIA_CARDS);
   });
 
-  test('tables are accessible scroll regions; data never hidden', async ({ page }, testInfo) => {
+  test('grid never hides data: all cards visible, no horizontal overflow', async ({ page }) => {
     await page.goto('/projects.html');
-
-    for (const region of ['gcc', 'india']) {
-      const wrapper = page.locator(`[aria-labelledby="${region}-table-caption"]`);
-      await expect(wrapper).toHaveAttribute('role', 'region');
-      await expect(wrapper).toHaveAttribute('tabindex', '0');
+    // Every card participates in normal flow — nothing is clipped or
+    // scrolled away at any project viewport
+    const cards = page.locator('.asset-card');
+    const n = await cards.count();
+    expect(n).toBe(GCC_CARDS.length + INDIA_CARDS.length);
+    for (let i = 0; i < n; i++) {
+      await cards.nth(i).scrollIntoViewIfNeeded();
+      await expect(cards.nth(i)).toBeVisible();
     }
-
-    if (testInfo.project.name === 'mobile') {
-      // The wrapper itself overflows (scrolls internally)…
-      const scrolls = await page
-        .locator('[aria-labelledby="india-table-caption"]')
-        .evaluate((el) => el.scrollWidth > el.clientWidth);
-      expect(scrolls, 'india table wrapper should scroll internally on mobile').toBe(true);
-      // …with a visible affordance…
-      await expect(page.locator('.table-hint').first()).toBeVisible();
-      // …and the wrapper is keyboard-scrollable. Key-driven scrolling applies
-      // on a later frame, so poll rather than reading scrollLeft immediately.
-      const wrapper = page.locator('[aria-labelledby="india-table-caption"]');
-      await wrapper.focus();
-      await expect
-        .poll(
-          async () => {
-            await page.keyboard.press('ArrowRight');
-            return wrapper.evaluate((el) => el.scrollLeft);
-          },
-          { timeout: 5000 }
-        )
-        .toBeGreaterThan(0);
-    }
-
-    // …while the DOCUMENT never overflows
     await assertNoHorizontalOverflow(page);
   });
 
