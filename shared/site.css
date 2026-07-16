@@ -1,0 +1,1064 @@
+/* ==========================================================================
+   Cappella — shared page shell for the static subpages
+   (about-us.html, projects.html, team.html, contact-us.html)
+
+   Design language derived from the homepage (Cappella Website.dc.html) and
+   rules.md: Montserrat 300–800, brand red #D1202F, Space Mono meta labels,
+   editorial hairlines, 24px/300 body copy at the 1440px reference width.
+   Type ramps use clamp() so a 1440px viewport renders the exact Figma sizes.
+
+   Long text always wraps (rules.md global text rule) — no nowrap anywhere.
+   ========================================================================== */
+
+:root {
+  --cap-red: rgb(209, 32, 47);
+  --cap-red-hover: rgb(170, 20, 34);
+  --cap-warm: #fff0f0;
+  --cap-black: rgb(0, 0, 0);
+  --cap-white: rgb(255, 255, 255);
+  --cap-footer-ink: rgb(255, 231, 231);
+  --cap-hairline: rgba(0, 0, 0, 0.14);
+  --cap-hairline-inverse: rgba(255, 255, 255, 0.28);
+  --cap-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --cap-ease-power: cubic-bezier(0.76, 0, 0.24, 1);
+  --container: min(1216px, 92vw);
+}
+
+/* ---------- Reset-lite ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  font-weight: 300;
+  color: var(--cap-black);
+  background: var(--cap-white);
+  line-height: 1.23;
+  overflow-wrap: break-word;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--cap-red);
+  color: var(--cap-white);
+}
+
+/* Visible keyboard focus everywhere (subpage addition; homepage untouched) */
+:focus-visible {
+  outline: 2px solid var(--cap-red);
+  outline-offset: 3px;
+}
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--cap-red);
+  color: var(--cap-white);
+  padding: 10px 18px;
+  font: 600 14px 'Montserrat', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* ---------- Type scale (exact rules.md sizes at 1440px) ---------- */
+.hero-title {
+  font-size: clamp(42px, 6.94vw, 100px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+}
+
+.section-title {
+  font-size: clamp(30px, 3.82vw, 55px);
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.stat-number {
+  font-size: clamp(34px, 4.17vw, 60px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.caption,
+.stat-caption {
+  font-size: clamp(16px, 1.67vw, 24px);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.body-copy {
+  font-size: clamp(17px, 1.67vw, 24px);
+  font-weight: 300;
+  line-height: 1.23;
+}
+
+.meta-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cap-red);
+}
+
+/* ---------- Layout primitives ---------- */
+.container {
+  width: var(--container);
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: clamp(56px, 8vw, 104px);
+}
+
+.section + .section {
+  border-top: 1px solid var(--cap-hairline);
+}
+
+.section-head {
+  display: grid;
+  gap: 18px;
+  margin-bottom: clamp(28px, 4vw, 56px);
+}
+
+/* ---------- Header ---------- */
+/* Sticky: pinned to the top on scroll. z-index must beat the menu backdrop
+   (55) — the mobile nav panel is a fixed CHILD of the header, so it lives in
+   the header's stacking context and would otherwise be trapped under the
+   backdrop. No transform/filter here ever: either would become the containing
+   block for that fixed panel. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  border-bottom: 1px solid var(--cap-hairline);
+  background: var(--cap-white);
+  transition: box-shadow 0.35s ease;
+}
+
+.site-header.is-scrolled {
+  box-shadow: 0 12px 32px rgba(17, 17, 17, 0.08);
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 84px;
+}
+
+.site-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.site-logo img {
+  width: 34px;
+  height: auto;
+}
+
+.site-logo .site-logo-word {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: var(--cap-black);
+}
+
+.nav-toggle {
+  font: 600 13px 'Montserrat', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--cap-black);
+  color: var(--cap-black);
+  padding: 10px 18px;
+  cursor: pointer;
+}
+
+.site-nav ul {
+  display: flex;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+}
+
+.site-nav a {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding-block: 6px;
+  position: relative;
+  white-space: normal;
+}
+
+.site-nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--cap-red);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.site-nav a[aria-current='page'] {
+  color: var(--cap-red);
+}
+
+.site-nav a[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.site-nav a:hover {
+  color: var(--cap-red-hover);
+}
+
+.menu-backdrop {
+  display: none;
+}
+
+/* Desktop: the toggle is never shown, even after JS unhides it for the
+   mobile panel pattern (display:none also removes it from tab order). */
+@media (min-width: 900px) {
+  .nav-toggle {
+    display: none;
+  }
+}
+
+/* Mobile nav — JS OFF: plain stacked links below the logo row, always visible */
+@media (max-width: 899px) {
+  .site-header .container {
+    flex-wrap: wrap;
+    padding-block: 16px;
+  }
+
+  html:not(.js) .site-nav {
+    width: 100%;
+  }
+
+  html:not(.js) .site-nav ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--cap-hairline);
+    margin-top: 8px;
+  }
+
+  /* The toggle stays clickable above the open panel/backdrop (it is the
+     close affordance as well as the open one). */
+  .js .nav-toggle {
+    position: relative;
+    z-index: 70;
+  }
+
+  /* Mobile nav — JS ON: slide-in panel (echo of the homepage menu overlay) */
+  .js .site-nav {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(420px, 94vw);
+    background: var(--cap-white);
+    z-index: 60;
+    padding: 96px 36px 36px;
+    transform: translateX(102%);
+    visibility: hidden;
+  }
+
+  .js .site-nav.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: -18px 0 60px rgba(0, 0, 0, 0.25);
+  }
+
+  .js .site-nav ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 26px;
+  }
+
+  .js .site-nav a {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: none;
+  }
+
+  .js .menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 55;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .js .menu-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Scroll lock on <html>, NOT <body>: body overflow:hidden would become
+     the sticky header's scrollport and un-stick it while the menu is open. */
+  html.menu-open {
+    overflow: hidden;
+  }
+}
+
+/* Menu choreography (homepage overlay recipe): panel 0.75s power, backdrop
+   0.6s power, links rise out of overflow masks with 0.12 + i*0.07s delays;
+   close reverses fast (0.3s, no delay). */
+@media (max-width: 899px) and (prefers-reduced-motion: no-preference) {
+  .js .site-nav {
+    transition:
+      transform 0.75s var(--cap-ease-power),
+      visibility 0s linear 0.75s;
+  }
+
+  .js .site-nav.is-open {
+    transition: transform 0.75s var(--cap-ease-power);
+  }
+
+  .js .menu-backdrop {
+    transition: opacity 0.6s var(--cap-ease-power);
+  }
+
+  .js .site-nav li {
+    overflow: hidden;
+  }
+
+  .js .site-nav li a {
+    display: inline-block;
+    transform: translateY(115%);
+    transition: transform 0.3s var(--cap-ease-power);
+  }
+
+  .js .site-nav.is-open li a {
+    transform: none;
+    transition: transform 0.8s var(--cap-ease-expo);
+  }
+
+  .js .site-nav.is-open li:nth-child(1) a { transition-delay: 0.12s; }
+  .js .site-nav.is-open li:nth-child(2) a { transition-delay: 0.19s; }
+  .js .site-nav.is-open li:nth-child(3) a { transition-delay: 0.26s; }
+  .js .site-nav.is-open li:nth-child(4) a { transition-delay: 0.33s; }
+}
+
+/* ---------- Hero ---------- */
+.page-hero {
+  padding-block: clamp(64px, 9vw, 128px) clamp(48px, 7vw, 96px);
+}
+
+.page-hero .meta-label {
+  display: block;
+  margin-bottom: 22px;
+}
+
+.page-hero .hero-intro {
+  margin-top: 28px;
+  max-width: 52ch;
+}
+
+/* ---------- Stats strip (red band) ---------- */
+.stats-band {
+  background: var(--cap-red);
+  color: var(--cap-white);
+  padding-block: clamp(44px, 6vw, 80px);
+}
+
+.stats-band dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+}
+
+.stats-band .stat {
+  border-left: 1px solid var(--cap-hairline-inverse);
+  padding-left: clamp(16px, 2vw, 28px);
+}
+
+.stats-band dt {
+  order: 2;
+}
+
+.stats-band dd {
+  order: 1;
+}
+
+.stats-band .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-band .stat-caption {
+  color: var(--cap-footer-ink);
+}
+
+@media (max-width: 899px) {
+  .stats-band dl {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 36px;
+  }
+}
+
+@media (max-width: 479px) {
+  .stats-band dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Editorial item lists (Cappella Edge, What We Do, Team) ---------- */
+.item-list {
+  display: grid;
+  gap: 0;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: clamp(16px, 3vw, 40px);
+  padding-block: clamp(24px, 3.4vw, 40px);
+  border-top: 1px solid var(--cap-hairline);
+}
+
+.item:last-child {
+  border-bottom: 1px solid var(--cap-hairline);
+}
+
+.item-index {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--cap-red);
+  padding-top: 8px;
+}
+
+.item h3 {
+  font-size: clamp(22px, 2.3vw, 33px);
+  font-weight: 600;
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+
+.item .body-copy {
+  max-width: 62ch;
+}
+
+@media (max-width: 599px) {
+  .item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ---------- Two-column section intro ---------- */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: start;
+}
+
+@media (max-width: 899px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stack > * + * {
+  margin-top: 1.1em;
+}
+
+/* ---------- Team cards ---------- */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(24px, 3.5vw, 48px);
+}
+
+.team-card {
+  position: relative;
+  border: 1px solid var(--cap-hairline);
+  padding: clamp(24px, 3vw, 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--cap-white);
+}
+
+/* Red top bar as a pseudo-element so it can wipe in on reveal.
+   Base state is fully drawn — JS-off and reduced-motion render identically
+   to the old border-top. */
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--cap-red);
+  transform-origin: left;
+}
+
+.team-card h3 {
+  font-size: clamp(24px, 2.5vw, 36px);
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.team-card .role {
+  color: var(--cap-red);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 14px;
+}
+
+@media (max-width: 899px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Data tables (Projects, SKOLEN) ---------- */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--cap-hairline);
+}
+
+.table-scroll table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.table-scroll caption {
+  text-align: left;
+  font-weight: 600;
+  font-size: clamp(18px, 1.8vw, 26px);
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--cap-hairline);
+  background: var(--cap-warm);
+}
+
+.table-scroll th,
+.table-scroll td {
+  text-align: left;
+  padding: 14px 20px;
+  font-size: clamp(15px, 1.15vw, 17px);
+  line-height: 1.35;
+  border-bottom: 1px solid var(--cap-hairline);
+}
+
+.table-scroll thead th {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--cap-red);
+  border-bottom: 2px solid var(--cap-red);
+  background: var(--cap-white);
+}
+
+.table-scroll tbody th[scope='row'] {
+  font-weight: 600;
+}
+
+.table-scroll tbody tr:last-child th,
+.table-scroll tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-scroll tbody tr:hover {
+  background: var(--cap-warm);
+}
+
+.table-hint {
+  display: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(0, 0, 0, 0.55);
+  margin-top: 10px;
+}
+
+@media (max-width: 899px) {
+  .table-hint {
+    display: block;
+  }
+}
+
+/* ---------- Photo band (Projects) ---------- */
+.photo-band {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 1.6vw, 24px);
+}
+
+.photo-band figure {
+  position: relative;
+}
+
+.photo-band img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  filter: grayscale(18%);
+}
+
+.photo-band figcaption {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding-top: 10px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .photo-band img {
+    transition: filter 0.5s ease, transform 0.7s var(--cap-ease-expo);
+  }
+
+  .photo-band figure:hover img {
+    filter: grayscale(0%);
+    transform: scale(1.02);
+  }
+}
+
+@media (max-width: 899px) {
+  .photo-band {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Contact CTA ---------- */
+.contact-cta {
+  position: relative;
+  display: inline-block;
+  color: var(--cap-red);
+  font-size: clamp(26px, 3.5vw, 52px);
+  font-weight: 600;
+  line-height: 1.15;
+  padding-bottom: 6px;
+}
+
+/* Underline as a pseudo-element so it can wipe in on reveal; base state is
+   fully drawn (JS-off / reduced-motion identical to the old border). */
+.contact-cta::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--cap-red);
+  transform-origin: left;
+}
+
+.contact-cta:hover {
+  color: var(--cap-red-hover);
+}
+
+.contact-cta:hover::after {
+  background: var(--cap-red-hover);
+}
+
+address {
+  font-style: normal;
+}
+
+.address-block {
+  font-size: clamp(18px, 1.9vw, 27px);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  background: var(--cap-red);
+  color: var(--cap-footer-ink);
+  margin-top: clamp(56px, 8vw, 104px);
+}
+
+.site-footer .container {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 4fr);
+  gap: clamp(28px, 4vw, 56px);
+  padding-block: clamp(48px, 6vw, 88px);
+}
+
+.footer-brand img.footer-mark {
+  width: clamp(96px, 12vw, 150px);
+  opacity: 0.95;
+}
+
+.footer-brand img.footer-word {
+  width: clamp(160px, 18vw, 230px);
+  margin-top: 26px;
+}
+
+.footer-col {
+  border-left: 1px solid var(--cap-hairline-inverse);
+  padding-left: clamp(18px, 2.4vw, 32px);
+}
+
+.footer-heading {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 231, 231, 0.75);
+  margin-bottom: 20px;
+}
+
+.footer-nav ul {
+  display: grid;
+  gap: 12px;
+}
+
+.footer-link {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cap-white);
+  position: relative;
+  display: inline-block;
+}
+
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: var(--cap-white);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.footer-link:hover::after,
+.footer-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .footer-link::after {
+    transition: transform 0.45s var(--cap-ease-power);
+  }
+}
+
+.site-footer :focus-visible {
+  outline-color: var(--cap-white);
+}
+
+.footer-address {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 25px;
+  text-transform: uppercase;
+  color: var(--cap-white);
+  margin-top: 18px;
+}
+
+@media (max-width: 899px) {
+  .site-footer .container {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-col {
+    border-left: none;
+    border-top: 1px solid var(--cap-hairline-inverse);
+    padding-left: 0;
+    padding-top: 24px;
+  }
+}
+
+/* ==========================================================================
+   Motion system (JS enhancement; triple-gated)
+
+   EVERY hidden base state lives inside @media (prefers-reduced-motion:
+   no-preference) AND under .js — with reduced motion or without JS nothing
+   is ever hidden, no override block needed. Variants are selected by the
+   [data-reveal] value; the reveal engine in site.js adds .is-in.
+   ========================================================================== */
+
+/* ---------- Lenis helpers (recommended companion styles) ---------- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------- Page enter: header fades down once ---------- */
+  .js .site-header .container {
+    transition:
+      opacity 0.7s var(--cap-ease-expo),
+      transform 0.7s var(--cap-ease-expo);
+  }
+
+  html.cap-enter:not(.cap-ready) .site-header .container {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  /* ---------- Default reveal: fade-rise (homepage 0.75s expo) ---------- */
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.75s var(--cap-ease-expo),
+      transform 0.75s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Stagger steps (homepage delay classes) */
+  .js [data-reveal][data-reveal-delay='1'] { transition-delay: 0.1s; }
+  .js [data-reveal][data-reveal-delay='2'] { transition-delay: 0.2s; }
+  .js [data-reveal][data-reveal-delay='3'] { transition-delay: 0.3s; }
+  .js [data-reveal][data-reveal-delay='4'] { transition-delay: 0.4s; }
+  .js [data-reveal][data-reveal-delay='5'] { transition-delay: 0.5s; }
+
+  /* ---------- Variant: plain fade ---------- */
+  .js [data-reveal='fade'] {
+    transform: none;
+  }
+
+  /* ---------- Variant: scale (stats band) ---------- */
+  .js [data-reveal='scale'] {
+    transform: scale(0.96);
+    transition:
+      opacity 0.7s var(--cap-ease-expo),
+      transform 0.7s var(--cap-ease-expo);
+  }
+
+  /* ---------- Variant: hero H1 char rise ----------
+     Fallback (SplitType absent): opacity-only fade — no layout shift.
+     Split mode (.cap-split): block visible, per-char masked rise with the
+     homepage hero recipe. */
+  .js [data-reveal='chars'] {
+    transform: none;
+  }
+
+  .js [data-reveal='chars'].cap-split {
+    opacity: 1;
+  }
+
+  .cap-line {
+    overflow: hidden;
+  }
+
+  .cap-word {
+    display: inline-block;
+  }
+
+  .cap-char {
+    display: inline-block;
+    transform-origin: 0% 100%;
+    transition:
+      transform 1.05s cubic-bezier(0.19, 1, 0.22, 1),
+      opacity 0.5s ease;
+  }
+
+  .js [data-reveal='chars'].cap-split:not(.is-in) .cap-char {
+    opacity: 0;
+    transform: translateY(115%) rotate(6deg);
+  }
+
+  /* ---------- Variant: paragraph line masks ----------
+     Fallback: default rise. Split mode: block visible, GSAP drives the
+     lines inside overflow masks. */
+  .js [data-reveal='lines'].cap-split {
+    opacity: 1;
+    transform: none;
+  }
+
+  .cap-line-mask {
+    display: block;
+    overflow: hidden;
+  }
+
+  .cap-line-inner {
+    display: block;
+    will-change: transform;
+  }
+
+  /* ---------- Variant: table (wrapper fades; caption wipes; rows cascade;
+     no transforms on the wrapper so the scroll region is untouched) ------ */
+  .js [data-reveal='table'] {
+    transform: none;
+    transition: opacity 0.7s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal='table'] caption {
+    transition: clip-path 0.85s var(--cap-ease-expo) 0.1s;
+  }
+
+  .js [data-reveal='table']:not(.is-in) caption {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .js [data-reveal='table'] tbody tr {
+    transition:
+      opacity 0.6s var(--cap-ease-expo),
+      transform 0.6s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal='table']:not(.is-in) tbody tr {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  /* ---------- Variant: photo clip wipe (Projects) ---------- */
+  .js [data-reveal='clip'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .js [data-reveal='clip'] img {
+    transition:
+      clip-path 0.85s var(--cap-ease-expo),
+      filter 0.5s ease,
+      transform 0.7s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal='clip']:not(.is-in) img {
+    clip-path: inset(100% 0 0 0);
+  }
+
+  .js [data-reveal='clip'].is-in img {
+    clip-path: inset(0 0 0 0);
+  }
+
+  .js [data-reveal='clip'][data-reveal-delay='1'] img { transition-delay: 0.1s, 0s, 0s; }
+  .js [data-reveal='clip'][data-reveal-delay='2'] img { transition-delay: 0.2s, 0s, 0s; }
+  .js [data-reveal='clip'][data-reveal-delay='3'] img { transition-delay: 0.3s, 0s, 0s; }
+  .js [data-reveal='clip'][data-reveal-delay='4'] img { transition-delay: 0.4s, 0s, 0s; }
+
+  /* ---------- Variant: team card (rise + top-bar wipe) ---------- */
+  .team-card::before {
+    transition: transform 0.8s var(--cap-ease-expo) 0.15s;
+  }
+
+  .js [data-reveal='card']:not(.is-in)::before {
+    transform: scaleX(0);
+  }
+
+  /* ---------- Item lists: index slide-in + hover nudge ---------- */
+  .item .item-index {
+    transition:
+      opacity 0.6s var(--cap-ease-expo) 0.2s,
+      transform 0.6s var(--cap-ease-expo) 0.2s;
+  }
+
+  .js .item[data-reveal]:not(.is-in) .item-index {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  .item h3 {
+    transition: transform 0.45s var(--cap-ease-expo);
+  }
+
+  .item:hover h3 {
+    transform: translateX(6px);
+  }
+
+  /* ---------- Contact CTA underline wipe-in ---------- */
+  .contact-cta::after {
+    transition:
+      transform 0.8s var(--cap-ease-expo) 0.3s,
+      background-color 0.3s ease;
+  }
+
+  .js [data-reveal]:not(.is-in) .contact-cta::after {
+    transform: scaleX(0);
+  }
+
+  /* ---------- Footer choreography (homepage recipe) ----------
+     Big-C mark clip-wipes 1.1s expo (+0.1s); every .cap-footer-item fades
+     with a positional delay set inline by site.js before .is-in lands. */
+  .js [data-reveal='footer'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .js [data-reveal='footer'] .footer-mark {
+    transition: clip-path 1.1s var(--cap-ease-expo) 0.1s;
+  }
+
+  .js [data-reveal='footer']:not(.is-in) .footer-mark {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .js [data-reveal='footer'] .cap-footer-item {
+    transition: opacity 0.85s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal='footer']:not(.is-in) .cap-footer-item {
+    opacity: 0;
+  }
+}
