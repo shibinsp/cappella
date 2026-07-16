@@ -2980,7 +2980,11 @@ class Component extends DCLogic {
       });
 
       if (stat75) {
-        const fp = clamp((p - 0.55) / 0.4); // beside the stairs — trails them slightly
+        // Rise WITH the stairs, not after them: the old window (0.55 → 0.95)
+        // needed the stair container at the viewport top for full opacity,
+        // so in normal scrolling the stat read as empty red space ("design
+        // incomplete" — client). Full by p 0.6, i.e. as the stairs build.
+        const fp = clamp((p - 0.15) / 0.45);
         stat75.style.opacity = String(fp);
         stat75.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
       }

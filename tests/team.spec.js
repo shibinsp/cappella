@@ -1,4 +1,5 @@
-// Phase 4 gate: Team page — Leadership Collective, 4 text-only member cards.
+// Phase 4 gate: Team page — Leadership Collective, 4 member cards with
+// client-supplied portraits (INTRAPRENEURS drive, added 2026-07-16).
 const { test, expect } = require('@playwright/test');
 const {
   attachErrorCapture,
@@ -31,7 +32,7 @@ const MEMBERS = [
 ];
 
 test.describe('team.html', () => {
-  test('h1, intro, four exact member cards, no images in cards', async ({ page }) => {
+  test('h1, intro, four exact member cards with portraits', async ({ page }) => {
     const errors = attachErrorCapture(page);
     await page.goto('/team.html');
 
@@ -49,8 +50,18 @@ test.describe('team.html', () => {
       await expect(cards.nth(i).locator('p.body-copy')).toHaveText(MEMBERS[i].bio);
     }
 
-    // No photos exist for the team — cards must not fabricate any
-    await expect(page.locator('.team-card img')).toHaveCount(0);
+    // Every card carries its client-supplied portrait: descriptive alt,
+    // file actually loads (naturalWidth > 0)
+    const portraits = page.locator('.team-card img.portrait');
+    await expect(portraits).toHaveCount(4);
+    for (let i = 0; i < MEMBERS.length; i++) {
+      const img = portraits.nth(i);
+      await expect(img).toHaveAttribute('alt', `Portrait of ${MEMBERS[i].name}`);
+      await img.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => img.evaluate((el) => el.complete && el.naturalWidth > 0), { timeout: 10000 })
+        .toBe(true);
+    }
 
     await assertNoHorizontalOverflow(page);
     expectNoPageErrors(errors);
