@@ -290,13 +290,20 @@ test.describe('pinned journey', () => {
         const stage = document.querySelector('.cap-j-stage');
         const br = b.getBoundingClientRect();
         const sr = stage.getBoundingClientRect();
+        const sky = document.querySelector('.cap-j-sky');
+        const t = getComputedStyle(sky).transform;
+        const m = t === 'none' ? { f: 0 } : new DOMMatrixReadOnly(t);
         return {
           visualBase: br.top + br.height * parseFloat(b.dataset.base),
           horizon: sr.top + sr.height * 0.872,
-          scale: sr.height / 820
+          scale: sr.height / 820,
+          skyShift: m.f
         };
       }, i);
       expect(Math.abs(base.visualBase - base.horizon)).toBeLessThan(12 * base.scale);
+      // Raised sea level: sky translated up -75px on Growth/Expansion
+      // (loose tolerance — the scroll lerp may still be settling)
+      expect(Math.abs(base.skyShift - (i === 0 ? 0 : -75))).toBeLessThan(8);
     }
 
     // Old journey band content must be hidden
