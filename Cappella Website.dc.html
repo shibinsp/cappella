@@ -1026,6 +1026,38 @@ class Component extends DCLogic {
     // (The crossing hairline previously injected at this row was removed
     // 2026-07-17: the Figma design has no horizontal line at the Lighthouse
     // row — the grid verticals simply end/gap around it.)
+
+    // Center-column vertical (Figma): runs down the x726 column, gapping
+    // around the LIGHTHOUSE wordmark, then continuing to the footer band.
+    // The baked element for it (the hidden 1581-long svg) got stranded at
+    // the wrong span by the band/journey shifts — rebuild it as two clones
+    // positioned from live geometry, adopted by the shift machinery via
+    // data-jorig-ty (+ data-cap-shifted so shiftBelowBand won't re-shift).
+    const donor = scaler.querySelector('svg[width="1581"]');
+    if (donor && !scaler.querySelector('[data-cap-centerline]')) {
+      const srect = scaler.getBoundingClientRect();
+      const mSc = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+      const sc2 = mSc ? parseFloat(mSc[1]) : 1;
+      const cvTop = (el) => (el.getBoundingClientRect().top - srect.top) / sc2;
+      const cvBottom = (el) => (el.getBoundingClientRect().bottom - srect.top) / sc2;
+      const band = scaler.querySelector('[data-original-top="7352"]');
+      const jd = this._jDelta || 0;
+      const mkSeg = (topY, bottomY) => {
+        const len = bottomY - topY;
+        if (len <= 10) return;
+        const el = donor.cloneNode(true);
+        el.setAttribute('data-cap-centerline', '1');
+        el.setAttribute('data-cap-shifted', '1');
+        el.setAttribute('data-jorig-ty', String(bottomY - jd));
+        el.style.display = '';
+        el.style.transform = 'matrix(0, -1, 1, 0, 726, ' + bottomY.toFixed(1) + ') scaleX(' + (len / 1581).toFixed(5) + ')';
+        donor.parentElement.appendChild(el);
+      };
+      if (band) {
+        mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
+        mkSeg(cvBottom(lh) + 18, cvTop(band));
+      }
+    }
     if (this._runAdjust) this._runAdjust();
   }
 
