@@ -638,9 +638,9 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (scaler) {
       const footerShiftTop = 0; // Keeping top at 7092 prevents overlap with operators section
-      // 530 = compact footer content; +190 opens the giant-wordmark row at
-      // the band bottom (type-on letters, see _setupFooterWordmark)
-      const footerHeight = 720;
+      const footerHeight = 530; // compact footer content
+      // (Giant CAPPELLA wordmark type-on removed 2026-07-17 — invented
+      // element, not in the approved design.)
 
       // ===== BAND EXTENSION SHIFT =====
       // The red stats band grew by 260px (staircase now sits below the
@@ -917,7 +917,6 @@ class Component extends DCLogic {
       safe(() => this._setupAccordion(), 'accordion');
       // this._setupMetaLabels();
       safe(() => this._setupFooterAnimations(), 'footer');
-      safe(() => this._setupFooterWordmark(), 'footerWordmark');
       // (Operators marquee removed per client feedback 2026-07-16 — the
       // baked static logo grid + triangle decorations render as designed.)
       safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
@@ -1028,69 +1027,6 @@ class Component extends DCLogic {
       frameRoot.appendChild(line);
     });
     if (this._runAdjust) this._runAdjust();
-  }
-
-  _setupFooterWordmark() {
-    // Giant CAPPELLA across the footer's bottom row — letters type on
-    // strictly left → right (fade + rise), scrubbed to scroll and fully
-    // reversible. Injected with data-cap-own so adjustFooter's capture and
-    // the footer reveal gate never adopt it; the footer band extension
-    // (footerHeight 530 → 720) is its reserved row.
-    const scaler = document.getElementById('cap-scaler');
-    const band = scaler && scaler.querySelector('[data-original-top="7352"]');
-    if (!band) {
-      if ((this._fwTries = (this._fwTries || 0) + 1) < 40) setTimeout(() => this._setupFooterWordmark(), 250);
-      return;
-    }
-    if (band.querySelector('.cap-fw')) return;
-
-    const row = document.createElement('div');
-    row.className = 'cap-fw';
-    row.setAttribute('data-cap-own', '1');
-    row.style.cssText =
-      'position:absolute; left:63px; width:1314px; top:524px; height:170px;' +
-      'display:flex; justify-content:space-between; align-items:flex-end;' +
-      'overflow:hidden; pointer-events:none; z-index:4;';
-    'CAPPELLA'.split('').forEach(ch => {
-      const s = document.createElement('span');
-      s.setAttribute('data-cap-own', '1');
-      s.textContent = ch;
-      s.style.cssText =
-        'font-family:Montserrat, sans-serif; font-weight:800; font-size:150px;' +
-        'line-height:1; color:rgb(255,255,255); display:inline-block;' +
-        'opacity:0; will-change:opacity, transform;';
-      row.appendChild(s);
-    });
-    band.appendChild(row);
-    const letters = [...row.children];
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      letters.forEach(s => { s.style.opacity = '1'; s.style.transform = 'none'; });
-      return;
-    }
-
-    const STAG = 0.16; // per-letter offset of the master progress
-    let cur = 0;
-    const tick = () => {
-      this._fwRaf = requestAnimationFrame(tick);
-      const r = band.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (r.bottom < -200 || r.top > vh + 200) return; // off-screen: idle
-      // Progress = how far the band has entered, relative to its visible
-      // height (rect-based, so it reaches 1 at page bottom on every scale).
-      const target = Math.max(0, Math.min(1, (vh - r.top) / Math.min(r.height, vh * 0.85)));
-      cur += (target - cur) * 0.1;
-      if (Math.abs(target - cur) < 0.0005) cur = target;
-      letters.forEach((s, i) => {
-        const local = Math.max(0, Math.min(1, cur * (1 + letters.length * STAG) - i * STAG));
-        const e = +(1 - Math.pow(1 - local, 3)).toFixed(3);
-        if (s._capE === e) return; // skip no-op writes (observer + layout noise)
-        s._capE = e;
-        s.style.opacity = String(e);
-        s.style.transform = 'translateY(' + ((1 - e) * 44).toFixed(1) + 'px)';
-      });
-    };
-    tick();
   }
 
   _setupDotGrid() {
@@ -2246,6 +2182,26 @@ class Component extends DCLogic {
       </svg>
     `;
     document.body.appendChild(btn);
+
+    // Hide the baked Figma menu square (solid red box, hero top-right) that
+    // this floating button replaces — retried until the frame hydrates
+    const hideBakedMenuBox = () => {
+      const scaler = document.getElementById('cap-scaler');
+      if (!scaler) return false;
+      const box = [...scaler.querySelectorAll('div')].find((e) => {
+        const st = e.getAttribute('style') || '';
+        return parseFloat(e.style.left) === 1360 && parseFloat(e.style.top) === 25 &&
+               st.includes('209, 32, 47') && Math.abs(parseFloat(e.style.width) - 56) < 2;
+      });
+      if (box) { box.style.display = 'none'; return true; }
+      return false;
+    };
+    if (!hideBakedMenuBox()) {
+      let boxTries = 0;
+      const boxTimer = setInterval(() => {
+        if (hideBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
+      }, 250);
+    }
 
     const overlay = document.createElement('div');
     overlay.id = 'cap-menu-overlay';
@@ -4212,7 +4168,6 @@ class Component extends DCLogic {
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
-    if (this._fwRaf) cancelAnimationFrame(this._fwRaf);
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);

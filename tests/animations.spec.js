@@ -488,53 +488,6 @@ test.describe('portfolio counter-scroll columns', () => {
   });
 });
 
-test.describe('footer wordmark type-on', () => {
-  const HOME = '/Cappella%20Website.dc.html';
-
-  test('letters appear left to right and all land at the bottom', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
-    testInfo.setTimeout(90000);
-    const errors = attachErrorCapture(page);
-    await page.goto(HOME, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#cap-journey', { timeout: 20000 });
-    await page.waitForSelector('.cap-fw span', { timeout: 20000 });
-
-    // Mid-entry: opacities must be non-increasing left → right with a real
-    // spread (the cascade), polled while the lerp converges.
-    await page.evaluate(() =>
-      window.scrollTo(0, document.body.scrollHeight - window.innerHeight * 1.45)
-    );
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() => {
-            const o = [...document.querySelectorAll('.cap-fw span')].map(
-              (s) => +s.style.opacity || 0
-            );
-            const ordered = o.every((v, i) => i === 0 || v <= o[i - 1] + 0.001);
-            return ordered && o[0] > 0.5 && o[0] - o[o.length - 1] > 0.3;
-          }),
-        { timeout: 10000 }
-      )
-      .toBe(true);
-
-    // Page bottom: every letter fully landed
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() =>
-            [...document.querySelectorAll('.cap-fw span')].every(
-              (s) => +s.style.opacity === 1
-            )
-          ),
-        { timeout: 10000 }
-      )
-      .toBe(true);
-    expectNoPageErrors(errors);
-  });
-});
-
 test.describe('footer reveal replays', () => {
   const HOME = '/Cappella%20Website.dc.html';
 
