@@ -837,9 +837,9 @@ function Frame4(_p = {}) {
     fill: "currentColor",
     fillRule: "nonzero"
   })), /*#__PURE__*/React.createElement("svg", {
-    width: 774,
+    width: 980,
     height: 1,
-    viewBox: "0 -0.500 774 1",
+    viewBox: "0 -0.500 980 1",
     fill: "none",
     style: {
       position: "absolute",
@@ -847,12 +847,12 @@ function Frame4(_p = {}) {
       top: 0,
       transform: "matrix(0,1,-1,0,723,2150)",
       transformOrigin: "0 0",
-      width: 774,
+      width: 980,
       height: 1,
       color: "rgb(209,32,47)"
     }
   }, /*#__PURE__*/React.createElement("path", {
-    d: "M 0 -0.5 L 0 0 L 774 0 L 774 -0.5 L 774 -1 L 0 -1 L 0 -0.5 Z",
+    d: "M 0 -0.5 L 0 0 L 980 0 L 980 -0.5 L 980 -1 L 0 -1 L 0 -0.5 Z",
     fill: "currentColor",
     fillRule: "nonzero"
   })), /*#__PURE__*/React.createElement("svg", {
