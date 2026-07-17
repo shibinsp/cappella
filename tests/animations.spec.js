@@ -306,6 +306,31 @@ test.describe('pinned journey', () => {
       expect(Math.abs(base.skyShift - (i === 0 ? 0 : -75))).toBeLessThan(8);
     }
 
+    // The white curve's exit point lines up with the red hairline that starts
+    // at the section boundary below, so the two read as one continuous line
+    const join = await page.evaluate(() => {
+      const host = document.getElementById('cap-journey');
+      const hostBottom = window.scrollY + host.getBoundingClientRect().bottom;
+      const path = document.querySelectorAll('.cap-j-phase')[2].querySelector('.cap-j-path');
+      const end = path.getPointAtLength(path.getTotalLength());
+      const stage = document.querySelector('.cap-j-stage');
+      const sr = stage.getBoundingClientRect();
+      const curveX = sr.left + end.x * (sr.width / 1600);
+      let redX = null;
+      for (const el of document.querySelectorAll('#cap-scaler svg')) {
+        const r = el.getBoundingClientRect();
+        const pageTop = window.scrollY + r.top;
+        const st = el.getAttribute('style') || '';
+        if (r.width <= 4 && r.height > 80 && st.includes('209, 32, 47') && Math.abs(pageTop - hostBottom) < 10) {
+          redX = r.left + r.width / 2;
+          break;
+        }
+      }
+      return { curveX, redX };
+    });
+    expect(join.redX).not.toBeNull();
+    expect(Math.abs(join.curveX - join.redX)).toBeLessThan(4);
+
     // Old journey band content must be hidden
     const hidden = await page.evaluate(
       () => document.querySelectorAll('#cap-scaler [data-jhidden]').length
