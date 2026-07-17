@@ -2790,8 +2790,13 @@ class Component extends DCLogic {
     const layout = () => {
       const s = vp.clientWidth / 1440;
       const vpPageTop = vp.getBoundingClientRect().top + window.scrollY;
-      host.style.top = Math.round(vpPageTop + this._jBandTop * s) + 'px';
-      host.style.height = Math.round(this._jVH * window.innerHeight) + 'px';
+      // GAP_CLOSE: the baked frame leaves a 15px white strip between the
+      // Edge image's bottom (y3125) and the band top (y3140) — the sky
+      // starts at the image edge instead (client request 2026-07-17). Added
+      // to the height so the host's BOTTOM edge (red-hairline join) stays.
+      const GAP_CLOSE = 15;
+      host.style.top = Math.round(vpPageTop + (this._jBandTop - GAP_CLOSE) * s) + 'px';
+      host.style.height = Math.round(this._jVH * window.innerHeight + GAP_CLOSE * s) + 'px';
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / CW, h / CH);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
