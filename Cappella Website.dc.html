@@ -2514,17 +2514,25 @@ class Component extends DCLogic {
     const CW = PORTRAIT ? 800 : 1600;   // canvas design width
     const CH = PORTRAIT ? 1500 : 820;   // canvas design height
     const HY = PORTRAIT ? 1150 : 715;   // sky-horizon y in canvas coords
-    const BASE_PATH = PORTRAIT
-      ? 'M 640 -10 C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
-      : 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
+    // Path head x + body (the M start is composed dynamically in setTail so
+    // the curve always reaches the pin's top edge — on viewports taller than
+    // the canvas aspect the stage letterboxes and a static start would hang
+    // visibly mid-sky)
+    const HEAD_X = PORTRAIT ? 640 : 812;
+    const BASE_BODY = PORTRAIT
+      ? 'C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
+      : 'C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
+    const BASE_PATH = 'M ' + HEAD_X + ' -10 ' + BASE_BODY;
     const TAIL = PORTRAIT
       ? { c1x: 158, c1y: 1310, minMid: 1350 }
       : { c1x: 207, c1y: 732, minMid: 760 };
-    // Dot positions + their arc-length reveal fractions (measured per path,
-    // keeping the hand-tuned reveal offsets: +0.06 / +0.06 / -0.02)
+    // Dot positions; reveal fractions are recomputed per layout (the dynamic
+    // head/tail change the path length), preserving the hand-tuned offsets
     const DOTS = PORTRAIT
       ? [['0.25', 540, 300], ['0.50', 360, 700], ['0.70', 170, 1230]]
       : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
+    const TH_ADJ = PORTRAIT ? [0.06, 0.06, -0.067] : [0.06, 0.055, -0.019];
+    const TH_LIVE = DOTS.map((d) => parseFloat(d[0]));
     const MPOS = PORTRAIT
       ? [[90, 240, 420], [410, 640, 370], [230, 1170, 440]]
       : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
@@ -2569,7 +2577,7 @@ class Component extends DCLogic {
           '<path class="cap-j-path" d="' + BASE_PATH + '" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
           dotIdx.map((di) => {
             const d = DOTS[di];
-            return '<circle class="cap-j-dot" data-th="' + d[0] + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
+            return '<circle class="cap-j-dot" data-di="' + di + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
           }).join('') +
         '</svg>' +
         markers +
@@ -2580,7 +2588,7 @@ class Component extends DCLogic {
     const marker = (di, year, assets, note, countTo) => {
       const pos = MPOS[di];
       const wrap = PORTRAIT ? 'white-space:normal;max-width:' + pos[2] + 'px;' : '';
-      return '<div class="cap-j-marker" data-th="' + DOTS[di][0] + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
+      return '<div class="cap-j-marker" data-di="' + di + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
         '<div style="font-size:' + MF.y + 'px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
         '<div style="font-size:' + MF.a + 'px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
         (note ? '<div style="font-size:' + MF.n + 'px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
@@ -2743,7 +2751,13 @@ class Component extends DCLogic {
       const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
       // stage-local y of the pin's bottom edge, +12 overshoot past the clip
       const yExit = (h + CH * scale) / (2 * scale) + 12;
-      const d = BASE_PATH + ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
+      // …and of the pin's TOP edge: on viewports taller than the canvas
+      // aspect the stage letterboxes, so the curve extends straight up from
+      // its design start to the section's top edge instead of hanging mid-sky
+      const yHead = Math.min(-10, -(h - CH * scale) / (2 * scale) - 12);
+      const d = 'M ' + HEAD_X + ' ' + yHead.toFixed(1) +
+        (yHead < -10 ? ' L ' + HEAD_X + ' -10 ' : ' ') + BASE_BODY +
+        ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
         xExit.toFixed(1) + ' ' + Math.max(TAIL.minMid, yExit - 90).toFixed(1) + ' ' +
         xExit.toFixed(1) + ' ' + yExit.toFixed(1);
       phases.forEach((ph) => {
@@ -2754,6 +2768,21 @@ class Component extends DCLogic {
         ph._path.dataset.len = len;
         ph._path.style.strokeDasharray = len;
       });
+      // The head/tail lengths vary with the viewport, so the dots' arc
+      // fractions move — recompute them (y-bisection; the path is monotonic
+      // in y) and reapply the hand-tuned reveal offsets
+      const p0 = phases[0] && phases[0]._path;
+      if (p0) {
+        const total = p0.getTotalLength();
+        DOTS.forEach((dot, di) => {
+          let lo = 0, hi = total;
+          for (let k = 0; k < 40; k++) {
+            const mid = (lo + hi) / 2;
+            if (p0.getPointAtLength(mid).y < dot[2]) lo = mid; else hi = mid;
+          }
+          TH_LIVE[di] = Math.min(0.95, Math.max(0.02, lo / total + TH_ADJ[di]));
+        });
+      }
     };
 
     // geometry: host over the band gap (page coordinates — the host is a
@@ -2888,7 +2917,7 @@ class Component extends DCLogic {
         }
 
         ph._dots.forEach((d, di) => {
-          const th = parseFloat(d.dataset.th);
+          const th = TH_LIVE[+d.dataset.di];
           const rev = clamp((drawT - (th - 0.04)) / 0.06, 0, 1);
           d.style.opacity = rev.toFixed(3);
           const ring = ph._rings[di];
@@ -2916,7 +2945,7 @@ class Component extends DCLogic {
         });
 
         ph._markers.forEach((m) => {
-          const th = parseFloat(m.dataset.th);
+          const th = TH_LIVE[+m.dataset.di];
           const r = clamp((drawT - (th - 0.06)) / 0.10, 0, 1);
           const e = easeOut(r);
           m.style.opacity = e.toFixed(3);
@@ -2924,7 +2953,7 @@ class Component extends DCLogic {
         });
         ph._counts.forEach((c) => {
           const mk = c.closest('.cap-j-marker');
-          const th = parseFloat(mk.dataset.th);
+          const th = TH_LIVE[+mk.dataset.di];
           if (drawT >= th - 0.02 && op > 0.3) {
             if (!c._counting && !c._done) c._counting = now;
           } else if (op < 0.1) {
