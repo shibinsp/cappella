@@ -3865,6 +3865,10 @@ class Component extends DCLogic {
 
       // OCI-style hover roll: duplicate the title inside an overflow mask
       const rowH = titleEl.getBoundingClientRect().height / sc();
+      // Baked titles sit at left:806 while the description column starts at
+      // 755 — share the description's left edge so the panel reads as one
+      // aligned stack (client note 2026-07-17: "Alignment is off")
+      titleEl.style.left = DESC_LEFT + 'px';
       titleEl.style.height = rowH + 'px';
       titleEl.style.overflow = 'hidden';
       titleEl.style.transition = 'top 0.65s ' + EASE;
@@ -3911,14 +3915,14 @@ class Component extends DCLogic {
       const link = document.createElement('div');
       link.style.cssText =
         'margin-top:22px; display:inline-flex; align-items:center; gap:8px;' +
-        'font-family: Montserrat, sans-serif; font-weight:600; font-size:13px;' +
-        'letter-spacing:1.5px; color: rgb(209,32,47); cursor:pointer; pointer-events:auto;';
+        "font-family: 'Space Mono', monospace; font-weight:400; font-size:13px;" +
+        'letter-spacing:2px; color: rgb(209,32,47); cursor:pointer; pointer-events:auto;';
       const arrow = document.createElement('span');
       arrow.textContent = '→';
       arrow.style.cssText = 'display:inline-block; transition: transform 0.35s ' + EASE + ';';
-      link.appendChild(document.createTextNode('[  LEARN MORE '));
+      link.appendChild(document.createTextNode('[ LEARN MORE'));
       link.appendChild(arrow);
-      link.appendChild(document.createTextNode('  ]'));
+      link.appendChild(document.createTextNode(']'));
       link.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(6px)'; });
       link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
       link.addEventListener('click', () => {
