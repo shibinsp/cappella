@@ -3287,12 +3287,12 @@ class Component extends DCLogic {
     ];
 
     // =====================================================================
-    // TRUE WebGL GLSL Bayer-Matrix Dither  (OCI-style, Cappella Red)
-    // Architecture mirrors oci-website/js/dither.js but uses:
-    //   dark  = #D1202F (Cappella red)   light = #FFF0F0 (warm white)
-    // uDitherAmount uniform: 1.0 = full dither  /  0.0 = full colour
+    // WebGL card treatment: photo under a translucent Cappella-red overlay
+    // (#D1202F at A8 = 65.9% — client spec 2026-07-17; replaces the earlier
+    // Bayer-dither duotone).
+    // u_dither uniform: 1.0 = overlay on  /  0.0 = full colour
     // On hover → tween to 0.0 + zoom 1.05x  (reveal original image)
-    // On leave → tween to 1.0 + zoom 1.0x   (restore dither)
+    // On leave → tween to 1.0 + zoom 1.0x   (restore overlay)
     // =====================================================================
 
     // --- GLSL shaders ---
@@ -3306,63 +3306,27 @@ class Component extends DCLogic {
       }
     `;
 
-    // 4×4 Bayer threshold matrix encoded as uniforms
-    // u_bayer[y*4+x] = ordered-dither threshold (0–15)
     const FRAG_SRC = `
       precision mediump float;
       varying vec2 v_uv;
       uniform sampler2D u_tex;
-      uniform float u_dither;      // 0=colour, 1=dither
+      uniform float u_dither;      // 0=colour, 1=overlay
       uniform float u_zoom;        // 1.0 default, 1.05 hovered
-      uniform float u_bayer[16];   // 4x4 Bayer matrix values
 
       void main() {
         /* zoom from centre */
         vec2 uv = (v_uv - 0.5) / u_zoom + 0.5;
         vec4 col = texture2D(u_tex, uv);
 
-        /* luminance */
-        float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+        /* #D1202F at A8 alpha (168/255 = 0.659) over the photo */
+        vec3 red = vec3(0.820, 0.125, 0.184);
+        vec3 tinted = mix(col.rgb, red, 0.659);
 
-        /* Bayer threshold lookup (use mod on pixel coords) */
-        int bx = int(mod(floor(gl_FragCoord.x), 4.0));
-        int by = int(mod(floor(gl_FragCoord.y), 4.0));
-        float idx = float(by * 4 + bx);
-
-        /* manually index — GLSL ES 1.0 needs constant-index arrays  */
-        /* so we use a chain of comparisons (16 branches, GPU trivial) */
-        float thr = 0.0;
-        if      (idx <  1.0) thr = u_bayer[ 0];
-        else if (idx <  2.0) thr = u_bayer[ 1];
-        else if (idx <  3.0) thr = u_bayer[ 2];
-        else if (idx <  4.0) thr = u_bayer[ 3];
-        else if (idx <  5.0) thr = u_bayer[ 4];
-        else if (idx <  6.0) thr = u_bayer[ 5];
-        else if (idx <  7.0) thr = u_bayer[ 6];
-        else if (idx <  8.0) thr = u_bayer[ 7];
-        else if (idx <  9.0) thr = u_bayer[ 8];
-        else if (idx < 10.0) thr = u_bayer[ 9];
-        else if (idx < 11.0) thr = u_bayer[10];
-        else if (idx < 12.0) thr = u_bayer[11];
-        else if (idx < 13.0) thr = u_bayer[12];
-        else if (idx < 14.0) thr = u_bayer[13];
-        else if (idx < 15.0) thr = u_bayer[14];
-        else                 thr = u_bayer[15];
-
-        float threshold = (thr + 0.5) / 16.0;
-
-        /* Cappella red duotone  */
-        vec3 dark  = vec3(0.820, 0.125, 0.184);   /* #D1202F */
-        vec3 light = vec3(1.000, 0.941, 0.941);   /* #FFF0F0 */
-        vec3 dithered = lum > threshold ? light : dark;
-
-        /* blend between dithered and original */
-        gl_FragColor = vec4(mix(col.rgb, dithered, u_dither), col.a);
+        /* blend between overlaid and original (hover reveal) */
+        gl_FragColor = vec4(mix(col.rgb, tinted, u_dither), col.a);
       }
     `;
 
-    // 4×4 Bayer matrix (same as OCI)
-    const BAYER16 = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
 
     /**
      * Creates a WebGL dither instance on a <canvas> element.
@@ -3406,8 +3370,6 @@ class Component extends DCLogic {
       // uniforms
       const uDither = gl.getUniformLocation(prog, 'u_dither');
       const uZoom   = gl.getUniformLocation(prog, 'u_zoom');
-      const uBayer  = gl.getUniformLocation(prog, 'u_bayer[0]');
-      gl.uniform1fv(uBayer, new Float32Array(BAYER16));
 
       // texture
       const tex = gl.createTexture();
@@ -3513,8 +3475,7 @@ class Component extends DCLogic {
         ditherCanvas.style.cssText = [
           'position:absolute', 'top:0', 'left:0',
           'width:100%', 'height:100%',
-          'pointer-events:none',
-          'image-rendering:pixelated'          // keep the halftone crisp
+          'pointer-events:none'
         ].join(';');
         img.appendChild(ditherCanvas);
 
