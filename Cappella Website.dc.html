@@ -2540,9 +2540,12 @@ class Component extends DCLogic {
     host.id = 'cap-journey';
     host.style.cssText = 'position:absolute; left:0; width:100%; z-index:40;';
 
-    const phaseHtml = (i, img, imgStyle, markers, wordA, wordB, dots) =>
+    // basePct = the building's visual base row / PNG height (the images carry
+    // different amounts of transparent padding). Zoom scales about that base
+    // so the building stays planted on the horizon.
+    const phaseHtml = (i, img, imgStyle, basePct, markers, wordA, wordB, dots) =>
       '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
-        '<img class="cap-j-building" src="' + A + img + '" alt="" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% 100%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
+        '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct + '" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
         '<svg class="cap-j-svg" viewBox="0 0 1600 820" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
           '<path class="cap-j-path" d="M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670 C 207 732 243 812 240 840" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
           dots.map((th) => {
@@ -2568,16 +2571,16 @@ class Component extends DCLogic {
           '<img src="' + A + 'sky.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;pointer-events:none;">' +
           '<div class="cap-j-tint" style="position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
           '<div style="position:absolute;left:120px;top:78px;font-family:Montserrat,sans-serif;font-size:64px;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
-          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:112px;width:900px;',
+          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:88px;width:900px;', 0.958,
             marker('0.26', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
             marker('0.57', 596, 442, '2017', '1 Asset', '', 0) +
             marker('0.82', 296, 642, '2018', '1 Asset', '', 0),
             'Foundation', 'Phase', ['0.26', '0.57', '0.82']) +
-          phaseHtml(1, 'growth.png', 'right:-20px;bottom:55px;width:1040px;',
+          phaseHtml(1, 'growth.png', 'right:-20px;bottom:5px;width:1040px;', 0.801,
             marker('0.26', 806, 180, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
             marker('0.82', 296, 642, '2021', 'Assets', '', 2),
             'Growth', 'Phase', ['0.26', '0.82']) +
-          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-40px;width:940px;',
+          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-57px;width:940px;', 0.741,
             marker('0.26', 806, 180, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
             marker('0.57', 596, 442, '2024', '1 Asset', '', 0) +
             marker('0.82', 296, 642, '2025', 'Assets', 'Expansion to Dubai', 3),
@@ -2670,7 +2673,7 @@ class Component extends DCLogic {
         if (!b || !sh || !b.offsetWidth) return;
         const w = b.offsetWidth, h = b.offsetHeight;
         const cx = b.offsetLeft + w * 0.5;
-        const baseY = b.offsetTop + h * 0.9;
+        const baseY = b.offsetTop + h * parseFloat(b.dataset.base || '0.9');
         const sw = w * 0.8, shh = 46;
         sh.dataset.baseTop = (baseY - shh / 2);
         sh.style.width = sw + 'px';
@@ -2726,19 +2729,20 @@ class Component extends DCLogic {
         const zoomP = clamp(local / 0.6, 0, 1);
         const zEase = reduce ? zoomP : easeOutBack(zoomP);
         const s = 1.14 - 0.14 * zEase;
-        const ty = (1 - zoomP) * 26;
+        // No vertical motion: the base must stay planted on the horizon
+        // (client note 2026-07-17: "objects are literally floating").
+        // The phase drift and cursor parallax run horizontally only.
         const drift = reduce ? 0 : (lc - 0.5) * -34;
         const pbx = reduce ? 0 : mx * -16;
-        const pby = reduce ? 0 : my * -9;
         const b = ph._building;
-        if (b) b.style.transform = 'translate(' + pbx.toFixed(1) + 'px, ' + (ty + drift + pby).toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+        if (b) b.style.transform = 'translate(' + (pbx + drift).toFixed(1) + 'px, 0px) scale(' + s.toFixed(3) + ')';
         if (ph._svg) ph._svg.style.transform = reduce ? '' : 'translate(' + (mx * 8).toFixed(1) + 'px, ' + (my * 5).toFixed(1) + 'px)';
 
         const sh = ph._shadow;
         if (sh) {
           const baseTop = parseFloat(sh.dataset.baseTop || '0');
-          sh.style.top = (baseTop + ty + drift).toFixed(1) + 'px';
-          sh.style.transform = 'scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
+          sh.style.top = baseTop.toFixed(1) + 'px';
+          sh.style.transform = 'translateX(' + (pbx + drift).toFixed(1) + 'px) scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
           sh.style.opacity = (op * 0.55).toFixed(3);
         }
 

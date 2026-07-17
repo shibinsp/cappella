@@ -281,6 +281,22 @@ test.describe('pinned journey', () => {
       });
       expect(pin.top).toBe(0);
       expect(pin.h).toBe(await page.evaluate(() => window.innerHeight));
+
+      // Building sits ON the horizon: its visual base (PNG alpha base, carried
+      // as data-base) must land on the sky horizon at 87.2% of stage height
+      const base = await page.evaluate((i) => {
+        const ph = document.querySelectorAll('.cap-j-phase')[i];
+        const b = ph.querySelector('.cap-j-building');
+        const stage = document.querySelector('.cap-j-stage');
+        const br = b.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        return {
+          visualBase: br.top + br.height * parseFloat(b.dataset.base),
+          horizon: sr.top + sr.height * 0.872,
+          scale: sr.height / 820
+        };
+      }, i);
+      expect(Math.abs(base.visualBase - base.horizon)).toBeLessThan(12 * base.scale);
     }
 
     // Old journey band content must be hidden
