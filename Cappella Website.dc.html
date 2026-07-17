@@ -2529,6 +2529,40 @@ class Component extends DCLogic {
     const A = './components/assets/journey/';
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    // Portrait phones get a recomposed vertical scene — width-scaling the
+    // 1600x820 landscape canvas onto a phone leaves a ~200px strip lost in
+    // an empty viewport. The mode is fixed per build; crossing the
+    // breakpoint on resize tears the section down and rebuilds it.
+    const PORTRAIT = window.innerWidth < Math.min(720, window.innerHeight * 0.85);
+    const CW = PORTRAIT ? 800 : 1600;   // canvas design width
+    const CH = PORTRAIT ? 1500 : 820;   // canvas design height
+    const HY = PORTRAIT ? 1150 : 715;   // sky-horizon y in canvas coords
+    const BASE_PATH = PORTRAIT
+      ? 'M 640 -10 C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
+      : 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
+    const TAIL = PORTRAIT
+      ? { c1x: 158, c1y: 1310, minMid: 1350 }
+      : { c1x: 207, c1y: 732, minMid: 760 };
+    // Dot positions + their arc-length reveal fractions (measured per path,
+    // keeping the hand-tuned reveal offsets: +0.06 / +0.06 / -0.02)
+    const DOTS = PORTRAIT
+      ? [['0.25', 540, 300], ['0.50', 360, 700], ['0.70', 170, 1230]]
+      : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
+    const MPOS = PORTRAIT
+      ? [[90, 240, 420], [410, 640, 370], [230, 1170, 440]]
+      : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
+    const MF = PORTRAIT ? { y: 40, a: 26, n: 18 } : { y: 42, a: 30, n: 17 };
+    // Natural PNG geometry: [width, height, visual-base row, visual-top row]
+    const NAT = {
+      'foundation.png': [806, 353, 338, 11],
+      'growth.png': [979, 472, 378, 21],
+      'expansion.png': [899, 599, 444, 133]
+    };
+    const BDIM = PORTRAIT
+      ? [[760, -30], [760, -30], [760, -30]]
+      : [[900, -10], [1040, -20], [940, -70]];
+    const PNAT = [NAT['foundation.png'], NAT['growth.png'], NAT['expansion.png']];
+
     const css = document.createElement('style');
     css.id = 'cap-journey-css';
     css.textContent =
@@ -2540,30 +2574,41 @@ class Component extends DCLogic {
     host.id = 'cap-journey';
     host.style.cssText = 'position:absolute; left:0; width:100%; z-index:40;';
 
-    // basePct = the building's visual base row / PNG height (the images carry
-    // different amounts of transparent padding). Zoom scales about that base
-    // so the building stays planted on the horizon.
-    const phaseHtml = (i, img, imgStyle, basePct, markers, wordA, wordB, dots) =>
-      '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
-        '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct + '" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
-        '<svg class="cap-j-svg" viewBox="0 0 1600 820" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
-          '<path class="cap-j-path" d="M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670 C 207 732 197 830 197 920" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
-          dots.map((th) => {
-            const pts = { '0.25': [776, 210], '0.53': [560, 470], '0.76': [260, 670] };
-            const p = pts[th];
-            return '<circle class="cap-j-dot" data-th="' + th + '" cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
+    // The building's visual base row / PNG height (the images carry different
+    // amounts of transparent padding) anchors each building on the horizon:
+    // bottom offset and transform-origin both derive from it, so the zoom
+    // scales about the base and it stays planted.
+    const phaseHtml = (i, img, markers, wordA, wordB, dotIdx) => {
+      const nat = NAT[img], bw = BDIM[i][0], bright = BDIM[i][1];
+      const bs = bw / nat[0];
+      const basePct = nat[2] / nat[1];
+      const bottom = (CH - HY) - (nat[1] - nat[2]) * bs;
+      const wordStyle = PORTRAIT
+        ? 'right:24px;bottom:32px;font-size:64px;'
+        : 'right:40px;bottom:26px;font-size:112px;';
+      return '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
+        '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct.toFixed(4) + '" style="position:absolute;right:' + bright + 'px;bottom:' + bottom.toFixed(1) + 'px;width:' + bw + 'px;height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
+        '<svg class="cap-j-svg" viewBox="0 0 ' + CW + ' ' + CH + '" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
+          '<path class="cap-j-path" d="' + BASE_PATH + '" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
+          dotIdx.map((di) => {
+            const d = DOTS[di];
+            return '<circle class="cap-j-dot" data-th="' + d[0] + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
           }).join('') +
         '</svg>' +
         markers +
-        '<div class="cap-j-word" style="position:absolute;right:40px;bottom:26px;font-family:Montserrat,sans-serif;font-size:112px;line-height:1;color:#fff;letter-spacing:-.01em;text-shadow:0 4px 24px rgba(50,65,80,.22);"><span style="font-weight:800;">' + wordA + '</span> <span style="font-weight:300;">' + wordB + '</span></div>' +
+        '<div class="cap-j-word" style="position:absolute;' + wordStyle + 'font-family:Montserrat,sans-serif;line-height:1;color:#fff;letter-spacing:-.01em;text-shadow:0 4px 24px rgba(50,65,80,.22);"><span style="font-weight:800;">' + wordA + '</span> <span style="font-weight:300;">' + wordB + '</span></div>' +
       '</div>';
+    };
 
-    const marker = (th, left, top, year, assets, note, countTo) =>
-      '<div class="cap-j-marker" data-th="' + th + '" style="position:absolute;left:' + left + 'px;top:' + top + 'px;">' +
-        '<div style="font-size:42px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
-        '<div style="font-size:30px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
-        (note ? '<div style="font-size:17px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
+    const marker = (di, year, assets, note, countTo) => {
+      const pos = MPOS[di];
+      const wrap = PORTRAIT ? 'white-space:normal;max-width:' + pos[2] + 'px;' : '';
+      return '<div class="cap-j-marker" data-th="' + DOTS[di][0] + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
+        '<div style="font-size:' + MF.y + 'px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
+        '<div style="font-size:' + MF.a + 'px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
+        (note ? '<div style="font-size:' + MF.n + 'px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
       '</div>';
+    };
 
     host.innerHTML =
       '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
@@ -2578,22 +2623,22 @@ class Component extends DCLogic {
           '<img class="cap-j-sky" src="' + A + 'sky.png" alt="" style="position:absolute;left:0;top:0;user-select:none;">' +
           '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
         '</div>' +
-        '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:1600px;height:820px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          '<div style="position:absolute;left:120px;top:78px;font-family:Montserrat,sans-serif;font-size:64px;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
-          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:88px;width:900px;', 0.958,
-            marker('0.25', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
-            marker('0.53', 596, 442, '2017', '1 Asset', '', 0) +
-            marker('0.76', 296, 642, '2018', '1 Asset', '', 0),
-            'Foundation', 'Phase', ['0.25', '0.53', '0.76']) +
-          phaseHtml(1, 'growth.png', 'right:-20px;bottom:5px;width:1040px;', 0.801,
-            marker('0.25', 806, 180, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
-            marker('0.76', 296, 642, '2021', 'Assets', '', 2),
-            'Growth', 'Phase', ['0.25', '0.76']) +
-          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-57px;width:940px;', 0.741,
-            marker('0.25', 806, 180, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
-            marker('0.53', 596, 442, '2024', '1 Asset', '', 0) +
-            marker('0.76', 296, 642, '2025', 'Assets', 'Expansion to Dubai', 3),
-            'Expansion', 'Phase', ['0.25', '0.53', '0.76']) +
+        '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:' + CW + 'px;height:' + CH + 'px;transform:translate(-50%,-50%);transform-origin:center center;">' +
+          '<div style="position:absolute;' + (PORTRAIT ? 'left:44px;top:64px;font-size:52px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
+          phaseHtml(0, 'foundation.png',
+            marker(0, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
+            marker(1, '2017', '1 Asset', '', 0) +
+            marker(2, '2018', '1 Asset', '', 0),
+            'Foundation', 'Phase', [0, 1, 2]) +
+          phaseHtml(1, 'growth.png',
+            marker(0, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
+            marker(2, '2021', 'Assets', '', 2),
+            'Growth', 'Phase', [0, 2]) +
+          phaseHtml(2, 'expansion.png',
+            marker(0, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
+            marker(1, '2024', '1 Asset', '', 0) +
+            marker(2, '2025', 'Assets', 'Expansion to Dubai', 3),
+            'Expansion', 'Phase', [0, 1, 2]) +
         '</div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 52%, rgba(18,26,36,0.20) 100%);"></div>' +
         '<div class="cap-j-railbox" style="position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:8;">' +
@@ -2615,6 +2660,12 @@ class Component extends DCLogic {
     // Stage-design px; scaled to screen px when applied (pin-level sky).
     const HORIZON_SHIFT = [0, -75, -75];
     let stageScale = 1;
+    // Buildings hold their reference (1440x900) pixel size when the viewport
+    // squeezes the stage below it — the window crops the excess instead of
+    // the building shrinking (client note 2026-07-17: "don't change the
+    // size, just cut the extra overlay")
+    const REF_SCALE = 0.894;
+    let sizeK = 1;
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
     const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
@@ -2696,6 +2747,7 @@ class Component extends DCLogic {
         sh.style.left = (cx - sw / 2) + 'px';
         sh.style.top = (baseY - shh / 2) + 'px';
       };
+      ph._positionShadow = positionShadow;
       if (ph._building) {
         if (ph._building.complete) positionShadow();
         ph._building.addEventListener('load', positionShadow);
@@ -2710,13 +2762,12 @@ class Component extends DCLogic {
     const RED_X_FRAME = 177.6;
     const setTail = (scale, w, h) => {
       const frameScale = vp.clientWidth / 1440;
-      const stageLeft = (w - 1600 * scale) / 2;
+      const stageLeft = (w - CW * scale) / 2;
       const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
       // stage-local y of the pin's bottom edge, +12 overshoot past the clip
-      const yExit = (h + 820 * scale) / (2 * scale) + 12;
-      const d = 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470' +
-        ' C 474 547 313 608 260 670 C 207 732 ' +
-        xExit.toFixed(1) + ' ' + Math.max(760, yExit - 90).toFixed(1) + ' ' +
+      const yExit = (h + CH * scale) / (2 * scale) + 12;
+      const d = BASE_PATH + ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
+        xExit.toFixed(1) + ' ' + Math.max(TAIL.minMid, yExit - 90).toFixed(1) + ' ' +
         xExit.toFixed(1) + ' ' + yExit.toFixed(1);
       phases.forEach((ph) => {
         if (!ph._path) return;
@@ -2736,15 +2787,54 @@ class Component extends DCLogic {
       host.style.top = Math.round(vpPageTop + this._jBandTop * s) + 'px';
       host.style.height = Math.round(this._jVH * window.innerHeight) + 'px';
       const w = pin.clientWidth, h = pin.clientHeight;
-      const scale = Math.min(w / 1600, h / 820);
+      const scale = Math.min(w / CW, h / CH);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
       stageScale = scale;
+      // Buildings anchor to the WINDOW's right edge (not the canvas edge —
+      // on wide/short viewports the centered canvas would leave them
+      // floating mid-frame) and hold their reference px size when the stage
+      // squeezes below it, the window cropping the excess. Growth is clamped
+      // so a facade never reaches the marker column (canvas x 850).
+      if (!PORTRAIT) {
+        const xRight = CW / 2 + w / (2 * scale); // window right edge, canvas coords
+        sizeK = Math.max(1, REF_SCALE / scale);
+        const srect = stage.getBoundingClientRect();
+        const sc2 = srect.width / CW;
+        phases.forEach((ph, i) => {
+          const b = ph._building || ph.querySelector('.cap-j-building');
+          if (!b) return;
+          // Marker boxes in canvas coords, measured once (positions and
+          // fonts are canvas-fixed; re-measured on webfont load)
+          if (!ph._mBoxes && ph._markers && ph._markers.length && sc2 > 0) {
+            ph._mBoxes = ph._markers.map((m) => {
+              const r = m.getBoundingClientRect();
+              return { right: (r.right - srect.left) / sc2, bottom: (r.bottom - srect.top) / sc2 };
+            });
+          }
+          // The building may grow only while every time node + text stays
+          // clear of it: per marker, EITHER the facade starts right of the
+          // text (kH) OR its roofline stays below the text (kV)
+          const nat = PNAT[i];
+          let kSafe = Infinity;
+          (ph._mBoxes || []).forEach((mb) => {
+            const kH = (xRight + BDIM[i][1] - (mb.right + 14)) / BDIM[i][0];
+            const kV = ((HY - (mb.bottom + 24)) * nat[0]) / ((nat[2] - nat[3]) * BDIM[i][0]);
+            kSafe = Math.min(kSafe, Math.max(kH, kV));
+          });
+          const k = Math.max(1, Math.min(sizeK, kSafe));
+          const bs = (BDIM[i][0] * k) / nat[0];
+          b.style.width = (BDIM[i][0] * k).toFixed(1) + 'px';
+          b.style.right = (CW - xRight + BDIM[i][1]).toFixed(1) + 'px';
+          b.style.bottom = ((CH - HY) - (nat[1] - nat[2]) * bs).toFixed(1) + 'px';
+          if (ph._positionShadow) ph._positionShadow();
+        });
+      }
       setTail(scale, w, h);
       // Full-bleed sky: scale so it spans the pin's width AND reaches the
       // pin's top edge, with its horizon row (698/807 of the image) pinned
-      // to the stage's design horizon (y 715)
+      // to the stage's design horizon
       if (skyImg) {
-        const yH = (h - 820 * scale) / 2 + 715 * scale;
+        const yH = (h - CH * scale) / 2 + HY * scale;
         const ss = Math.max(w / 1543, yH / 698);
         skyImg.style.width = (1543 * ss).toFixed(1) + 'px';
         skyImg.style.height = (807 * ss).toFixed(1) + 'px';
@@ -2945,6 +3035,16 @@ class Component extends DCLogic {
     }
 
     const onResize = () => {
+      // Crossing the portrait breakpoint (e.g. phone rotation) rebuilds the
+      // whole section with the other composition
+      if ((window.innerWidth < Math.min(720, window.innerHeight * 0.85)) !== PORTRAIT) {
+        this._jCleanup();
+        host.remove();
+        const oldCss = document.getElementById('cap-journey-css');
+        if (oldCss) oldCss.remove();
+        this._setupJourneyPinned();
+        return;
+      }
       if (this._jComputeDelta) {
         const nd = this._jComputeDelta();
         if (nd !== this._jDelta) {
@@ -2961,6 +3061,13 @@ class Component extends DCLogic {
     layout();
     onScroll();
     update(targetG);
+    // Marker boxes measured before Montserrat lands are narrow — remeasure
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        phases.forEach((ph) => { ph._mBoxes = null; });
+        layout();
+      });
+    }
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);
     this._jRaf = requestAnimationFrame(tick);
