@@ -1000,7 +1000,8 @@ class Component extends DCLogic {
       if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
       return;
     }
-    if (document.getElementById('cap-op-stitch')) return;
+    if (this._opStitchDone) return;
+    this._opStitchDone = true;
 
     // JGI's logo is a transparent circular PNG, so the x1026 grid vertical
     // showed through it (the rectangular logos mask crossing lines with
@@ -1022,25 +1023,9 @@ class Component extends DCLogic {
     const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
     lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
 
-    // Hairlines: two segments abutting the logo (the design's lines touch
-    // logos, never cross them) — left to the x448 vertical, right to the
-    // x1019 vertical. Injected at pre-shift coords (jorig domain − 260) and
-    // adopted by the observer-driven runAdjust like baked frame elements.
-    const lhLeft = parseFloat(lh.style.left) || 0;
-    const lhRight = lhLeft + (parseFloat(lh.style.width) || 0);
-    const segs = [
-      { left: 448, width: (lhLeft - 18) - 448 },
-      { left: lhRight + 18, width: 1019 - (lhRight + 18) }
-    ];
-    segs.forEach((g, i) => {
-      const line = document.createElement('div');
-      if (i === 0) line.id = 'cap-op-stitch';
-      line.style.cssText =
-        'position:absolute; left:' + g.left + 'px; width:' + g.width + 'px; height:1px;' +
-        'top:' + (smCenter - 260) + 'px;' +
-        'background:rgb(209,32,47); opacity:0.35; z-index:0; pointer-events:none;';
-      frameRoot.appendChild(line);
-    });
+    // (The crossing hairline previously injected at this row was removed
+    // 2026-07-17: the Figma design has no horizontal line at the Lighthouse
+    // row — the grid verticals simply end/gap around it.)
     if (this._runAdjust) this._runAdjust();
   }
 
