@@ -1002,6 +1002,13 @@ class Component extends DCLogic {
     }
     if (document.getElementById('cap-op-stitch')) return;
 
+    // JGI's logo is a transparent circular PNG, so the x1026 grid vertical
+    // showed through it (the rectangular logos mask crossing lines with
+    // their own white boxes). A white backing makes it mask the line the
+    // same way — invisible against the section's white page.
+    const jgi = scaler.querySelector('.fig-asset-79356d431474ada0');
+    if (jgi) jgi.style.backgroundColor = '#fff';
+
     // Row axis = Saint Mary's vertical centre, in the post-band-shift
     // domain the journey bookkeeping stores (jorig = baked + 260).
     const jorigOf = (el) => parseFloat(el.getAttribute('data-jorig-top') || el.style.top) || 0;
