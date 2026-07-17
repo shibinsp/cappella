@@ -3865,6 +3865,10 @@ class Component extends DCLogic {
 
       // OCI-style hover roll: duplicate the title inside an overflow mask
       const rowH = titleEl.getBoundingClientRect().height / sc();
+      // Baked titles sit at left:806 while the description column starts at
+      // 755 — share the description's left edge so the panel reads as one
+      // aligned stack (client note 2026-07-17: "Alignment is off")
+      titleEl.style.left = DESC_LEFT + 'px';
       titleEl.style.height = rowH + 'px';
       titleEl.style.overflow = 'hidden';
       titleEl.style.transition = 'top 0.65s ' + EASE;
@@ -3879,7 +3883,8 @@ class Component extends DCLogic {
       titleEl.textContent = '';
       titleEl.appendChild(roll);
 
-      // Plus icon — styled as thin + bars, rotates to × via GSAP on open (OCI signature)
+      // Plus icon — thin + bars; the vertical bar collapses on open so the
+      // icon reads − like the Figma frame (not the OCI ×)
       const iconContainer = document.createElement('div');
       iconContainer.style.cssText =
         'position:absolute; left:1388px; width:22px; height:22px;' +
@@ -3889,12 +3894,14 @@ class Component extends DCLogic {
       const hBar = document.createElement('div');
       hBar.style.cssText = 'position:absolute; width:22px; height:2px; background:currentColor;';
       const vBar = document.createElement('div');
-      vBar.style.cssText = 'position:absolute; width:2px; height:22px; background:currentColor;';
+      vBar.style.cssText = 'position:absolute; width:2px; height:22px; background:currentColor;' +
+        'transition: transform 0.45s ' + EASE + ';';
       iconContainer.appendChild(hBar);
       iconContainer.appendChild(vBar);
       scaler.appendChild(iconContainer);
 
-      // Masked description + [ LEARN MORE → ] link (OCI panel content)
+      // Masked description (Figma has no learn-more link in the open panel —
+      // client design reference 2026-07-17)
       const descWrap = document.createElement('div');
       descWrap.style.cssText =
         'position:absolute; left:' + DESC_LEFT + 'px; width:' + DESC_WIDTH + 'px;' +
@@ -3908,34 +3915,21 @@ class Component extends DCLogic {
         'font-family: Montserrat, sans-serif; font-weight:300; font-size:24px;' +
         'line-height:123.131%; color: rgb(0,0,0); white-space: normal;';
       txt.textContent = d.text;
-      const link = document.createElement('div');
-      link.style.cssText =
-        'margin-top:22px; display:inline-flex; align-items:center; gap:8px;' +
-        'font-family: Montserrat, sans-serif; font-weight:600; font-size:13px;' +
-        'letter-spacing:1.5px; color: rgb(209,32,47); cursor:pointer; pointer-events:auto;';
-      const arrow = document.createElement('span');
-      arrow.textContent = '→';
-      arrow.style.cssText = 'display:inline-block; transition: transform 0.35s ' + EASE + ';';
-      link.appendChild(document.createTextNode('[  LEARN MORE '));
-      link.appendChild(arrow);
-      link.appendChild(document.createTextNode('  ]'));
-      link.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(6px)'; });
-      link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
-      link.addEventListener('click', () => {
-        const vp = document.getElementById('cap-viewport');
-        const target = 7202 * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
-        if (this._lenis) this._lenis.scrollTo(target);
-        else window.scrollTo({ top: target, behavior: 'smooth' });
-      });
       inner.appendChild(txt);
-      inner.appendChild(link);
       descWrap.appendChild(inner);
       scaler.appendChild(descWrap);
 
-      // Freeze the mask to the content's natural height, derive the open size
-      const innerH = Math.ceil(inner.getBoundingClientRect().height / sc());
-      descWrap.style.height = innerH + 'px';
-      const openH = Math.max(d.figmaShift || 0, DESC_OFFSET + innerH + 28);
+      // Freeze the mask to the content's natural height, derive the open
+      // size. Measured lazily too: the setup-time measurement can race the
+      // Montserrat webfont (clipped text) or run before layout (zero-height
+      // mask, which also starves the 0.3-threshold IntersectionObserver).
+      const measureOpen = () => {
+        const h = Math.ceil(inner.getBoundingClientRect().height / sc());
+        if (!h) return 0;
+        descWrap.style.height = h + 'px';
+        return Math.max(d.figmaShift || 0, DESC_OFFSET + h + 28);
+      };
+      const openH = measureOpen() || d.figmaShift || (DESC_OFFSET + 118 + 28);
 
       // Divider under this row (item 3's is missing in Figma — clone one)
       const bakedDividerTy = d.closedDividerTop + (idx >= BAKED_OPEN_INDEX ? BAKED_SHIFT : 0);
@@ -3959,7 +3953,7 @@ class Component extends DCLogic {
         'cursor:pointer; z-index:10; transition: top 0.65s ' + EASE + ';';
       scaler.appendChild(hitArea);
 
-      items.push({ ...d, titleEl, roll, rowH, iconContainer, descWrap, inner, openH, dividerEl, setDividerTop, hitArea });
+      items.push({ ...d, titleEl, roll, rowH, iconContainer, vBar, descWrap, inner, openH, measureOpen, dividerEl, setDividerTop, hitArea });
     });
 
     if (!items.length) return;
@@ -3973,21 +3967,23 @@ class Component extends DCLogic {
         item.titleEl.style.top = top + 'px';
         item.iconContainer.style.top = (top + ICON_OFFSET) + 'px';
 
-        // OCI-exact GSAP rotation: 135deg open (×), 0deg closed
+        // + collapses to − on open (Figma frame shows a minus, not the OCI ×)
         if (window.gsap) {
-          window.gsap.to(item.iconContainer, {
-            rotation: isOpen ? 135 : 0,
+          window.gsap.to(item.vBar, {
+            scaleY: isOpen ? 0 : 1,
             duration: 0.8,
             ease: 'power4.inOut',
             overwrite: true
           });
         } else {
-          item.iconContainer.style.transform = isOpen ? 'rotate(135deg)' : 'rotate(0deg)';
+          item.vBar.style.transform = isOpen ? 'scaleY(0)' : 'scaleY(1)';
         }
 
         item.descWrap.style.top = (top + DESC_OFFSET) + 'px';
         item.hitArea.style.top = (top - 4) + 'px';
         if (isOpen) {
+          const fresh = item.measureOpen();
+          if (fresh) item.openH = fresh;
           item.inner.style.transitionDelay = '0.15s, 0.15s';
           item.inner.style.transform = 'translateY(0)';
           item.inner.style.opacity = '1';
@@ -4118,6 +4114,28 @@ class Component extends DCLogic {
         io.observe(openItem.descWrap);
       }
     });
+
+    // Masks measured before Montserrat landed are wrong — remeasure once the
+    // webfonts settle and re-run the (idempotent) layout
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        items.forEach(item => {
+          const h = item.measureOpen();
+          if (h) item.openH = h;
+        });
+        layout();
+        if (openItem && activeIndex === BAKED_OPEN_INDEX) {
+          // layout() reveals the open item's description; if the user hasn't
+          // scrolled to it yet, keep it hidden for the on-scroll slide-in
+          const r = openItem.descWrap.getBoundingClientRect();
+          const inView = r.top < window.innerHeight && r.bottom > 0;
+          if (!inView) {
+            openItem.inner.style.transform = 'translateY(110%)';
+            openItem.inner.style.opacity = '0';
+          }
+        }
+      });
+    }
   }
 
   componentWillUnmount() {
