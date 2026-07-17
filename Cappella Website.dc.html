@@ -2183,9 +2183,12 @@ class Component extends DCLogic {
     `;
     document.body.appendChild(btn);
 
-    // Hide the baked Figma menu square (solid red box, hero top-right) that
-    // this floating button replaces — retried until the frame hydrates
-    const hideBakedMenuBox = () => {
+    // Replace the baked Figma menu square (solid red box, hero top-right)
+    // with the white Cappella C mark (user request 2026-07-17) — retried
+    // until the frame hydrates. top:25 sits below every band-shift
+    // threshold, so no exemption bookkeeping is needed, but the attributes
+    // keep it out of the passes regardless.
+    const replaceBakedMenuBox = () => {
       const scaler = document.getElementById('cap-scaler');
       if (!scaler) return false;
       const box = [...scaler.querySelectorAll('div')].find((e) => {
@@ -2193,13 +2196,26 @@ class Component extends DCLogic {
         return parseFloat(e.style.left) === 1360 && parseFloat(e.style.top) === 25 &&
                st.includes('209, 32, 47') && Math.abs(parseFloat(e.style.width) - 56) < 2;
       });
-      if (box) { box.style.display = 'none'; return true; }
-      return false;
+      if (!box) return false;
+      box.style.display = 'none';
+      if (!scaler.querySelector('.cap-hero-mark')) {
+        const img = document.createElement('img');
+        img.src = './components/assets/c9d8f12cf6e90c99.png';
+        img.alt = 'Cappella';
+        img.className = 'cap-hero-mark';
+        img.setAttribute('data-cap-own', '1');
+        img.setAttribute('data-jexempt', '1');
+        img.style.cssText =
+          'position:absolute; left:1362px; top:29px; width:52px; height:48px;' +
+          'object-fit:contain; z-index:5; pointer-events:none;';
+        scaler.appendChild(img);
+      }
+      return true;
     };
-    if (!hideBakedMenuBox()) {
+    if (!replaceBakedMenuBox()) {
       let boxTries = 0;
       const boxTimer = setInterval(() => {
-        if (hideBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
+        if (replaceBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
       }, 250);
     }
 
