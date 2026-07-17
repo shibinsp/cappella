@@ -31,12 +31,17 @@ test.describe('contact-us.html', () => {
     expectNoPageErrors(errors);
   });
 
-  test('nothing invented: no form, no tel links, no map embeds', async ({ page }) => {
+  test('nothing invented: no form, no tel links; one client-requested map embed', async ({ page }) => {
     await page.goto('/contact-us.html');
     await expect(page.locator('form')).toHaveCount(0);
     await expect(page.locator('input, textarea, select')).toHaveCount(0);
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
-    await expect(page.locator('iframe')).toHaveCount(0);
+
+    // Map added per client feedback (2026-07-17 screenshot: "Map, text style")
+    const iframe = page.locator('iframe');
+    await expect(iframe).toHaveCount(1);
+    await expect(iframe).toHaveAttribute('src', /google\.com\/maps/);
+    await expect(iframe).toHaveAttribute('title', /map/i);
   });
 
   test('full-page screenshot', async ({ page }, testInfo) => {
