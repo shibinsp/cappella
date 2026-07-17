@@ -2561,6 +2561,7 @@ class Component extends DCLogic {
     const BDIM = PORTRAIT
       ? [[760, -30], [760, -30], [760, -30]]
       : [[900, -10], [1040, -20], [940, -70]];
+    const PNAT = [NAT['foundation.png'], NAT['growth.png'], NAT['expansion.png']];
 
     const css = document.createElement('style');
     css.id = 'cap-journey-css';
@@ -2659,13 +2660,11 @@ class Component extends DCLogic {
     // Stage-design px; scaled to screen px when applied (pin-level sky).
     const HORIZON_SHIFT = [0, -75, -75];
     let stageScale = 1;
-    // Buildings resist shrinking when the viewport squeezes the stage below
-    // the 1440x900 scale — they counter-scale (bounded so the year markers
-    // stay clear of the facades), growing rightward off-frame so the window
-    // crops the excess instead of the building shrinking (client note
-    // 2026-07-17: "don't change the size, just cut the extra overlay")
+    // Buildings hold their reference (1440x900) pixel size when the viewport
+    // squeezes the stage below it — the window crops the excess instead of
+    // the building shrinking (client note 2026-07-17: "don't change the
+    // size, just cut the extra overlay")
     const REF_SCALE = 0.894;
-    const SIZE_K_MAX = 1.18;
     let sizeK = 1;
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
@@ -2748,6 +2747,7 @@ class Component extends DCLogic {
         sh.style.left = (cx - sw / 2) + 'px';
         sh.style.top = (baseY - shh / 2) + 'px';
       };
+      ph._positionShadow = positionShadow;
       if (ph._building) {
         if (ph._building.complete) positionShadow();
         ph._building.addEventListener('load', positionShadow);
@@ -2790,18 +2790,28 @@ class Component extends DCLogic {
       const scale = Math.min(w / CW, h / CH);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
       stageScale = scale;
-      sizeK = PORTRAIT ? 1 : Math.min(SIZE_K_MAX, Math.max(1, REF_SCALE / scale));
-      // Counter-scaled buildings grow rightward off-frame (origin x 0) so
-      // the extra crops at the window instead of crowding the markers; the
-      // top marker lifts clear of the taller facade
-      phases.forEach((ph) => {
-        const b = ph._building || (ph.querySelector && ph.querySelector('.cap-j-building'));
-        if (b) {
-          const basePctCss = (parseFloat(b.dataset.base) * 100).toFixed(1) + '%';
-          b.style.transformOrigin = (sizeK > 1.01 ? '0% ' : '70% ') + basePctCss;
-        }
-        ph._m1Lift = sizeK > 1.01 ? 40 : 0;
-      });
+      // Buildings anchor to the WINDOW's right edge (not the canvas edge —
+      // on wide/short viewports the centered canvas would leave them
+      // floating mid-frame) and hold their reference px size when the stage
+      // squeezes below it, the window cropping the excess. Growth is clamped
+      // so a facade never reaches the marker column (canvas x 850).
+      if (!PORTRAIT) {
+        const xRight = CW / 2 + w / (2 * scale); // window right edge, canvas coords
+        sizeK = Math.max(1, REF_SCALE / scale);
+        phases.forEach((ph, i) => {
+          const b = ph._building || ph.querySelector('.cap-j-building');
+          if (!b) return;
+          const kSafe = Math.max(1, (xRight + BDIM[i][1] - 850) / BDIM[i][0]);
+          const k = Math.min(sizeK, kSafe);
+          const nat = PNAT[i];
+          const bs = (BDIM[i][0] * k) / nat[0];
+          b.style.width = (BDIM[i][0] * k).toFixed(1) + 'px';
+          b.style.right = (CW - xRight + BDIM[i][1]).toFixed(1) + 'px';
+          b.style.bottom = ((CH - HY) - (nat[1] - nat[2]) * bs).toFixed(1) + 'px';
+          ph._m1Lift = k > 1.01 ? 40 : 0;
+          if (ph._positionShadow) ph._positionShadow();
+        });
+      }
       setTail(scale, w, h);
       // Full-bleed sky: scale so it spans the pin's width AND reaches the
       // pin's top edge, with its horizon row (698/807 of the image) pinned
@@ -2854,16 +2864,15 @@ class Component extends DCLogic {
         // The phase drift and cursor parallax run horizontally only.
         const drift = reduce ? 0 : (lc - 0.5) * -34;
         const pbx = reduce ? 0 : mx * -16;
-        const sEff = s * sizeK;
         const b = ph._building;
-        if (b) b.style.transform = 'translate(' + (pbx + drift).toFixed(1) + 'px, 0px) scale(' + sEff.toFixed(3) + ')';
+        if (b) b.style.transform = 'translate(' + (pbx + drift).toFixed(1) + 'px, 0px) scale(' + s.toFixed(3) + ')';
         if (ph._svg) ph._svg.style.transform = reduce ? '' : 'translate(' + (mx * 8).toFixed(1) + 'px, ' + (my * 5).toFixed(1) + 'px)';
 
         const sh = ph._shadow;
         if (sh) {
           const baseTop = parseFloat(sh.dataset.baseTop || '0');
           sh.style.top = baseTop.toFixed(1) + 'px';
-          sh.style.transform = 'translateX(' + (pbx + drift).toFixed(1) + 'px) scaleX(' + sEff.toFixed(3) + ') scaleY(' + ((0.8 + 0.2 * zoomP) * sizeK).toFixed(3) + ')';
+          sh.style.transform = 'translateX(' + (pbx + drift).toFixed(1) + 'px) scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
           sh.style.opacity = (op * 0.55).toFixed(3);
         }
 
