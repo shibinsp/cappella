@@ -301,9 +301,12 @@ test.describe('pinned journey', () => {
         };
       }, i);
       expect(Math.abs(base.visualBase - base.horizon)).toBeLessThan(12 * base.scale);
-      // Raised sea level: sky translated up -75px on Growth/Expansion
-      // (loose tolerance — the scroll lerp may still be settling)
-      expect(Math.abs(base.skyShift - (i === 0 ? 0 : -75))).toBeLessThan(8);
+      // Raised sea level: sky translated up -75 stage px (scaled to screen px
+      // for the pin-level sky) on Growth/Expansion. Loose tolerance — the
+      // scroll lerp may still be settling.
+      const stageScale = await page.evaluate(() =>
+        document.querySelector('.cap-j-stage').getBoundingClientRect().width / 1600);
+      expect(Math.abs(base.skyShift - (i === 0 ? 0 : -75 * stageScale))).toBeLessThan(8);
     }
 
     // The white curve's exit point lines up with the red hairline that starts

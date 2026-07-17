@@ -2567,13 +2567,18 @@ class Component extends DCLogic {
 
     host.innerHTML =
       '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
+        // Full-bleed backdrop at pin level: on viewports wider than the
+        // 1600:820 design ratio the stage letterboxes horizontally, so the
+        // sky/sea must fill the pin, not the stage. The sky img is sized and
+        // positioned by layout() so its horizon row tracks the stage's
+        // design horizon (y 715); the sea gradient (matched to sky.png's
+        // bottom row) continues below it.
+        '<div class="cap-j-backdrop" style="position:absolute;inset:0;pointer-events:none;">' +
+          '<div style="position:absolute;left:0;right:0;bottom:0;height:50%;background:linear-gradient(90deg, rgb(172,174,178), rgb(160,160,163) 45%, rgb(200,192,188));"></div>' +
+          '<img class="cap-j-sky" src="' + A + 'sky.png" alt="" style="position:absolute;left:0;top:0;user-select:none;">' +
+          '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
+        '</div>' +
         '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:1600px;height:820px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          // Sea filler: sky.png only has ~113px of sea below its horizon, so
-          // when the sky translates up (raised sea level on later phases) the
-          // exposed strip continues into this bottom-row-matched gradient
-          '<div style="position:absolute;left:0;right:0;bottom:0;height:260px;background:linear-gradient(90deg, rgb(172,174,178), rgb(160,160,163) 45%, rgb(200,192,188));pointer-events:none;"></div>' +
-          '<img class="cap-j-sky" src="' + A + 'sky.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;pointer-events:none;">' +
-          '<div class="cap-j-tint" style="position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
           '<div style="position:absolute;left:120px;top:78px;font-family:Montserrat,sans-serif;font-size:64px;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
           phaseHtml(0, 'foundation.png', 'right:-10px;bottom:88px;width:900px;', 0.958,
             marker('0.25', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
@@ -2606,8 +2611,10 @@ class Component extends DCLogic {
     const skyTints = Array.from(host.querySelectorAll('.cap-j-tint'));
     const skyImg = host.querySelector('.cap-j-sky');
     // Raised sea level on Growth/Expansion: sky translates up so the horizon
-    // moves from 87% to ~78% of the stage (client request 2026-07-17)
+    // moves from 87% to ~78% of the stage (client request 2026-07-17).
+    // Stage-design px; scaled to screen px when applied (pin-level sky).
     const HORIZON_SHIFT = [0, -75, -75];
+    let stageScale = 1;
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
     const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
@@ -2731,7 +2738,19 @@ class Component extends DCLogic {
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / 1600, h / 820);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+      stageScale = scale;
       setTail(scale, w, h);
+      // Full-bleed sky: scale so it spans the pin's width AND reaches the
+      // pin's top edge, with its horizon row (698/807 of the image) pinned
+      // to the stage's design horizon (y 715)
+      if (skyImg) {
+        const yH = (h - 820 * scale) / 2 + 715 * scale;
+        const ss = Math.max(w / 1543, yH / 698);
+        skyImg.style.width = (1543 * ss).toFixed(1) + 'px';
+        skyImg.style.height = (807 * ss).toFixed(1) + 'px';
+        skyImg.style.left = ((w - 1543 * ss) / 2).toFixed(1) + 'px';
+        skyImg.style.top = (yH - 698 * ss).toFixed(1) + 'px';
+      }
     };
 
     let mx = 0, my = 0;
@@ -2882,9 +2901,10 @@ class Component extends DCLogic {
       });
 
       // Opacity-weighted horizon shift — slides smoothly through crossfades,
-      // holds its last value outside the band (den ~ 0 there)
+      // holds its last value outside the band (den ~ 0 there). The shift is
+      // in stage-design px; the sky is a pin-level (screen px) element now.
       if (skyImg && shiftDen > 0.05) {
-        skyImg.style.transform = 'translateY(' + (shiftNum / shiftDen).toFixed(1) + 'px)';
+        skyImg.style.transform = 'translateY(' + ((shiftNum / shiftDen) * stageScale).toFixed(1) + 'px)';
       }
 
       skyTints.forEach((tn) => { tn.style.opacity = (clamp(g, 0, 1) * 0.85).toFixed(3); });
