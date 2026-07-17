@@ -2540,13 +2540,16 @@ class Component extends DCLogic {
     host.id = 'cap-journey';
     host.style.cssText = 'position:absolute; left:0; width:100%; z-index:40;';
 
-    const phaseHtml = (i, img, imgStyle, markers, wordA, wordB, dots) =>
+    // basePct = the building's visual base row / PNG height (the images carry
+    // different amounts of transparent padding). Zoom scales about that base
+    // so the building stays planted on the horizon.
+    const phaseHtml = (i, img, imgStyle, basePct, markers, wordA, wordB, dots) =>
       '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
-        '<img class="cap-j-building" src="' + A + img + '" alt="" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% 100%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
+        '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct + '" style="position:absolute;' + imgStyle + 'height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
         '<svg class="cap-j-svg" viewBox="0 0 1600 820" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
-          '<path class="cap-j-path" d="M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670 C 207 732 243 812 240 840" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
+          '<path class="cap-j-path" d="M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670 C 207 732 197 830 197 920" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
           dots.map((th) => {
-            const pts = { '0.26': [776, 210], '0.57': [560, 470], '0.82': [260, 670] };
+            const pts = { '0.25': [776, 210], '0.53': [560, 470], '0.76': [260, 670] };
             const p = pts[th];
             return '<circle class="cap-j-dot" data-th="' + th + '" cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
           }).join('') +
@@ -2564,24 +2567,33 @@ class Component extends DCLogic {
 
     host.innerHTML =
       '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
+        // Full-bleed backdrop at pin level: on viewports wider than the
+        // 1600:820 design ratio the stage letterboxes horizontally, so the
+        // sky/sea must fill the pin, not the stage. The sky img is sized and
+        // positioned by layout() so its horizon row tracks the stage's
+        // design horizon (y 715); the sea gradient (matched to sky.png's
+        // bottom row) continues below it.
+        '<div class="cap-j-backdrop" style="position:absolute;inset:0;pointer-events:none;">' +
+          '<div style="position:absolute;left:0;right:0;bottom:0;height:50%;background:linear-gradient(90deg, rgb(172,174,178), rgb(160,160,163) 45%, rgb(200,192,188));"></div>' +
+          '<img class="cap-j-sky" src="' + A + 'sky.png" alt="" style="position:absolute;left:0;top:0;user-select:none;">' +
+          '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
+        '</div>' +
         '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:1600px;height:820px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          '<img src="' + A + 'sky.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none;pointer-events:none;">' +
-          '<div class="cap-j-tint" style="position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
           '<div style="position:absolute;left:120px;top:78px;font-family:Montserrat,sans-serif;font-size:64px;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
-          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:112px;width:900px;',
-            marker('0.26', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
-            marker('0.57', 596, 442, '2017', '1 Asset', '', 0) +
-            marker('0.82', 296, 642, '2018', '1 Asset', '', 0),
-            'Foundation', 'Phase', ['0.26', '0.57', '0.82']) +
-          phaseHtml(1, 'growth.png', 'right:-20px;bottom:55px;width:1040px;',
-            marker('0.26', 806, 180, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
-            marker('0.82', 296, 642, '2021', 'Assets', '', 2),
-            'Growth', 'Phase', ['0.26', '0.82']) +
-          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-40px;width:940px;',
-            marker('0.26', 806, 180, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
-            marker('0.57', 596, 442, '2024', '1 Asset', '', 0) +
-            marker('0.82', 296, 642, '2025', 'Assets', 'Expansion to Dubai', 3),
-            'Expansion', 'Phase', ['0.26', '0.57', '0.82']) +
+          phaseHtml(0, 'foundation.png', 'right:-10px;bottom:88px;width:900px;', 0.958,
+            marker('0.25', 806, 180, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
+            marker('0.53', 596, 442, '2017', '1 Asset', '', 0) +
+            marker('0.76', 296, 642, '2018', '1 Asset', '', 0),
+            'Foundation', 'Phase', ['0.25', '0.53', '0.76']) +
+          phaseHtml(1, 'growth.png', 'right:-20px;bottom:5px;width:1040px;', 0.801,
+            marker('0.25', 806, 180, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
+            marker('0.76', 296, 642, '2021', 'Assets', '', 2),
+            'Growth', 'Phase', ['0.25', '0.76']) +
+          phaseHtml(2, 'expansion.png', 'right:-70px;bottom:-57px;width:940px;', 0.741,
+            marker('0.25', 806, 180, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
+            marker('0.53', 596, 442, '2024', '1 Asset', '', 0) +
+            marker('0.76', 296, 642, '2025', 'Assets', 'Expansion to Dubai', 3),
+            'Expansion', 'Phase', ['0.25', '0.53', '0.76']) +
         '</div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 52%, rgba(18,26,36,0.20) 100%);"></div>' +
         '<div class="cap-j-railbox" style="position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:8;">' +
@@ -2597,6 +2609,12 @@ class Component extends DCLogic {
     const phases = Array.from(host.querySelectorAll('.cap-j-phase'));
     const rails = Array.from(host.querySelectorAll('.cap-j-rail'));
     const skyTints = Array.from(host.querySelectorAll('.cap-j-tint'));
+    const skyImg = host.querySelector('.cap-j-sky');
+    // Raised sea level on Growth/Expansion: sky translates up so the horizon
+    // moves from 87% to ~78% of the stage (client request 2026-07-17).
+    // Stage-design px; scaled to screen px when applied (pin-level sky).
+    const HORIZON_SHIFT = [0, -75, -75];
+    let stageScale = 1;
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
     const easeOut = (t) => 1 - Math.pow(1 - t, 3);
     const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
@@ -2670,7 +2688,7 @@ class Component extends DCLogic {
         if (!b || !sh || !b.offsetWidth) return;
         const w = b.offsetWidth, h = b.offsetHeight;
         const cx = b.offsetLeft + w * 0.5;
-        const baseY = b.offsetTop + h * 0.9;
+        const baseY = b.offsetTop + h * parseFloat(b.dataset.base || '0.9');
         const sw = w * 0.8, shh = 46;
         sh.dataset.baseTop = (baseY - shh / 2);
         sh.style.width = sw + 'px';
@@ -2684,6 +2702,32 @@ class Component extends DCLogic {
       }
     });
 
+    // The curve's tail must exit the section at the exact x of the baked red
+    // hairline that opens the next section (frame x 177.6), so the two read
+    // as one continuous line. That x depends on the stage scale/centering
+    // (height-limited viewports shift the stage), so the final segment is
+    // recomputed per layout.
+    const RED_X_FRAME = 177.6;
+    const setTail = (scale, w, h) => {
+      const frameScale = vp.clientWidth / 1440;
+      const stageLeft = (w - 1600 * scale) / 2;
+      const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
+      // stage-local y of the pin's bottom edge, +12 overshoot past the clip
+      const yExit = (h + 820 * scale) / (2 * scale) + 12;
+      const d = 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470' +
+        ' C 474 547 313 608 260 670 C 207 732 ' +
+        xExit.toFixed(1) + ' ' + Math.max(760, yExit - 90).toFixed(1) + ' ' +
+        xExit.toFixed(1) + ' ' + yExit.toFixed(1);
+      phases.forEach((ph) => {
+        if (!ph._path) return;
+        ph._path.setAttribute('d', d);
+        const len = ph._path.getTotalLength();
+        ph._len = len;
+        ph._path.dataset.len = len;
+        ph._path.style.strokeDasharray = len;
+      });
+    };
+
     // geometry: host over the band gap (page coordinates — the host is a
     // body child); stage scaled to the pin
     const layout = () => {
@@ -2694,6 +2738,19 @@ class Component extends DCLogic {
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / 1600, h / 820);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+      stageScale = scale;
+      setTail(scale, w, h);
+      // Full-bleed sky: scale so it spans the pin's width AND reaches the
+      // pin's top edge, with its horizon row (698/807 of the image) pinned
+      // to the stage's design horizon (y 715)
+      if (skyImg) {
+        const yH = (h - 820 * scale) / 2 + 715 * scale;
+        const ss = Math.max(w / 1543, yH / 698);
+        skyImg.style.width = (1543 * ss).toFixed(1) + 'px';
+        skyImg.style.height = (807 * ss).toFixed(1) + 'px';
+        skyImg.style.left = ((w - 1543 * ss) / 2).toFixed(1) + 'px';
+        skyImg.style.top = (yH - 698 * ss).toFixed(1) + 'px';
+      }
     };
 
     let mx = 0, my = 0;
@@ -2713,6 +2770,7 @@ class Component extends DCLogic {
       const t = g * 3;
       const now = performance.now();
       let active = 0, best = -1;
+      let shiftNum = 0, shiftDen = 0;
       phases.forEach((ph, i) => {
         const local = t - i;
         const inLeft = clamp((local + 0.22) / 0.40, 0, 1);
@@ -2721,24 +2779,27 @@ class Component extends DCLogic {
         ph.style.opacity = op.toFixed(3);
         ph.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
         if (op > best) { best = op; active = i; }
+        shiftNum += op * HORIZON_SHIFT[i];
+        shiftDen += op;
 
         const lc = clamp(local, 0, 1);
         const zoomP = clamp(local / 0.6, 0, 1);
         const zEase = reduce ? zoomP : easeOutBack(zoomP);
         const s = 1.14 - 0.14 * zEase;
-        const ty = (1 - zoomP) * 26;
+        // No vertical motion: the base must stay planted on the horizon
+        // (client note 2026-07-17: "objects are literally floating").
+        // The phase drift and cursor parallax run horizontally only.
         const drift = reduce ? 0 : (lc - 0.5) * -34;
         const pbx = reduce ? 0 : mx * -16;
-        const pby = reduce ? 0 : my * -9;
         const b = ph._building;
-        if (b) b.style.transform = 'translate(' + pbx.toFixed(1) + 'px, ' + (ty + drift + pby).toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+        if (b) b.style.transform = 'translate(' + (pbx + drift).toFixed(1) + 'px, 0px) scale(' + s.toFixed(3) + ')';
         if (ph._svg) ph._svg.style.transform = reduce ? '' : 'translate(' + (mx * 8).toFixed(1) + 'px, ' + (my * 5).toFixed(1) + 'px)';
 
         const sh = ph._shadow;
         if (sh) {
           const baseTop = parseFloat(sh.dataset.baseTop || '0');
-          sh.style.top = (baseTop + ty + drift).toFixed(1) + 'px';
-          sh.style.transform = 'scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
+          sh.style.top = baseTop.toFixed(1) + 'px';
+          sh.style.transform = 'translateX(' + (pbx + drift).toFixed(1) + 'px) scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
           sh.style.opacity = (op * 0.55).toFixed(3);
         }
 
@@ -2838,6 +2899,13 @@ class Component extends DCLogic {
           }
         }
       });
+
+      // Opacity-weighted horizon shift — slides smoothly through crossfades,
+      // holds its last value outside the band (den ~ 0 there). The shift is
+      // in stage-design px; the sky is a pin-level (screen px) element now.
+      if (skyImg && shiftDen > 0.05) {
+        skyImg.style.transform = 'translateY(' + ((shiftNum / shiftDen) * stageScale).toFixed(1) + 'px)';
+      }
 
       skyTints.forEach((tn) => { tn.style.opacity = (clamp(g, 0, 1) * 0.85).toFixed(3); });
       rails.forEach((rl, i) => {
