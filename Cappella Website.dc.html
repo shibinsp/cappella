@@ -2443,6 +2443,9 @@ class Component extends DCLogic {
       const els = frameRoot.querySelectorAll('*');
       for (let i = 0; i < els.length; i++) {
         const el = els[i];
+        // Elements whose position is owned by another system (e.g. the
+        // portfolio city logo, which alignLogo() re-anchors continuously)
+        if (el.getAttribute('data-jexempt')) continue;
         // top-positioned elements
         let orig = el.getAttribute('data-jorig-top');
         orig = orig !== null ? parseFloat(orig) : parseFloat(el.style.top);
@@ -3611,12 +3614,29 @@ class Component extends DCLogic {
     // Keep the red interlocking C logo perfectly positioned to the right of the active city name
     // ROOT CAUSE FIX: hide the logo immediately so it never shows at its default Figma
     // position (left:309, top:4464) which overlaps the 'Hyderabad' text. Only show it
-    // after alignLogo() has successfully re-positioned it.
+    // after alignLogo() has successfully re-positioned it. Re-parented into the
+    // scaler so its left/top live in stable canvas coordinates — its baked
+    // wrapper's rect churns while the city tiles re-render, which used to
+    // strand the logo on the previous city's row after a filter switch.
     (() => {
       const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
       if (logoEl) {
         logoEl.style.opacity = '0';
         logoEl.style.transition = 'opacity 0.3s ease';
+        if (logoEl.parentElement !== scaler) scaler.appendChild(logoEl);
+        // alignLogo owns this element's position from here on. The frame has
+        // several stacked repositioning passes (shiftBelowBand +260,
+        // shiftJourney +delta, adjustFooter's footer family) that rewrite
+        // style.top from their own bookkeeping — so position the logo purely
+        // via transform with left/top pinned at 0: a 0 top is below every
+        // shifter's threshold and a translate() never matches their
+        // ^matrix() regexes. Exemption attributes kept as belt-and-braces.
+        logoEl.setAttribute('data-jexempt', '1');
+        logoEl.setAttribute('data-cap-own', '1');
+        logoEl.removeAttribute('data-jorig-top');
+        logoEl.removeAttribute('data-original-top');
+        logoEl.style.left = '0px';
+        logoEl.style.top = '0px';
       }
     })();
 
@@ -3624,21 +3644,21 @@ class Component extends DCLogic {
     const alignLogo = () => {
       const logoEl = scaler.querySelector('.fig-asset-eae7f9bdb03982f5-132fb376');
       if (!logoEl) return;
-      
+
       const activeCityEl = cityEls.find(c => c.name === currentCityName)?.el;
       if (!activeCityEl) return;
-      
-      // Filter out trailing spaces, line breaks, zero-width chars - only count actual letters
+
+      // Anything visible counts — mid-scramble the spans hold digits/symbols,
+      // and a letters-only filter would pick a wrong "last" character
       const charSpans = [...activeCityEl.querySelectorAll('.cap-char')].filter(span => {
-        return /[a-zA-Z]/.test(span.textContent || '');
+        return /\S/.test(span.textContent || '');
       });
-      
+
       if (charSpans && charSpans.length > 0) {
         const lastChar = charSpans[charSpans.length - 1];
         const lastCharRect = lastChar.getBoundingClientRect();
-        const parentRect = (logoEl.offsetParent || scaler).getBoundingClientRect();
         const s = sc();
-        
+
         // getBoundingClientRect can return 0-rect for off-screen elements on some browsers.
         // Fall back to reading the span's inline style (Figma coordinates) in that case.
         if (lastCharRect.width === 0 && lastCharRect.height === 0) {
@@ -3647,15 +3667,24 @@ class Component extends DCLogic {
           const cityLeft = parseFloat(activeCityEl.style.left) || 0;
           const cityWidth = parseFloat(activeCityEl.style.width) || 120;
           const cityHeight = parseFloat(activeCityEl.style.height) || 28;
-          logoEl.style.left = (cityLeft + cityWidth + 12) + 'px';
-          logoEl.style.top = (cityTop + (cityHeight - 19) / 2) + 'px';
+          logoEl.style.transform = 'translate(' + (cityLeft + cityWidth + 12) + 'px, ' + (cityTop + (cityHeight - 19) / 2) + 'px)';
         } else {
-          // Position the logo (21px wide, 19px tall) 12px to the right of the last character
-          logoEl.style.left = ((lastCharRect.right - parentRect.left) / s + 12) + 'px';
-          // Vertically center the logo with the last character
-          logoEl.style.top = ((lastCharRect.top - parentRect.top) / s + (lastCharRect.height - 19) / 2) + 'px';
+          // Self-calibrating placement: zero the translate, measure where
+          // the logo actually lands (its containing block inside the baked
+          // frame is not the scaler's origin), then translate by the
+          // screen-space delta to the target — correct under any
+          // containing-block/transform quirk of the export.
+          logoEl.style.transform = 'translate(0px, 0px)';
+          const base = logoEl.getBoundingClientRect();
+          // Target: 12 canvas px right of the last character, vertically
+          // centered on it (logo is 21x19 canvas px)
+          const targetX = lastCharRect.right + 12 * s;
+          const targetY = lastCharRect.top + (lastCharRect.height - 19 * s) / 2;
+          const tx = (targetX - base.left) / s;
+          const ty = (targetY - base.top) / s;
+          logoEl.style.transform = 'translate(' + tx.toFixed(1) + 'px, ' + ty.toFixed(1) + 'px)';
         }
-        
+
         // Reveal the logo now that it's correctly positioned
         logoEl.style.opacity = '1';
       }
@@ -3885,6 +3914,10 @@ class Component extends DCLogic {
       updateCardTransforms();
       renderCityTiles(cityName);
       alignLogo(); // Align on filter change
+      // Settle passes: the tile re-render + its 0.65s GSAP entrance shift
+      // geometry after this synchronous call — re-align once the dust clears
+      requestAnimationFrame(alignLogo);
+      setTimeout(alignLogo, 750);
     };
 
     cityEls.forEach(c => {

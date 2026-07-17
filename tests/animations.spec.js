@@ -447,6 +447,62 @@ test.describe('reduced motion', () => {
   });
 });
 
+test.describe('portfolio city filter', () => {
+  const HOME = '/Cappella%20Website.dc.html';
+
+  test('the red mark follows the active city through real clicks', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'hover/click flow asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.evaluate(() => {
+      const scaler = document.getElementById('cap-scaler');
+      const el = [...scaler.querySelectorAll('span')].find(
+        (e) => (e.textContent || '').trim() === 'Dubai' && e.style.cursor === 'pointer'
+      );
+      el.scrollIntoView({ block: 'center' });
+    });
+    await page.waitForTimeout(1000);
+
+    for (const city of ['Dubai', 'Chennai', 'Pune', 'Hyderabad']) {
+      const target = await page.evaluate((name) => {
+        const scaler = document.getElementById('cap-scaler');
+        const el = [...scaler.querySelectorAll('span')].find(
+          (e) => (e.textContent || '').trim() === name && e.style.cursor === 'pointer'
+        );
+        const r = el.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }, city);
+      // Real mouse click: exercises the hover-scramble + tile re-render path
+      // that used to strand the logo on the previous city
+      await page.mouse.click(target.x, target.y);
+      await page.mouse.move(700, 120);
+      await page.waitForTimeout(1100); // scramble + tile entrance + settle pass
+
+      const m = await page.evaluate((name) => {
+        const scaler = document.getElementById('cap-scaler');
+        const el = [...scaler.querySelectorAll('span')].find(
+          (e) => (e.textContent || '').trim() === name && e.style.cursor === 'pointer'
+        );
+        const spans = [...el.querySelectorAll('.cap-char')].filter((s) => /\S/.test(s.textContent || ''));
+        const last = spans[spans.length - 1].getBoundingClientRect();
+        const logo = scaler
+          .querySelector('.fig-asset-eae7f9bdb03982f5-132fb376')
+          .getBoundingClientRect();
+        return {
+          gapX: logo.left - last.right,
+          rowOverlap: logo.top < last.bottom && logo.bottom > last.top,
+          visible: logo.width > 0
+        };
+      }, city);
+      expect(m.visible, city).toBe(true);
+      expect(m.rowOverlap, city + ' row').toBe(true);
+      expect(m.gapX, city + ' gap').toBeGreaterThan(2);
+      expect(m.gapX, city + ' gap').toBeLessThan(40);
+    }
+  });
+});
+
 test.describe('portfolio counter-scroll columns', () => {
   const HOME = '/Cappella%20Website.dc.html';
   const CARD_L = '.fig-asset-3f58066ce9ef777c-b69ac725'; // left column
