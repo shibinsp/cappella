@@ -951,7 +951,10 @@ class Component extends DCLogic {
       return;
     }
     this._bandGridDone = true;
-    const BAND_BOTTOM = 2675;
+    // 2415 = the extended band's true bottom (fill 1715 + 700). The earlier
+    // 2675 double-counted the +260 extension and ran the x1078 rail through
+    // "The Cappella Edge" heading below the band.
+    const BAND_BOTTOM = 2415;
     rails.forEach(el => {
       const mm = /matrix\(0,\s*1,\s*-1,\s*0,\s*([\d.]+),\s*([\d.]+)\)/.exec(el.style.transform);
       const len = parseFloat(el.getAttribute('width')) || 1;
@@ -2633,6 +2636,18 @@ class Component extends DCLogic {
         '</div>' +
       '</div>';
     document.body.appendChild(host);
+
+    // Baked faded-red vertical (svg width 1581, 53% opacity) dangles from
+    // under the band down into Our Portfolio — removed per client request
+    // 2026-07-17
+    (() => {
+      const sc2 = document.getElementById('cap-scaler');
+      if (!sc2) return;
+      [...sc2.querySelectorAll('svg[width="1581"]')].forEach((el) => {
+        const st = el.getAttribute('style') || '';
+        if (st.includes('209, 32, 47')) el.style.display = 'none';
+      });
+    })();
 
     const pin = host.querySelector('.cap-j-pin');
     const stage = host.querySelector('.cap-j-stage');
