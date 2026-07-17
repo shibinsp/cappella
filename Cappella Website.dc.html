@@ -2695,6 +2695,32 @@ class Component extends DCLogic {
       }
     });
 
+    // The curve's tail must exit the section at the exact x of the baked red
+    // hairline that opens the next section (frame x 177.6), so the two read
+    // as one continuous line. That x depends on the stage scale/centering
+    // (height-limited viewports shift the stage), so the final segment is
+    // recomputed per layout.
+    const RED_X_FRAME = 177.6;
+    const setTail = (scale, w, h) => {
+      const frameScale = vp.clientWidth / 1440;
+      const stageLeft = (w - 1600 * scale) / 2;
+      const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
+      // stage-local y of the pin's bottom edge, +12 overshoot past the clip
+      const yExit = (h + 820 * scale) / (2 * scale) + 12;
+      const d = 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470' +
+        ' C 474 547 313 608 260 670 C 207 732 ' +
+        xExit.toFixed(1) + ' ' + Math.max(760, yExit - 90).toFixed(1) + ' ' +
+        xExit.toFixed(1) + ' ' + yExit.toFixed(1);
+      phases.forEach((ph) => {
+        if (!ph._path) return;
+        ph._path.setAttribute('d', d);
+        const len = ph._path.getTotalLength();
+        ph._len = len;
+        ph._path.dataset.len = len;
+        ph._path.style.strokeDasharray = len;
+      });
+    };
+
     // geometry: host over the band gap (page coordinates — the host is a
     // body child); stage scaled to the pin
     const layout = () => {
@@ -2705,6 +2731,7 @@ class Component extends DCLogic {
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / 1600, h / 820);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
+      setTail(scale, w, h);
     };
 
     let mx = 0, my = 0;

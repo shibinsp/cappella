@@ -307,8 +307,10 @@ test.describe('pinned journey', () => {
     }
 
     // The white curve's exit point lines up with the red hairline that starts
-    // at the section boundary below, so the two read as one continuous line
-    const join = await page.evaluate(() => {
+    // at the section boundary below, so the two read as one continuous line.
+    // Checked at the default (width-limited) viewport AND a short
+    // (height-limited) one, where the stage shrinks and centers.
+    const measureJoin = () => page.evaluate(() => {
       const host = document.getElementById('cap-journey');
       const hostBottom = window.scrollY + host.getBoundingClientRect().bottom;
       const path = document.querySelectorAll('.cap-j-phase')[2].querySelector('.cap-j-path');
@@ -328,8 +330,15 @@ test.describe('pinned journey', () => {
       }
       return { curveX, redX };
     });
+    const join = await measureJoin();
     expect(join.redX).not.toBeNull();
     expect(Math.abs(join.curveX - join.redX)).toBeLessThan(4);
+
+    await page.setViewportSize({ width: 1440, height: 640 });
+    await page.waitForTimeout(600);
+    const joinShort = await measureJoin();
+    expect(joinShort.redX).not.toBeNull();
+    expect(Math.abs(joinShort.curveX - joinShort.redX)).toBeLessThan(4);
 
     // Old journey band content must be hidden
     const hidden = await page.evaluate(
