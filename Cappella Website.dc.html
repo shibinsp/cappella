@@ -3883,7 +3883,8 @@ class Component extends DCLogic {
       titleEl.textContent = '';
       titleEl.appendChild(roll);
 
-      // Plus icon — styled as thin + bars, rotates to × via GSAP on open (OCI signature)
+      // Plus icon — thin + bars; the vertical bar collapses on open so the
+      // icon reads − like the Figma frame (not the OCI ×)
       const iconContainer = document.createElement('div');
       iconContainer.style.cssText =
         'position:absolute; left:1388px; width:22px; height:22px;' +
@@ -3893,12 +3894,14 @@ class Component extends DCLogic {
       const hBar = document.createElement('div');
       hBar.style.cssText = 'position:absolute; width:22px; height:2px; background:currentColor;';
       const vBar = document.createElement('div');
-      vBar.style.cssText = 'position:absolute; width:2px; height:22px; background:currentColor;';
+      vBar.style.cssText = 'position:absolute; width:2px; height:22px; background:currentColor;' +
+        'transition: transform 0.45s ' + EASE + ';';
       iconContainer.appendChild(hBar);
       iconContainer.appendChild(vBar);
       scaler.appendChild(iconContainer);
 
-      // Masked description + [ LEARN MORE → ] link (OCI panel content)
+      // Masked description (Figma has no learn-more link in the open panel —
+      // client design reference 2026-07-17)
       const descWrap = document.createElement('div');
       descWrap.style.cssText =
         'position:absolute; left:' + DESC_LEFT + 'px; width:' + DESC_WIDTH + 'px;' +
@@ -3912,27 +3915,7 @@ class Component extends DCLogic {
         'font-family: Montserrat, sans-serif; font-weight:300; font-size:24px;' +
         'line-height:123.131%; color: rgb(0,0,0); white-space: normal;';
       txt.textContent = d.text;
-      const link = document.createElement('div');
-      link.style.cssText =
-        'margin-top:22px; display:inline-flex; align-items:center; gap:8px;' +
-        "font-family: 'Space Mono', monospace; font-weight:400; font-size:13px;" +
-        'letter-spacing:2px; color: rgb(209,32,47); cursor:pointer; pointer-events:auto;';
-      const arrow = document.createElement('span');
-      arrow.textContent = '→';
-      arrow.style.cssText = 'display:inline-block; transition: transform 0.35s ' + EASE + ';';
-      link.appendChild(document.createTextNode('[ LEARN MORE'));
-      link.appendChild(arrow);
-      link.appendChild(document.createTextNode(']'));
-      link.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(6px)'; });
-      link.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
-      link.addEventListener('click', () => {
-        const vp = document.getElementById('cap-viewport');
-        const target = 7202 * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
-        if (this._lenis) this._lenis.scrollTo(target);
-        else window.scrollTo({ top: target, behavior: 'smooth' });
-      });
       inner.appendChild(txt);
-      inner.appendChild(link);
       descWrap.appendChild(inner);
       scaler.appendChild(descWrap);
 
@@ -3963,7 +3946,7 @@ class Component extends DCLogic {
         'cursor:pointer; z-index:10; transition: top 0.65s ' + EASE + ';';
       scaler.appendChild(hitArea);
 
-      items.push({ ...d, titleEl, roll, rowH, iconContainer, descWrap, inner, openH, dividerEl, setDividerTop, hitArea });
+      items.push({ ...d, titleEl, roll, rowH, iconContainer, vBar, descWrap, inner, openH, dividerEl, setDividerTop, hitArea });
     });
 
     if (!items.length) return;
@@ -3977,16 +3960,16 @@ class Component extends DCLogic {
         item.titleEl.style.top = top + 'px';
         item.iconContainer.style.top = (top + ICON_OFFSET) + 'px';
 
-        // OCI-exact GSAP rotation: 135deg open (×), 0deg closed
+        // + collapses to − on open (Figma frame shows a minus, not the OCI ×)
         if (window.gsap) {
-          window.gsap.to(item.iconContainer, {
-            rotation: isOpen ? 135 : 0,
+          window.gsap.to(item.vBar, {
+            scaleY: isOpen ? 0 : 1,
             duration: 0.8,
             ease: 'power4.inOut',
             overwrite: true
           });
         } else {
-          item.iconContainer.style.transform = isOpen ? 'rotate(135deg)' : 'rotate(0deg)';
+          item.vBar.style.transform = isOpen ? 'scaleY(0)' : 'scaleY(1)';
         }
 
         item.descWrap.style.top = (top + DESC_OFFSET) + 'px';
