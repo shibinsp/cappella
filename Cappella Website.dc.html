@@ -747,10 +747,17 @@ class Component extends DCLogic {
                   if (match) {
                     const tx = parseFloat(match[5]);
                     const ty = parseFloat(match[6]);
+                    // Each rail is drawn as a top stub + middle segment + bottom
+                    // segment; the middle segment ends at footer-local y 363. The
+                    // baked bottom segment (ty 418 left / 479 middle) starts lower,
+                    // leaving a gap so the divider looks like it stops partway. Pull
+                    // it up to 363 to close the gap — the segment is long enough to
+                    // then reach the footer bottom, matching the Figma design.
+                    const newTy = ty > 400 ? 363 : ty;
                     if (Math.abs(tx - 737) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},700,${ty})`;
+                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},700,${newTy})`;
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},1059,${ty})`;
+                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},1059,${newTy})`;
                     }
                   }
                 }
