@@ -758,15 +758,17 @@ class Component extends DCLogic {
                     // Lower content blocks (footer-local y): CONNECT WITH US / LINKEDIN
                     // ≈ 368–420 (left column); STAY IN TOUCH + email box ≈ 300–393
                     // (right column). Bottom segments end at 530 = footer bottom.
-                    // newTx places each rail ~5px left of its column's text so the
-                    // content hugs the divider, per Figma (nav text ≈720, right
-                    // column text ≈1113 in canvas x).
+                    // newTx sets each rail right at the left edge of its column's
+                    // text, so the content hugs the divider per Figma (nav text
+                    // starts ≈720, right-column text ≈1113 in canvas x). The mid rail
+                    // can't go further right without its bottom segment cutting through
+                    // the DESIGNED BY / LIMITLESS text, which shares that left edge.
                     let newTx = tx, newTy = ty, newW = null;
                     if (Math.abs(tx - 737) < 3) {                 // left rail
-                      newTx = 727;
+                      newTx = 732;
                       if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
-                      newTx = 1120;
+                      newTx = 1125;
                       if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
                       else if (ty > 150 && ty < 300) { newW = 83; }   // middle seg: stop above STAY IN TOUCH
                     }
@@ -846,6 +848,12 @@ class Component extends DCLogic {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
                 el.style.top = (7732 + jd()) + 'px';
+              } else if (orig === 7416 || orig === 7458) {
+                // PARTNER email + registered-office address are baked at left 1079,
+                // which leaves them hanging ~34px left of the rest of the right
+                // column (STAY IN TOUCH / DESIGNED BY / LIMITLESS at 1113). Align
+                // them to the column rail so the block hugs the divider, per Figma.
+                el.style.left = '1113px';
               }
             }
           }
