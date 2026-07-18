@@ -259,15 +259,15 @@ function Frame4(_p = {}) {
     }
   }, "Your Email Id"), /*#__PURE__*/React.createElement("svg", {
     width: 21,
-    height: 1,
-    viewBox: "0 -0.500 21 1",
+    height: 8,
+    viewBox: "0 -4 21 8",
     fill: "none",
     style: {
       position: "absolute",
       left: 1307,
-      top: 436,
+      top: 432.5,
       width: 21,
-      height: 1,
+      height: 8,
       color: "rgb(255,255,255)"
     }
   }, /*#__PURE__*/React.createElement("path", {
@@ -1720,17 +1720,17 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 1079,
       top: 7198,
-      width: 291,
+      width: 315,
       height: 101,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
       fontWeight: 500,
       fontSize: 16,
       textTransform: "uppercase",
-      whiteSpace: "normal",
+      whiteSpace: "pre-line",
       lineHeight: "25px",
       color: "rgb(255,255,255)"
     }
-  }, "Suite 303, Niharika Jubilee One, Jubilee Hills, road No. 1, \u2028Hyderabad, Telanagana 500033\u2028"), /*#__PURE__*/React.createElement("span", {
+  }, "Suite 303, Niharika Jubilee One,\nJubilee Hills, road No. 1,\nHyderabad, Telanagana\n500033"), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 1079,

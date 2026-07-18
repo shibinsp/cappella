@@ -721,13 +721,16 @@ class Component extends DCLogic {
               el.style.height = footerHeight + 'px';
               el.style.zIndex = '2';
               
-              // Scale down and center the giant white interlocking logo
+              // Scale + center the giant white interlocking logo. Sized to
+              // fill the left column like the Figma design (~2.05x the JV
+              // Ventures wordmark) — the max that clears the "An Initiative
+              // by" row at band-y 380.
               const logo = el.querySelector('.fig-asset-c9d8f12cf6e90c99');
               if (logo) {
-                logo.style.width = '305px';
-                logo.style.height = '280px';
-                logo.style.left = '213px'; // Centered horizontally (202px + 11px container offset)
-                logo.style.top = '80px';
+                logo.style.width = '390px';
+                logo.style.height = '358px';
+                logo.style.left = '170px';
+                logo.style.top = '8px';
               }
               
               const redBg = el.querySelector('div');
@@ -744,11 +747,35 @@ class Component extends DCLogic {
                   if (match) {
                     const tx = parseFloat(match[5]);
                     const ty = parseFloat(match[6]);
-                    if (Math.abs(tx - 737) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},700,${ty})`;
-                    } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},1059,${ty})`;
+                    // Redraw the two column dividers to the Figma grid: each rail is
+                    // a short top stub, then line segments that break around the
+                    // footer's content blocks and run to the footer bottom. The baked
+                    // segments came from a taller Figma frame; once the footer is
+                    // compacted to 530px their positions/lengths no longer line up, so
+                    // reposition (matrix ty) and resize each one. style.width is the
+                    // rendered line length here — the horizontal path scales with the
+                    // viewBox, so shrinking the width shortens the (rotated) line.
+                    // Lower content blocks (footer-local y): CONNECT WITH US / LINKEDIN
+                    // ≈ 368–420 (left column); STAY IN TOUCH + email box ≈ 300–393
+                    // (right column). Bottom segments end at 530 = footer bottom.
+                    // newTx sets each rail right at the left edge of its column's
+                    // text, so the content hugs the divider per Figma (nav text
+                    // starts ≈720, right-column text ≈1113 in canvas x). The mid rail
+                    // can't go further right without its bottom segment cutting through
+                    // the DESIGNED BY / LIMITLESS text, which shares that left edge.
+                    let newTx = tx, newTy = ty, newW = null;
+                    if (Math.abs(tx - 737) < 3) {                 // left rail
+                      newTx = 732;
+                      if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
+                    } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
+                      newTx = 1125;
+                      if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
+                      else if (ty > 150 && ty < 300) { newW = 83; }   // middle seg: stop above STAY IN TOUCH
                     }
+                    if (newTx !== tx || newTy !== ty) {
+                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},${newTx},${newTy})`;
+                    }
+                    if (newW != null) { svg.style.width = newW + 'px'; svg.setAttribute('width', newW); }
                   }
                 }
               });
@@ -809,18 +836,24 @@ class Component extends DCLogic {
               } else if (orig === 8010) {
                 // Limitless logo — below the "Designed by" caption, both
                 // clear of the STAY IN TOUCH box (box bottom ≈ 7745)
-                el.style.left = '1113px'; // column rail
+                el.style.left = '1121px'; // column rail + 8px left padding
                 el.style.top = (7791 + jd()) + 'px';
               } else if (orig === 7983 || orig === 7978) {
                 // "Designed by" caption — 24px below the STAY IN TOUCH box
                 // (it previously overlapped the box's bottom border), stacked
                 // above the Limitless logo
-                el.style.left = '1113px'; // column rail
+                el.style.left = '1121px'; // column rail + 8px left padding
                 el.style.top = (7769 + jd()) + 'px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
                 el.style.top = (7732 + jd()) + 'px';
+              } else if (orig === 7416 || orig === 7458) {
+                // PARTNER email + registered-office address are baked at left 1079,
+                // which leaves them hanging ~34px left of the rest of the right
+                // column (STAY IN TOUCH / DESIGNED BY / LIMITLESS at 1113). Align
+                // them to the column rail so the block hugs the divider, per Figma.
+                el.style.left = '1113px';
               }
             }
           }
@@ -1361,9 +1394,18 @@ class Component extends DCLogic {
       }, 100 + idx * 80);
     });
 
-    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL
+    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL (hero region only)
+    // Position must come from the RENDERED rect: nested spans (e.g. the
+    // "$500" / "16 Assets" stats) carry no inline top, and the old
+    // `style.top || 0` default let them into the hero filter — their
+    // word-wrap containers (inline-block, overflow:hidden, va:bottom,
+    // margin-right .22em) then broke the odometer baseline and tracking.
+    const scRectHero = scaler.getBoundingClientRect();
+    const mHero = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+    const sHero = mHero ? parseFloat(mHero[1]) : 1;
     const headings = [...scaler.querySelectorAll('span, p, h1, h2, h3')].filter(el => {
-      const top = parseFloat(el.style.top) || 0;
+      const r = el.getBoundingClientRect();
+      const top = r.height ? (r.top - scRectHero.top) / sHero : (parseFloat(el.style.top) || 0);
       if (top > 850) return false;
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
@@ -1606,7 +1648,16 @@ class Component extends DCLogic {
       const txt = (el.textContent || '').trim();
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
     bodyParas.forEach((el, i) => {
       const r = el.getBoundingClientRect();
@@ -2004,7 +2055,16 @@ class Component extends DCLogic {
       const txt = (el.textContent || '').trim();
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
 
     bodyParas.forEach((el) => {
@@ -2049,6 +2109,14 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler || this._footerAnimated) return;
     this._footerAnimated = true;
+
+    // The global "white-space: normal !important" rule collapses the footer
+    // address's authored newlines; restore pre-line on just that span so it
+    // wraps to the Figma line layout (inline !important beats the stylesheet).
+    const addrSpan = [...scaler.querySelectorAll('span')].find(
+      el => el.childElementCount === 0 && /niharika/i.test(el.textContent || '')
+    );
+    if (addrSpan) addrSpan.style.setProperty('white-space', 'pre-line', 'important');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const m = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
     const scale = m ? parseFloat(m[1]) : 1;
@@ -3158,6 +3226,19 @@ class Component extends DCLogic {
       }
     });
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Natural glyph widths per element font (canvas measureText): the digit
+    // masks are sized to their OWN digit's width so a stat renders exactly
+    // as wide as the plain text would (a column's widest-digit width used to
+    // pad "1"s and squeeze "0"s, stretching stats past the Figma tracking).
+    const measCtx = document.createElement('canvas').getContext('2d');
+    const naturalW = (el, text) => {
+      const cs = window.getComputedStyle(el);
+      measCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      let w = measCtx.measureText(text).width;
+      const ls = parseFloat(cs.letterSpacing);
+      if (!isNaN(ls)) w += ls * text.length;
+      return w;
+    };
     const els = [...scaler.querySelectorAll('div, span')].filter(el => {
       if (el.querySelector('*') || el.dataset.capOdo) return false;
       const txt = (el.textContent || '').trim();
@@ -3167,8 +3248,12 @@ class Component extends DCLogic {
     });
     els.forEach(el => {
       el.dataset.capOdo = '1';
+      el.dataset.capOdoText = (el.textContent || '').trim();
       if (reduced) return; // leave static text
-      const txt = (el.textContent || '').trim();
+      // Rebuild from the RAW text: leading/trailing spaces are real layout
+      // (e.g. "$500 " ahead of an inline "Mn+" sibling) — trimming them
+      // glued the unit to the digits.
+      const txt = (el.textContent || '').replace(/[\u2028\u2029]/g, ' ');
       el.textContent = '';
       const rolls = [];
       [...txt].forEach(ch => {
@@ -3184,6 +3269,7 @@ class Component extends DCLogic {
         const digit = parseInt(ch, 10);
         const mask = document.createElement('span');
         mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:baseline;';
+        mask.style.width = naturalW(el, ch).toFixed(2) + 'px';
         const col = document.createElement('span');
         col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
         for (let r = 0; r < 2; r++) {
@@ -3214,6 +3300,59 @@ class Component extends DCLogic {
       }, { threshold: 0.4 });
       io.observe(el);
     });
+
+    // Value/unit tracking ("$500 Mn+"): the baked value span carries a fixed
+    // width with dead room after the digits, so the unit drifted wide of the
+    // Figma tracking. Release the width and guarantee exactly one word space
+    // between value and unit. Re-run on delays: the frame can re-render.
+    const tightenValueUnitPairs = () => {
+      // A line-split pass can race the odometer and wrap a stat's content in
+      // an inline-block overflow:hidden line mask — which baselines at its
+      // BOTTOM edge, sinking the digits ~10px below the unit. Unwrap any
+      // such foreign wrapper (our digit masks stay: they hold the columns).
+      const unwrapForeign = (host) => {
+        for (const child of [...host.children]) {
+          const st = child.style;
+          if (st.overflow !== 'hidden' || st.display !== 'inline-block') continue;
+          if (st.height === '1em') continue; // our own digit mask
+          const containsMask = [...child.querySelectorAll('span')].some(
+            s2 => s2.style.overflow === 'hidden'
+          );
+          if (containsMask) {
+            // foreign wrapper AROUND our digit masks → unwrap (our own
+            // masks contain only the rolling column, never another
+            // overflow-hidden span)
+            while (child.firstChild) host.insertBefore(child.firstChild, child);
+            child.remove();
+          } else if (!(child.textContent || '').trim() && !child.firstElementChild) {
+            child.remove(); // empty leftover wrapper
+          }
+        }
+      };
+      for (const odoEl of scaler.querySelectorAll('[data-cap-odo]')) unwrapForeign(odoEl);
+      for (const mnEl of scaler.querySelectorAll('span')) {
+        const unit = (mnEl.textContent || '').trim();
+        if (unit !== 'Mn+' && unit !== 'Mn' && unit !== 'Cr+' && unit !== 'Cr') continue;
+        if (!mnEl.getClientRects().length) continue;
+        const prev = mnEl.previousElementSibling;
+        if (!prev || !/\d/.test(prev.textContent || '')) continue;
+        unwrapForeign(prev); // re-rendered copies can lose data-cap-odo
+        if (!prev.dataset.capPairTight) {
+          prev.dataset.capPairTight = '1';
+          prev.style.width = 'auto';
+        }
+        if (!/\s$/.test(prev.textContent || '')) {
+          const sp = document.createElement('span');
+          sp.textContent = ' ';
+          sp.style.whiteSpace = 'pre';
+          prev.appendChild(sp);
+        }
+      }
+    };
+    tightenValueUnitPairs();
+    setTimeout(tightenValueUnitPairs, 800);
+    setTimeout(tightenValueUnitPairs, 2000);
+    setTimeout(tightenValueUnitPairs, 4000);
   }
 
   _setupReveal() {
