@@ -3268,7 +3268,11 @@ class Component extends DCLogic {
         // cycle before landing. Initially shows the real digit (offset digit).
         const digit = parseInt(ch, 10);
         const mask = document.createElement('span');
-        mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:baseline;';
+        // An overflow:hidden inline-block baselines at its bottom EDGE, not the
+        // glyph's baseline, so the digit (which sits ~0.137em higher inside the
+        // 1em box) rides up above the surrounding "$"/"Mn+" text. Nudge the mask
+        // down by that descent so the digit baseline lands on the text baseline.
+        mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:-0.137em;';
         mask.style.width = naturalW(el, ch).toFixed(2) + 'px';
         const col = document.createElement('span');
         col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
