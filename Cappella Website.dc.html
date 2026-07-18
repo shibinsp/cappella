@@ -721,13 +721,16 @@ class Component extends DCLogic {
               el.style.height = footerHeight + 'px';
               el.style.zIndex = '2';
               
-              // Scale down and center the giant white interlocking logo
+              // Scale + center the giant white interlocking logo. Sized to
+              // fill the left column like the Figma design (~2.05x the JV
+              // Ventures wordmark) — the max that clears the "An Initiative
+              // by" row at band-y 380.
               const logo = el.querySelector('.fig-asset-c9d8f12cf6e90c99');
               if (logo) {
-                logo.style.width = '305px';
-                logo.style.height = '280px';
-                logo.style.left = '213px'; // Centered horizontally (202px + 11px container offset)
-                logo.style.top = '80px';
+                logo.style.width = '390px';
+                logo.style.height = '358px';
+                logo.style.left = '170px';
+                logo.style.top = '8px';
               }
               
               const redBg = el.querySelector('div');
