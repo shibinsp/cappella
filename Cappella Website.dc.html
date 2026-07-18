@@ -291,11 +291,14 @@
       user-select: none;
       opacity: 0;
       pointer-events: none;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
     }
+    /* White ring on hover: the red fill camouflaged into the site's red
+       bands, so the hovered circle stays bounded on any background */
     #cap-menu-btn:hover {
       background: rgb(209, 32, 47);
-      border-color: rgb(209, 32, 47);
+      border-color: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 4px 20px rgba(0, 0, 0, 0.18);
       transform: scale(1.08);
     }
     #cap-menu-btn svg {
@@ -608,11 +611,17 @@
 
     <!-- Scroll-linked staircase reveal — left half only, original step size,
          entirely BELOW the zig-zag stats in the extended band (1975-2415). -->
-    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1975px; width: 728px; height: 440px; z-index: 6; pointer-events: none; overflow: hidden;">
+    <!-- width 723 = flush with the Edge section's red hairline below
+         (matrix tx 723) — was 728, leaving the bottom step 5px proud -->
+    <!-- height 450 + last step 120: the white steps overshoot the band bottom
+         (2415) by ~10px into the white Edge section below, covering a 1px red
+         sliver of the band slab that peeked under the staircase (sub-pixel
+         gap). Overshoot is white-on-white, invisible. -->
+    <div id="cap-reveal" style="position: absolute; left: 0px; top: 1975px; width: 723px; height: 450px; z-index: 6; pointer-events: none; overflow: hidden;">
       <div class="cap-stair" style="position: absolute; left: 0; top: 0px;   width: 25%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
       <div class="cap-stair" style="position: absolute; left: 0; top: 110px;  width: 50%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
       <div class="cap-stair" style="position: absolute; left: 0; top: 220px;  width: 75%;  height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
-      <div class="cap-stair" style="position: absolute; left: 0; top: 330px;  width: 100%; height: 110px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
+      <div class="cap-stair" style="position: absolute; left: 0; top: 330px;  width: 100%; height: 120px; background: rgb(255,255,255); transform-origin: left; transform: scaleX(0); will-change: transform;"></div>
     </div>
   </div>
 </div>
@@ -949,7 +958,10 @@ class Component extends DCLogic {
       return;
     }
     this._bandGridDone = true;
-    const BAND_BOTTOM = 2675;
+    // 2415 = the extended band's true bottom (fill 1715 + 700). The earlier
+    // 2675 double-counted the +260 extension and ran the x1078 rail through
+    // "The Cappella Edge" heading below the band.
+    const BAND_BOTTOM = 2415;
     rails.forEach(el => {
       const mm = /matrix\(0,\s*1,\s*-1,\s*0,\s*([\d.]+),\s*([\d.]+)\)/.exec(el.style.transform);
       const len = parseFloat(el.getAttribute('width')) || 1;
@@ -992,7 +1004,15 @@ class Component extends DCLogic {
       if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
       return;
     }
-    if (document.getElementById('cap-op-stitch')) return;
+    if (this._opStitchDone) return;
+    this._opStitchDone = true;
+
+    // JGI's logo is a transparent circular PNG, so the x1026 grid vertical
+    // showed through it (the rectangular logos mask crossing lines with
+    // their own white boxes). A white backing makes it mask the line the
+    // same way — invisible against the section's white page.
+    const jgi = scaler.querySelector('.fig-asset-79356d431474ada0');
+    if (jgi) jgi.style.backgroundColor = '#fff';
 
     // Row axis = Saint Mary's vertical centre, in the post-band-shift
     // domain the journey bookkeeping stores (jorig = baked + 260).
@@ -1007,25 +1027,41 @@ class Component extends DCLogic {
     const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
     lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
 
-    // Hairlines: two segments abutting the logo (the design's lines touch
-    // logos, never cross them) — left to the x448 vertical, right to the
-    // x1019 vertical. Injected at pre-shift coords (jorig domain − 260) and
-    // adopted by the observer-driven runAdjust like baked frame elements.
-    const lhLeft = parseFloat(lh.style.left) || 0;
-    const lhRight = lhLeft + (parseFloat(lh.style.width) || 0);
-    const segs = [
-      { left: 448, width: (lhLeft - 18) - 448 },
-      { left: lhRight + 18, width: 1019 - (lhRight + 18) }
-    ];
-    segs.forEach((g, i) => {
-      const line = document.createElement('div');
-      if (i === 0) line.id = 'cap-op-stitch';
-      line.style.cssText =
-        'position:absolute; left:' + g.left + 'px; width:' + g.width + 'px; height:1px;' +
-        'top:' + (smCenter - 260) + 'px;' +
-        'background:rgb(209,32,47); opacity:0.35; z-index:0; pointer-events:none;';
-      frameRoot.appendChild(line);
-    });
+    // (The crossing hairline previously injected at this row was removed
+    // 2026-07-17: the Figma design has no horizontal line at the Lighthouse
+    // row — the grid verticals simply end/gap around it.)
+
+    // Center-column vertical (Figma): runs down the x726 column, gapping
+    // around the LIGHTHOUSE wordmark, then continuing to the footer band.
+    // The baked element for it (the hidden 1581-long svg) got stranded at
+    // the wrong span by the band/journey shifts — rebuild it as two clones
+    // positioned from live geometry, adopted by the shift machinery via
+    // data-jorig-ty (+ data-cap-shifted so shiftBelowBand won't re-shift).
+    const donor = scaler.querySelector('svg[width="1581"]');
+    if (donor && !scaler.querySelector('[data-cap-centerline]')) {
+      const srect = scaler.getBoundingClientRect();
+      const mSc = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+      const sc2 = mSc ? parseFloat(mSc[1]) : 1;
+      const cvTop = (el) => (el.getBoundingClientRect().top - srect.top) / sc2;
+      const cvBottom = (el) => (el.getBoundingClientRect().bottom - srect.top) / sc2;
+      const band = scaler.querySelector('[data-original-top="7352"]');
+      const jd = this._jDelta || 0;
+      const mkSeg = (topY, bottomY) => {
+        const len = bottomY - topY;
+        if (len <= 10) return;
+        const el = donor.cloneNode(true);
+        el.setAttribute('data-cap-centerline', '1');
+        el.setAttribute('data-cap-shifted', '1');
+        el.setAttribute('data-jorig-ty', String(bottomY - jd));
+        el.style.display = '';
+        el.style.transform = 'matrix(0, -1, 1, 0, 726, ' + bottomY.toFixed(1) + ') scaleX(' + (len / 1581).toFixed(5) + ')';
+        donor.parentElement.appendChild(el);
+      };
+      if (band) {
+        mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
+        mkSeg(cvBottom(lh) + 18, cvTop(band));
+      }
+    }
     if (this._runAdjust) this._runAdjust();
   }
 
@@ -2183,9 +2219,12 @@ class Component extends DCLogic {
     `;
     document.body.appendChild(btn);
 
-    // Hide the baked Figma menu square (solid red box, hero top-right) that
-    // this floating button replaces — retried until the frame hydrates
-    const hideBakedMenuBox = () => {
+    // Replace the baked Figma menu square (solid red box, hero top-right)
+    // with the white Cappella C mark (user request 2026-07-17) — retried
+    // until the frame hydrates. top:25 sits below every band-shift
+    // threshold, so no exemption bookkeeping is needed, but the attributes
+    // keep it out of the passes regardless.
+    const replaceBakedMenuBox = () => {
       const scaler = document.getElementById('cap-scaler');
       if (!scaler) return false;
       const box = [...scaler.querySelectorAll('div')].find((e) => {
@@ -2193,13 +2232,26 @@ class Component extends DCLogic {
         return parseFloat(e.style.left) === 1360 && parseFloat(e.style.top) === 25 &&
                st.includes('209, 32, 47') && Math.abs(parseFloat(e.style.width) - 56) < 2;
       });
-      if (box) { box.style.display = 'none'; return true; }
-      return false;
+      if (!box) return false;
+      box.style.display = 'none';
+      if (!scaler.querySelector('.cap-hero-mark')) {
+        const img = document.createElement('img');
+        img.src = './components/assets/c9d8f12cf6e90c99.png';
+        img.alt = 'Cappella';
+        img.className = 'cap-hero-mark';
+        img.setAttribute('data-cap-own', '1');
+        img.setAttribute('data-jexempt', '1');
+        img.style.cssText =
+          'position:absolute; left:1362px; top:29px; width:52px; height:48px;' +
+          'object-fit:contain; z-index:5; pointer-events:none;';
+        scaler.appendChild(img);
+      }
+      return true;
     };
-    if (!hideBakedMenuBox()) {
+    if (!replaceBakedMenuBox()) {
       let boxTries = 0;
       const boxTimer = setInterval(() => {
-        if (hideBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
+        if (replaceBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
       }, 250);
     }
 
@@ -2496,17 +2548,25 @@ class Component extends DCLogic {
     const CW = PORTRAIT ? 800 : 1600;   // canvas design width
     const CH = PORTRAIT ? 1500 : 820;   // canvas design height
     const HY = PORTRAIT ? 1150 : 715;   // sky-horizon y in canvas coords
-    const BASE_PATH = PORTRAIT
-      ? 'M 640 -10 C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
-      : 'M 812 -10 C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
+    // Path head x + body (the M start is composed dynamically in setTail so
+    // the curve always reaches the pin's top edge — on viewports taller than
+    // the canvas aspect the stage letterboxes and a static start would hang
+    // visibly mid-sky)
+    const HEAD_X = PORTRAIT ? 640 : 812;
+    const BASE_BODY = PORTRAIT
+      ? 'C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
+      : 'C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
+    const BASE_PATH = 'M ' + HEAD_X + ' -10 ' + BASE_BODY;
     const TAIL = PORTRAIT
       ? { c1x: 158, c1y: 1310, minMid: 1350 }
       : { c1x: 207, c1y: 732, minMid: 760 };
-    // Dot positions + their arc-length reveal fractions (measured per path,
-    // keeping the hand-tuned reveal offsets: +0.06 / +0.06 / -0.02)
+    // Dot positions; reveal fractions are recomputed per layout (the dynamic
+    // head/tail change the path length), preserving the hand-tuned offsets
     const DOTS = PORTRAIT
       ? [['0.25', 540, 300], ['0.50', 360, 700], ['0.70', 170, 1230]]
       : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
+    const TH_ADJ = PORTRAIT ? [0.06, 0.06, -0.067] : [0.06, 0.055, -0.019];
+    const TH_LIVE = DOTS.map((d) => parseFloat(d[0]));
     const MPOS = PORTRAIT
       ? [[90, 240, 420], [410, 640, 370], [230, 1170, 440]]
       : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
@@ -2551,7 +2611,7 @@ class Component extends DCLogic {
           '<path class="cap-j-path" d="' + BASE_PATH + '" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
           dotIdx.map((di) => {
             const d = DOTS[di];
-            return '<circle class="cap-j-dot" data-th="' + d[0] + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
+            return '<circle class="cap-j-dot" data-di="' + di + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
           }).join('') +
         '</svg>' +
         markers +
@@ -2562,7 +2622,7 @@ class Component extends DCLogic {
     const marker = (di, year, assets, note, countTo) => {
       const pos = MPOS[di];
       const wrap = PORTRAIT ? 'white-space:normal;max-width:' + pos[2] + 'px;' : '';
-      return '<div class="cap-j-marker" data-th="' + DOTS[di][0] + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
+      return '<div class="cap-j-marker" data-di="' + di + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
         '<div style="font-size:' + MF.y + 'px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
         '<div style="font-size:' + MF.a + 'px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
         (note ? '<div style="font-size:' + MF.n + 'px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
@@ -2607,6 +2667,18 @@ class Component extends DCLogic {
         '</div>' +
       '</div>';
     document.body.appendChild(host);
+
+    // Baked faded-red vertical (svg width 1581, 53% opacity) dangles from
+    // under the band down into Our Portfolio — removed per client request
+    // 2026-07-17
+    (() => {
+      const sc2 = document.getElementById('cap-scaler');
+      if (!sc2) return;
+      [...sc2.querySelectorAll('svg[width="1581"]')].forEach((el) => {
+        const st = el.getAttribute('style') || '';
+        if (st.includes('209, 32, 47')) el.style.display = 'none';
+      });
+    })();
 
     const pin = host.querySelector('.cap-j-pin');
     const stage = host.querySelector('.cap-j-stage');
@@ -2725,7 +2797,13 @@ class Component extends DCLogic {
       const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
       // stage-local y of the pin's bottom edge, +12 overshoot past the clip
       const yExit = (h + CH * scale) / (2 * scale) + 12;
-      const d = BASE_PATH + ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
+      // …and of the pin's TOP edge: on viewports taller than the canvas
+      // aspect the stage letterboxes, so the curve extends straight up from
+      // its design start to the section's top edge instead of hanging mid-sky
+      const yHead = Math.min(-10, -(h - CH * scale) / (2 * scale) - 12);
+      const d = 'M ' + HEAD_X + ' ' + yHead.toFixed(1) +
+        (yHead < -10 ? ' L ' + HEAD_X + ' -10 ' : ' ') + BASE_BODY +
+        ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
         xExit.toFixed(1) + ' ' + Math.max(TAIL.minMid, yExit - 90).toFixed(1) + ' ' +
         xExit.toFixed(1) + ' ' + yExit.toFixed(1);
       phases.forEach((ph) => {
@@ -2736,6 +2814,21 @@ class Component extends DCLogic {
         ph._path.dataset.len = len;
         ph._path.style.strokeDasharray = len;
       });
+      // The head/tail lengths vary with the viewport, so the dots' arc
+      // fractions move — recompute them (y-bisection; the path is monotonic
+      // in y) and reapply the hand-tuned reveal offsets
+      const p0 = phases[0] && phases[0]._path;
+      if (p0) {
+        const total = p0.getTotalLength();
+        DOTS.forEach((dot, di) => {
+          let lo = 0, hi = total;
+          for (let k = 0; k < 40; k++) {
+            const mid = (lo + hi) / 2;
+            if (p0.getPointAtLength(mid).y < dot[2]) lo = mid; else hi = mid;
+          }
+          TH_LIVE[di] = Math.min(0.95, Math.max(0.02, lo / total + TH_ADJ[di]));
+        });
+      }
     };
 
     // geometry: host over the band gap (page coordinates — the host is a
@@ -2743,8 +2836,13 @@ class Component extends DCLogic {
     const layout = () => {
       const s = vp.clientWidth / 1440;
       const vpPageTop = vp.getBoundingClientRect().top + window.scrollY;
-      host.style.top = Math.round(vpPageTop + this._jBandTop * s) + 'px';
-      host.style.height = Math.round(this._jVH * window.innerHeight) + 'px';
+      // GAP_CLOSE: the baked frame leaves a 15px white strip between the
+      // Edge image's bottom (y3125) and the band top (y3140) — the sky
+      // starts at the image edge instead (client request 2026-07-17). Added
+      // to the height so the host's BOTTOM edge (red-hairline join) stays.
+      const GAP_CLOSE = 15;
+      host.style.top = Math.round(vpPageTop + (this._jBandTop - GAP_CLOSE) * s) + 'px';
+      host.style.height = Math.round(this._jVH * window.innerHeight + GAP_CLOSE * s) + 'px';
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / CW, h / CH);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
@@ -2870,7 +2968,7 @@ class Component extends DCLogic {
         }
 
         ph._dots.forEach((d, di) => {
-          const th = parseFloat(d.dataset.th);
+          const th = TH_LIVE[+d.dataset.di];
           const rev = clamp((drawT - (th - 0.04)) / 0.06, 0, 1);
           d.style.opacity = rev.toFixed(3);
           const ring = ph._rings[di];
@@ -2898,7 +2996,7 @@ class Component extends DCLogic {
         });
 
         ph._markers.forEach((m) => {
-          const th = parseFloat(m.dataset.th);
+          const th = TH_LIVE[+m.dataset.di];
           const r = clamp((drawT - (th - 0.06)) / 0.10, 0, 1);
           const e = easeOut(r);
           m.style.opacity = e.toFixed(3);
@@ -2906,7 +3004,7 @@ class Component extends DCLogic {
         });
         ph._counts.forEach((c) => {
           const mk = c.closest('.cap-j-marker');
-          const th = parseFloat(mk.dataset.th);
+          const th = TH_LIVE[+mk.dataset.di];
           if (drawT >= th - 0.02 && op > 0.3) {
             if (!c._counting && !c._done) c._counting = now;
           } else if (op < 0.1) {
@@ -3269,12 +3367,12 @@ class Component extends DCLogic {
     ];
 
     // =====================================================================
-    // TRUE WebGL GLSL Bayer-Matrix Dither  (OCI-style, Cappella Red)
-    // Architecture mirrors oci-website/js/dither.js but uses:
-    //   dark  = #D1202F (Cappella red)   light = #FFF0F0 (warm white)
-    // uDitherAmount uniform: 1.0 = full dither  /  0.0 = full colour
+    // WebGL card treatment: photo under a translucent Cappella-red overlay
+    // (#D1202F at A8 = 65.9% — client spec 2026-07-17; replaces the earlier
+    // Bayer-dither duotone).
+    // u_dither uniform: 1.0 = overlay on  /  0.0 = full colour
     // On hover → tween to 0.0 + zoom 1.05x  (reveal original image)
-    // On leave → tween to 1.0 + zoom 1.0x   (restore dither)
+    // On leave → tween to 1.0 + zoom 1.0x   (restore overlay)
     // =====================================================================
 
     // --- GLSL shaders ---
@@ -3288,63 +3386,27 @@ class Component extends DCLogic {
       }
     `;
 
-    // 4×4 Bayer threshold matrix encoded as uniforms
-    // u_bayer[y*4+x] = ordered-dither threshold (0–15)
     const FRAG_SRC = `
       precision mediump float;
       varying vec2 v_uv;
       uniform sampler2D u_tex;
-      uniform float u_dither;      // 0=colour, 1=dither
+      uniform float u_dither;      // 0=colour, 1=overlay
       uniform float u_zoom;        // 1.0 default, 1.05 hovered
-      uniform float u_bayer[16];   // 4x4 Bayer matrix values
 
       void main() {
         /* zoom from centre */
         vec2 uv = (v_uv - 0.5) / u_zoom + 0.5;
         vec4 col = texture2D(u_tex, uv);
 
-        /* luminance */
-        float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+        /* #D1202F at A8 alpha (168/255 = 0.659) over the photo */
+        vec3 red = vec3(0.820, 0.125, 0.184);
+        vec3 tinted = mix(col.rgb, red, 0.659);
 
-        /* Bayer threshold lookup (use mod on pixel coords) */
-        int bx = int(mod(floor(gl_FragCoord.x), 4.0));
-        int by = int(mod(floor(gl_FragCoord.y), 4.0));
-        float idx = float(by * 4 + bx);
-
-        /* manually index — GLSL ES 1.0 needs constant-index arrays  */
-        /* so we use a chain of comparisons (16 branches, GPU trivial) */
-        float thr = 0.0;
-        if      (idx <  1.0) thr = u_bayer[ 0];
-        else if (idx <  2.0) thr = u_bayer[ 1];
-        else if (idx <  3.0) thr = u_bayer[ 2];
-        else if (idx <  4.0) thr = u_bayer[ 3];
-        else if (idx <  5.0) thr = u_bayer[ 4];
-        else if (idx <  6.0) thr = u_bayer[ 5];
-        else if (idx <  7.0) thr = u_bayer[ 6];
-        else if (idx <  8.0) thr = u_bayer[ 7];
-        else if (idx <  9.0) thr = u_bayer[ 8];
-        else if (idx < 10.0) thr = u_bayer[ 9];
-        else if (idx < 11.0) thr = u_bayer[10];
-        else if (idx < 12.0) thr = u_bayer[11];
-        else if (idx < 13.0) thr = u_bayer[12];
-        else if (idx < 14.0) thr = u_bayer[13];
-        else if (idx < 15.0) thr = u_bayer[14];
-        else                 thr = u_bayer[15];
-
-        float threshold = (thr + 0.5) / 16.0;
-
-        /* Cappella red duotone  */
-        vec3 dark  = vec3(0.820, 0.125, 0.184);   /* #D1202F */
-        vec3 light = vec3(1.000, 0.941, 0.941);   /* #FFF0F0 */
-        vec3 dithered = lum > threshold ? light : dark;
-
-        /* blend between dithered and original */
-        gl_FragColor = vec4(mix(col.rgb, dithered, u_dither), col.a);
+        /* blend between overlaid and original (hover reveal) */
+        gl_FragColor = vec4(mix(col.rgb, tinted, u_dither), col.a);
       }
     `;
 
-    // 4×4 Bayer matrix (same as OCI)
-    const BAYER16 = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
 
     /**
      * Creates a WebGL dither instance on a <canvas> element.
@@ -3388,8 +3450,6 @@ class Component extends DCLogic {
       // uniforms
       const uDither = gl.getUniformLocation(prog, 'u_dither');
       const uZoom   = gl.getUniformLocation(prog, 'u_zoom');
-      const uBayer  = gl.getUniformLocation(prog, 'u_bayer[0]');
-      gl.uniform1fv(uBayer, new Float32Array(BAYER16));
 
       // texture
       const tex = gl.createTexture();
@@ -3495,8 +3555,7 @@ class Component extends DCLogic {
         ditherCanvas.style.cssText = [
           'position:absolute', 'top:0', 'left:0',
           'width:100%', 'height:100%',
-          'pointer-events:none',
-          'image-rendering:pixelated'          // keep the halftone crisp
+          'pointer-events:none'
         ].join(';');
         img.appendChild(ditherCanvas);
 
