@@ -758,12 +758,15 @@ class Component extends DCLogic {
                     // Lower content blocks (footer-local y): CONNECT WITH US / LINKEDIN
                     // ≈ 368–420 (left column); STAY IN TOUCH + email box ≈ 300–393
                     // (right column). Bottom segments end at 530 = footer bottom.
+                    // newTx places each rail ~5px left of its column's text so the
+                    // content hugs the divider, per Figma (nav text ≈720, right
+                    // column text ≈1113 in canvas x).
                     let newTx = tx, newTy = ty, newW = null;
                     if (Math.abs(tx - 737) < 3) {                 // left rail
-                      newTx = 700;
+                      newTx = 727;
                       if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
-                      newTx = 1059;
+                      newTx = 1120;
                       if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
                       else if (ty > 150 && ty < 300) { newW = 83; }   // middle seg: stop above STAY IN TOUCH
                     }
