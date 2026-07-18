@@ -3175,6 +3175,19 @@ class Component extends DCLogic {
       }
     });
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Natural glyph widths per element font (canvas measureText): the digit
+    // masks are sized to their OWN digit's width so a stat renders exactly
+    // as wide as the plain text would (a column's widest-digit width used to
+    // pad "1"s and squeeze "0"s, stretching stats past the Figma tracking).
+    const measCtx = document.createElement('canvas').getContext('2d');
+    const naturalW = (el, text) => {
+      const cs = window.getComputedStyle(el);
+      measCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      let w = measCtx.measureText(text).width;
+      const ls = parseFloat(cs.letterSpacing);
+      if (!isNaN(ls)) w += ls * text.length;
+      return w;
+    };
     const els = [...scaler.querySelectorAll('div, span')].filter(el => {
       if (el.querySelector('*') || el.dataset.capOdo) return false;
       const txt = (el.textContent || '').trim();
@@ -3184,8 +3197,12 @@ class Component extends DCLogic {
     });
     els.forEach(el => {
       el.dataset.capOdo = '1';
+      el.dataset.capOdoText = (el.textContent || '').trim();
       if (reduced) return; // leave static text
-      const txt = (el.textContent || '').trim();
+      // Rebuild from the RAW text: leading/trailing spaces are real layout
+      // (e.g. "$500 " ahead of an inline "Mn+" sibling) — trimming them
+      // glued the unit to the digits.
+      const txt = (el.textContent || '').replace(/[\u2028\u2029]/g, ' ');
       el.textContent = '';
       const rolls = [];
       [...txt].forEach(ch => {
@@ -3201,6 +3218,7 @@ class Component extends DCLogic {
         const digit = parseInt(ch, 10);
         const mask = document.createElement('span');
         mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:baseline;';
+        mask.style.width = naturalW(el, ch).toFixed(2) + 'px';
         const col = document.createElement('span');
         col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
         for (let r = 0; r < 2; r++) {
@@ -3231,6 +3249,32 @@ class Component extends DCLogic {
       }, { threshold: 0.4 });
       io.observe(el);
     });
+
+    // Value/unit tracking ("$500 Mn+"): the baked value span carries a fixed
+    // width with dead room after the digits, so the unit drifted wide of the
+    // Figma tracking. Release the width and guarantee exactly one word space
+    // between value and unit. Re-run on delays: the frame can re-render.
+    const tightenValueUnitPairs = () => {
+      for (const mnEl of scaler.querySelectorAll('span')) {
+        const unit = (mnEl.textContent || '').trim();
+        if (unit !== 'Mn+' && unit !== 'Mn' && unit !== 'Cr+' && unit !== 'Cr') continue;
+        if (!mnEl.getClientRects().length) continue;
+        const prev = mnEl.previousElementSibling;
+        if (!prev || !/\d/.test(prev.textContent || '')) continue;
+        if (prev.dataset.capPairTight) continue;
+        prev.dataset.capPairTight = '1';
+        prev.style.width = 'auto';
+        if (!/\s$/.test(prev.textContent || '')) {
+          const sp = document.createElement('span');
+          sp.textContent = ' ';
+          sp.style.whiteSpace = 'pre';
+          prev.appendChild(sp);
+        }
+      }
+    };
+    tightenValueUnitPairs();
+    setTimeout(tightenValueUnitPairs, 800);
+    setTimeout(tightenValueUnitPairs, 2000);
   }
 
   _setupReveal() {
