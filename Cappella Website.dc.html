@@ -1606,7 +1606,10 @@ class Component extends DCLogic {
       const txt = (el.textContent || '').trim();
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
     bodyParas.forEach((el, i) => {
       const r = el.getBoundingClientRect();
@@ -2004,7 +2007,10 @@ class Component extends DCLogic {
       const txt = (el.textContent || '').trim();
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
 
     bodyParas.forEach((el) => {
@@ -2049,6 +2055,14 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler || this._footerAnimated) return;
     this._footerAnimated = true;
+
+    // The global "white-space: normal !important" rule collapses the footer
+    // address's authored newlines; restore pre-line on just that span so it
+    // wraps to the Figma line layout (inline !important beats the stylesheet).
+    const addrSpan = [...scaler.querySelectorAll('span')].find(
+      el => el.childElementCount === 0 && /niharika/i.test(el.textContent || '')
+    );
+    if (addrSpan) addrSpan.style.setProperty('white-space', 'pre-line', 'important');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const m = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
     const scale = m ? parseFloat(m[1]) : 1;
