@@ -1364,9 +1364,18 @@ class Component extends DCLogic {
       }, 100 + idx * 80);
     });
 
-    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL
+    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL (hero region only)
+    // Position must come from the RENDERED rect: nested spans (e.g. the
+    // "$500" / "16 Assets" stats) carry no inline top, and the old
+    // `style.top || 0` default let them into the hero filter — their
+    // word-wrap containers (inline-block, overflow:hidden, va:bottom,
+    // margin-right .22em) then broke the odometer baseline and tracking.
+    const scRectHero = scaler.getBoundingClientRect();
+    const mHero = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+    const sHero = mHero ? parseFloat(mHero[1]) : 1;
     const headings = [...scaler.querySelectorAll('span, p, h1, h2, h3')].filter(el => {
-      const top = parseFloat(el.style.top) || 0;
+      const r = el.getBoundingClientRect();
+      const top = r.height ? (r.top - scRectHero.top) / sHero : (parseFloat(el.style.top) || 0);
       if (top > 850) return false;
       const style = window.getComputedStyle(el);
       const fontSize = parseFloat(style.fontSize) || 0;
@@ -1612,6 +1621,12 @@ class Component extends DCLogic {
       // Exclude the footer address (the only text with a 6-digit postal
       // code): the line-split froze it at a too-narrow wrap; left alone it
       // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
       return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
     bodyParas.forEach((el, i) => {
@@ -2013,6 +2028,12 @@ class Component extends DCLogic {
       // Exclude the footer address (the only text with a 6-digit postal
       // code): the line-split froze it at a too-narrow wrap; left alone it
       // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
       return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
     });
 
@@ -3255,15 +3276,41 @@ class Component extends DCLogic {
     // Figma tracking. Release the width and guarantee exactly one word space
     // between value and unit. Re-run on delays: the frame can re-render.
     const tightenValueUnitPairs = () => {
+      // A line-split pass can race the odometer and wrap a stat's content in
+      // an inline-block overflow:hidden line mask — which baselines at its
+      // BOTTOM edge, sinking the digits ~10px below the unit. Unwrap any
+      // such foreign wrapper (our digit masks stay: they hold the columns).
+      const unwrapForeign = (host) => {
+        for (const child of [...host.children]) {
+          const st = child.style;
+          if (st.overflow !== 'hidden' || st.display !== 'inline-block') continue;
+          if (st.height === '1em') continue; // our own digit mask
+          const containsMask = [...child.querySelectorAll('span')].some(
+            s2 => s2.style.overflow === 'hidden'
+          );
+          if (containsMask) {
+            // foreign wrapper AROUND our digit masks → unwrap (our own
+            // masks contain only the rolling column, never another
+            // overflow-hidden span)
+            while (child.firstChild) host.insertBefore(child.firstChild, child);
+            child.remove();
+          } else if (!(child.textContent || '').trim() && !child.firstElementChild) {
+            child.remove(); // empty leftover wrapper
+          }
+        }
+      };
+      for (const odoEl of scaler.querySelectorAll('[data-cap-odo]')) unwrapForeign(odoEl);
       for (const mnEl of scaler.querySelectorAll('span')) {
         const unit = (mnEl.textContent || '').trim();
         if (unit !== 'Mn+' && unit !== 'Mn' && unit !== 'Cr+' && unit !== 'Cr') continue;
         if (!mnEl.getClientRects().length) continue;
         const prev = mnEl.previousElementSibling;
         if (!prev || !/\d/.test(prev.textContent || '')) continue;
-        if (prev.dataset.capPairTight) continue;
-        prev.dataset.capPairTight = '1';
-        prev.style.width = 'auto';
+        unwrapForeign(prev); // re-rendered copies can lose data-cap-odo
+        if (!prev.dataset.capPairTight) {
+          prev.dataset.capPairTight = '1';
+          prev.style.width = 'auto';
+        }
         if (!/\s$/.test(prev.textContent || '')) {
           const sp = document.createElement('span');
           sp.textContent = ' ';
@@ -3275,6 +3322,7 @@ class Component extends DCLogic {
     tightenValueUnitPairs();
     setTimeout(tightenValueUnitPairs, 800);
     setTimeout(tightenValueUnitPairs, 2000);
+    setTimeout(tightenValueUnitPairs, 4000);
   }
 
   _setupReveal() {
