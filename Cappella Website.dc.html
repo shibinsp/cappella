@@ -747,18 +747,30 @@ class Component extends DCLogic {
                   if (match) {
                     const tx = parseFloat(match[5]);
                     const ty = parseFloat(match[6]);
-                    // Each rail is drawn as a top stub + middle segment + bottom
-                    // segment; the middle segment ends at footer-local y 363. The
-                    // baked bottom segment (ty 418 left / 479 middle) starts lower,
-                    // leaving a gap so the divider looks like it stops partway. Pull
-                    // it up to 363 to close the gap — the segment is long enough to
-                    // then reach the footer bottom, matching the Figma design.
-                    const newTy = ty > 400 ? 363 : ty;
-                    if (Math.abs(tx - 737) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},700,${newTy})`;
-                    } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {
-                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},1059,${newTy})`;
+                    // Redraw the two column dividers to the Figma grid: each rail is
+                    // a short top stub, then line segments that break around the
+                    // footer's content blocks and run to the footer bottom. The baked
+                    // segments came from a taller Figma frame; once the footer is
+                    // compacted to 530px their positions/lengths no longer line up, so
+                    // reposition (matrix ty) and resize each one. style.width is the
+                    // rendered line length here — the horizontal path scales with the
+                    // viewBox, so shrinking the width shortens the (rotated) line.
+                    // Lower content blocks (footer-local y): CONNECT WITH US / LINKEDIN
+                    // ≈ 368–420 (left column); STAY IN TOUCH + email box ≈ 300–393
+                    // (right column). Bottom segments end at 530 = footer bottom.
+                    let newTx = tx, newTy = ty, newW = null;
+                    if (Math.abs(tx - 737) < 3) {                 // left rail
+                      newTx = 700;
+                      if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
+                    } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
+                      newTx = 1059;
+                      if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
+                      else if (ty > 150 && ty < 300) { newW = 83; }   // middle seg: stop above STAY IN TOUCH
                     }
+                    if (newTx !== tx || newTy !== ty) {
+                      svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},${newTx},${newTy})`;
+                    }
+                    if (newW != null) { svg.style.width = newW + 'px'; svg.setAttribute('width', newW); }
                   }
                 }
               });
