@@ -28,10 +28,10 @@ for (const pageDef of PAGES) {
       await expect(current).toHaveCount(1);
       await expect(current).toHaveAttribute('href', pageDef.file);
 
-      // Wordmark links home (space encoded)
+      // Wordmark links home
       await expect(page.locator('.site-logo')).toHaveAttribute(
         'href',
-        'Cappella%20Website.dc.html'
+        'index.html'
       );
 
       // Footer: mailto + address present; nav links to all 4 pages

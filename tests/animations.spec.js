@@ -76,7 +76,7 @@ test.describe('animation system', () => {
 });
 
 test.describe('homepage preloader', () => {
-  const HOME = '/Cappella%20Website.dc.html';
+  const HOME = '/index.html';
   // The curtain exits via a traveling diagonal gradient-mask fade (the panel
   // itself never moves) — detect the inline exit values on the 9999 div.
   const exitStarted = (page) =>
@@ -246,7 +246,7 @@ test.describe('homepage preloader', () => {
 });
 
 test.describe('pinned journey', () => {
-  const HOME = '/Cappella%20Website.dc.html';
+  const HOME = '/index.html';
 
   test('pin sticks and phases progress with scroll', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
@@ -448,7 +448,7 @@ test.describe('reduced motion', () => {
 });
 
 test.describe('portfolio city filter', () => {
-  const HOME = '/Cappella%20Website.dc.html';
+  const HOME = '/index.html';
 
   test('the red mark follows the active city through real clicks', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'hover/click flow asserted at desktop scale');
@@ -504,7 +504,7 @@ test.describe('portfolio city filter', () => {
 });
 
 test.describe('portfolio counter-scroll columns', () => {
-  const HOME = '/Cappella%20Website.dc.html';
+  const HOME = '/index.html';
   const CARD_L = '.fig-asset-3f58066ce9ef777c-b69ac725'; // left column
   const CARD_R = '.fig-asset-016a31a2601bd9e3'; // right column
 
@@ -587,7 +587,7 @@ test.describe('portfolio counter-scroll columns', () => {
 });
 
 test.describe('footer reveal replays', () => {
-  const HOME = '/Cappella%20Website.dc.html';
+  const HOME = '/index.html';
 
   test('choreography retracts off-screen and replays on the next visit', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');

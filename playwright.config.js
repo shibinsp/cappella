@@ -20,7 +20,7 @@ module.exports = defineConfig({
   },
   webServer: {
     command: 'node scripts/serve.mjs 8788',
-    url: 'http://127.0.0.1:8788/Cappella%20Website.dc.html',
+    url: 'http://127.0.0.1:8788/index.html',
     reuseExistingServer: true,
     timeout: 15000
   },

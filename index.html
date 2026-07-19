@@ -191,20 +191,6 @@
       100% { transform: translate(0, 0); }
     }
 
-    /* Editorial section meta-labels: [ 01 — THE CAPPELLA EDGE ] */
-    .cap-meta {
-      position: absolute;
-      font-family: 'Space Mono', monospace;
-      font-size: 13px;
-      letter-spacing: 2px;
-      white-space: nowrap;
-      z-index: 5;
-      opacity: 0;
-      transform: translateY(14px);
-      transition: opacity 0.8s var(--cap-ease-expo), transform 0.8s var(--cap-ease-expo);
-    }
-    .cap-meta.cap-meta-in { opacity: 0.85; transform: translateY(0); }
-
     /* ===== DYNAMIC JOURNEY SLIDER ===== */
     #cap-journey-dynamic-wrap {
       position: absolute;
@@ -2441,34 +2427,8 @@ class Component extends DCLogic {
   }
 
   _setupMetaLabels() {
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler || scaler.querySelector('.cap-meta')) return;
-    // Anchored just above each section heading (frame coordinates)
-    const defs = [
-      ['01', 'THE CAPPELLA EDGE', 821, 2418, 'rgb(209,32,47)'],
-      ['02', 'OUR JOURNEY',        45, 3256, 'rgb(255,255,255)'],
-      ['03', 'OUR PORTFOLIO',     210, 4431, 'rgb(209,32,47)'],
-      ['04', 'OPERATORS',         775, 5494, 'rgb(209,32,47)'],
-      ['05', 'CONTACT',            44, 7250, 'rgb(255,255,255)']
-    ];
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('cap-meta-in');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.5 });
-    defs.forEach(([num, text, left, top, color]) => {
-      const el = document.createElement('div');
-      el.className = 'cap-meta';
-      el.textContent = '[ ' + num + ' — ' + text + ' ]';
-      el.style.left = left + 'px';
-      el.style.top = top + 'px';
-      el.style.color = color;
-      scaler.appendChild(el);
-      io.observe(el);
-    });
+    // Editorial [ NN — SECTION ] reference labels removed per client request.
+    return;
   }
 
   _setupJourneyBand() {
@@ -4363,63 +4323,10 @@ class Component extends DCLogic {
       });
     };
 
-    // Dithered flash on the section image whenever the accordion changes (OCI)
-    const edgeImg = scaler.querySelector('.fig-asset-63186349250e044c-069f3173');
-    let flashImage = () => {};
-    if (edgeImg) {
-      edgeImg.style.overflow = 'hidden';
-      edgeImg.style.transition = 'transform 0.6s ' + EASE;
-      const canvas = document.createElement('canvas');
-      canvas.style.cssText =
-        'position:absolute; left:0; top:0; width:100%; height:100%;' +
-        'pointer-events:none; opacity:0; transition: opacity 0.4s ease;';
-      edgeImg.appendChild(canvas);
-
-      const bayer = [[0,12,3,15],[8,4,11,7],[2,14,1,13],[10,6,9,5]];
-      const bg = window.getComputedStyle(edgeImg).backgroundImage;
-      if (bg && bg !== 'none') {
-        const tempImg = new Image();
-        tempImg.crossOrigin = 'anonymous';
-        tempImg.src = bg.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
-        tempImg.onload = () => {
-          const w = 150, h = Math.round((tempImg.height / tempImg.width) * w);
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(tempImg, 0, 0, w, h);
-          const imgData = ctx.getImageData(0, 0, w, h);
-          const px = imgData.data;
-          for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-              const i4 = (y * w + x) * 4;
-              const gray = 0.299 * px[i4] + 0.587 * px[i4 + 1] + 0.114 * px[i4 + 2];
-              const light = gray > ((bayer[y % 4][x % 4] + 0.5) / 16) * 255;
-              // Brand red duotone: dark=rgb(209,32,47) red, light=rgb(255,235,235) pink
-              px[i4]     = light ? 255 : 209;
-              px[i4 + 1] = light ? 235 : 32;
-              px[i4 + 2] = light ? 235 : 47;
-            }
-          }
-          ctx.putImageData(imgData, 0, 0);
-        };
-      }
-
-      let flashT = null;
-      flashImage = () => {
-        canvas.style.opacity = '1';
-        edgeImg.style.transform = 'scale(1.03)';
-        clearTimeout(flashT);
-        flashT = setTimeout(() => {
-          canvas.style.opacity = '0';
-          edgeImg.style.transform = 'scale(1)';
-        }, 420);
-      };
-    }
-
     items.forEach((item, i) => {
       item.hitArea.addEventListener('click', () => {
         activeIndex = activeIndex === i ? -1 : i;
         layout();
-        flashImage();
       });
       // OCI hover: pre-rotate to 90° when hovered (closed), back to 0° on leave
       item.hitArea.addEventListener('mouseenter', () => {

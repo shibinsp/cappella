@@ -8,7 +8,7 @@ const {
   PAGES
 } = require('./helpers');
 
-const HOME = '/Cappella%20Website.dc.html';
+const HOME = '/index.html';
 
 /** The homepage hydrates its React frame + binds nav ~0.5–1.6s after load. */
 async function gotoHome(page) {

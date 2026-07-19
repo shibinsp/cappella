@@ -1,8 +1,7 @@
 // Zero-dependency static file server for the Cappella site.
 // Usage: node scripts/serve.mjs [port]
 // - Serves the repo root.
-// - `/` maps to the homepage ("Cappella Website.dc.html" — note the space,
-//   which arrives URL-encoded and is handled via decodeURIComponent).
+// - `/` maps to the homepage (index.html).
 // - Path-traversal guarded (resolved path must stay inside the root).
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -32,7 +31,7 @@ const mime = {
 http.createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    if (p === '/' || p === '/index.html') p = '/Cappella Website.dc.html';
+    if (p === '/') p = '/index.html';
     const file = resolve(join(root, p));
     if (file !== root && !file.startsWith(root + sep)) {
       res.writeHead(403);
