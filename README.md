@@ -9,7 +9,7 @@ Cappella is India's leading Edu-Infra Asset Management Company, and this project
 | Path | Description |
 |------|-------------|
 | `Cappella Website.html` | Fully self-contained build of the page (all assets inlined). |
-| `Cappella Website.dc.html` | The page as a Design Component — mounts the materialized Figma frame and scales it to fit the screen. |
+| `index.html` | The page as a Design Component — mounts the materialized Figma frame and scales it to fit the screen. Served at `/`. |
 | `components/Components.bundle.js` | The materialized Figma frame (`Frame4`), pre-transpiled plain JS exposed as `window.Frame4`. |
 | `components/Components.d.ts` | Type declarations for the component bundle. |
 | `components/fig-assets.css` | Background/mask classes for every image asset. |

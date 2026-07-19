@@ -1,9 +1,16 @@
 # Original Figma export — kept as read-only backup, not served
 Cappella Website.html
 
+# Editor/OS thumbnail metadata
+.thumbnail
+**/.thumbnail
+
 # macOS metadata
 .DS_Store
 **/.DS_Store
+
+# Design-source / scratch — keep outside the repo
+Scroll animation request/
 
 # Screenshots (dev only)
 screenshots/

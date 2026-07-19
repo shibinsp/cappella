@@ -10,7 +10,7 @@ landing page from Figma, so future edits stay consistent.
   Copy them verbatim — never round or snap to an 8px grid.
 
 ## Project structure
-- `Cappella Website.dc.html` — the page (a Design Component). It mounts the
+- `index.html` — the page (a Design Component). It mounts the
   materialized Figma frame and scales it to fit the screen.
 - `components/Components.bundle.js` — the materialized Figma frame (`Frame4`),
   pre-transpiled plain JS exposed as `window.Frame4`.
@@ -30,7 +30,7 @@ landing page from Figma, so future edits stay consistent.
 ## Global text rule (IMPORTANT)
 Several Figma text layers were authored with `white-space: nowrap` inside a
 fixed-width box. On a scaled/narrower render this makes long copy overflow and
-get clipped at the crop edge. To prevent this everywhere, `Cappella Website.dc.html`
+get clipped at the crop edge. To prevent this everywhere, `index.html`
 carries a global rule in its `<helmet><style>`:
 
 ```css

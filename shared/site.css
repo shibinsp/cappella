@@ -2,7 +2,7 @@
    Cappella — shared page shell for the static subpages
    (about-us.html, projects.html, team.html, contact-us.html)
 
-   Design language derived from the homepage (Cappella Website.dc.html) and
+   Design language derived from the homepage (index.html) and
    rules.md: Montserrat 300–800, brand red #D1202F, Space Mono meta labels,
    editorial hairlines, 24px/300 body copy at the 1440px reference width.
    Type ramps use clamp() so a 1440px viewport renders the exact Figma sizes.
@@ -132,15 +132,6 @@ a {
   font-size: clamp(17px, 1.67vw, 24px);
   font-weight: 300;
   line-height: 1.23;
-}
-
-.meta-label {
-  font-family: 'Space Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--cap-red);
 }
 
 /* ---------- Layout primitives ---------- */
@@ -394,11 +385,6 @@ a {
 /* ---------- Hero ---------- */
 .page-hero {
   padding-block: clamp(64px, 9vw, 128px) clamp(48px, 7vw, 96px);
-}
-
-.page-hero .meta-label {
-  display: block;
-  margin-bottom: 22px;
 }
 
 .page-hero .hero-intro {
