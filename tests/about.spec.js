@@ -1,5 +1,5 @@
 // Phase 2 gate: About Us page content (docx-verbatim).
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,

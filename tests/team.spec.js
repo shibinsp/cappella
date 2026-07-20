@@ -1,6 +1,6 @@
 // Phase 4 gate: Team page — Leadership Collective, 4 member cards with
 // client-supplied portraits (INTRAPRENEURS drive, added 2026-07-16).
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,

@@ -8,6 +8,9 @@ const path = require('node:path');
  * display=swap, so an offline/blocked fonts CDN degrades gracefully and
  * must never fail the release gate. Everything else (local assets, pages)
  * must load cleanly.
+ *
+ * The Contact map does not need an entry here — it never loads under test.
+ * See the third-party blocking in fixtures.js.
  */
 const IGNORED_ORIGINS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

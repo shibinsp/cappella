@@ -1,6 +1,6 @@
 // Animation-system guarantees: text integrity, revert-to-pristine DOM,
 // reduced-motion behavior, menu stagger, scramble restoration.
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const { attachErrorCapture, expectNoPageErrors, PAGES } = require('./helpers');
 
 test.describe('animation system', () => {

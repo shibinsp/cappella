@@ -1,5 +1,5 @@
 // Phase 5 gate: Contact page — Registered Office, exact address, no form/tel.
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,

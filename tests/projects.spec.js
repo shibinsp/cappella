@@ -1,6 +1,6 @@
 // Phase 3 gate: Projects page — both portfolio asset GRIDS (client-requested
 // card format, replacing the original tables), every card, exact values.
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,
