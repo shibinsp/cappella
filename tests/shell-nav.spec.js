@@ -1,5 +1,5 @@
 // Phase 1 gate: shared shell — header/nav/footer/menu/a11y on all 4 subpages.
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,

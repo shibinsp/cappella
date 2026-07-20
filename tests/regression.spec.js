@@ -1,6 +1,6 @@
 // Phase 6 gate: full regression — homepage integrity after the nav
 // conversion, cross-site link health, reduced motion, homepage screenshots.
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./fixtures');
 const {
   attachErrorCapture,
   expectNoPageErrors,
