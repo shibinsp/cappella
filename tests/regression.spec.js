@@ -56,7 +56,6 @@ test.describe('homepage regression', () => {
   });
 
   test('top-nav spans navigate to the four pages', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'nav interaction covered at desktop scale');
     await gotoHome(page);
 
     await page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first().click();
@@ -76,7 +75,6 @@ test.describe('homepage regression', () => {
   });
 
   test('keyboard: converted nav spans are focusable and Enter navigates', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'nav interaction covered at desktop scale');
     await gotoHome(page);
 
     const about = page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first();
@@ -119,7 +117,6 @@ test.describe('homepage regression', () => {
   });
 
   test('footer spans navigate (PORTFOLIO → projects)', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'nav interaction covered at desktop scale');
     // The page is much taller with the pinned journey gap — scrolling to the
     // footer and binding retries need headroom under parallel load.
     testInfo.setTimeout(60000);
@@ -155,7 +152,6 @@ test.describe('homepage regression', () => {
 
 test.describe('cross-site link health', () => {
   test('every internal link on all five pages resolves 200', async ({ page, request }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'link health is viewport-independent');
     // Crawls five pages (two heavy homepage loads at networkidle) — needs
     // headroom beyond the 30s default under parallel-suite contention.
     testInfo.setTimeout(90000);
