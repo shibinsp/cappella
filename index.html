@@ -751,8 +751,20 @@ class Component extends DCLogic {
                     // the DESIGNED BY / LIMITLESS text, which shares that left edge.
                     let newTx = tx, newTy = ty, newW = null;
                     if (Math.abs(tx - 737) < 3) {                 // left rail
-                      newTx = 732;
+                      // KEEP the baked x (737). The section rail above the
+                      // footer sits at this same x and runs down into the
+                      // footer, so the two read as one continuous line.
+                      // Pulling this rail 5px left to hug the nav text broke
+                      // that join — the line visibly jogged at the boundary.
+                      newTx = tx;
                       if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
+                      // NOTE: the top stub still starts ~10px below where the
+                      // section rail above ends. Nudging its ty does NOT move
+                      // it by that amount — adjustFooter()/the MutationObserver
+                      // re-place these segments from data-original-top, so a
+                      // -10 ty landed the stub 79px high. Left alone
+                      // deliberately; closing it needs that re-placement path
+                      // understood first, not another transform tweak.
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
                       newTx = 1125;
                       if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
