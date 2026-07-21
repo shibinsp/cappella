@@ -1167,10 +1167,15 @@ class Component extends DCLogic {
     // loads (the journey delta is derived from viewport height), so absolute
     // coordinates measured in one session are wrong in the next.
     //
-    // dir is which SIDE of the logo the wedge sits on; it always fans back
-    // toward the logo. Client 2026-07-21: mirrored by column so the wedges
-    // point inward — the two left columns (x178, x451) get 'right', the two
-    // right columns (x726, x1026) get 'left'.
+    // `fan` picks the matrix form — which way the wedge opens out from its
+    // tip — and the trailing comment says where that puts it relative to its
+    // logo. Those are two different things: Saint Mary's wedge sits BELOW its
+    // logo while still fanning up-right, so naming the field after the side
+    // would be a lie.
+    //
+    // Client 2026-07-21: mirrored by column so the wedges point inward — the
+    // two left columns (x178, x451) sit to the right of their logo, the two
+    // right columns (x726, x1026) to the left.
     //
     // Tips sit on a column axis where a horizontal rule crosses it, so the
     // wedge's flat edge rests on that rule. CRIMSON/ISP share the (451, 9446)
@@ -1178,21 +1183,23 @@ class Component extends DCLogic {
     // safe, because each wedge is bound to its own logo's hover and they can
     // never be on screen together.
     const CELLS = [
-      // --- left columns: wedge to the RIGHT of the logo ---
-      { asset: 'fig-asset-91ee4f07ef1ea5a8', dir: 'right', dx: 358, dy: 56 },  // CRIMSON  tip (451, 9446)
-      { asset: 'fig-asset-1e639ffbc0aca215', dir: 'right', dx: 381, dy: 44 },  // MERAKI   tip (726, 9818)
+      { asset: 'fig-asset-91ee4f07ef1ea5a8', fan: 'upLeft',  dx: 358, dy: 56 },   // CRIMSON — right of logo, tip (451, 9446)
+      { asset: 'fig-asset-1e639ffbc0aca215', fan: 'upLeft',  dx: 381, dy: 44 },   // MERAKI  — right of logo, tip (726, 9818)
+      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRight', dx: -140, dy: 73 },  // ISP     — left of logo,  tip (451, 9446)
+      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRight', dx: -157, dy: 47 },  // TSUS    — left of logo,  tip (726, 9818)
 
-      // --- right columns: wedge to the LEFT of the logo ---
-      { asset: 'fig-asset-620dc3d6704178dd', dir: 'left', dx: -140, dy: 73 },  // ISP      tip (451, 9446)
-      { asset: 'fig-asset-1462c629c4c2879d', dir: 'left', dx: -157, dy: 47 },  // TSUS     tip (726, 9818)
+      // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
+      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule, and
+      // is exactly where baked wedge A sat with this same up-right form — so
+      // this restores the original Figma placement rather than inventing one.
+      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRight', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
 
-      // These three have no rule crossing next to them, so their wedges sit
-      // further out and (Lighthouse) with no rule under the flat edge. The
-      // Figma design deliberately has no horizontal at the Lighthouse row —
-      // see the note in _setupOperatorsGridStitch.
-      { asset: 'fig-asset-79356d431474ada0', dir: 'left', dx: -226, dy: 70 },  // JGI       tip (726, 9169)
-      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', dir: 'left', dx: -170, dy: 18 }, // LIGHTHOUSE tip (451, 10062)
-      { asset: 'fig-asset-1ec5ca333db94fc0', dir: 'left', dx: -216, dy: 18 }   // SAINT MARY'S tip (726, 10056)
+      // No rule crosses beside these two, so their wedges sit further out than
+      // the rest, and Lighthouse's has no rule under its flat edge at all —
+      // the Figma design deliberately has no horizontal on that row, see the
+      // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
+      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRight', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
     const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
@@ -1227,12 +1234,12 @@ class Component extends DCLogic {
     // 0,-1,1,0 local +y maps to screen +x, so the equivalent is clipping from
     // local bottom.
     const FORM = {
-      right: { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
-      left:  { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' }
+      upLeft:  { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
+      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' }
     };
 
     found.forEach(({ c, el }) => {
-      const form = FORM[c.dir] || FORM.right;
+      const form = FORM[c.fan] || FORM.upLeft;
 
       const anchor = document.createElement('div');
       anchor.setAttribute('data-cap-own', '1');
