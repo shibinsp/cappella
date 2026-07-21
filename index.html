@@ -4377,6 +4377,18 @@ class Component extends DCLogic {
     // that item's openH. The baked open state is the tallest layout the
     // section reaches, so content below the section never needs to move.
     const DESC_LEFT = 755, DESC_WIDTH = 624, DESC_OFFSET = 62;
+
+    // "The Cappella Edge" heading sits at baked left:821, indented 66.7px
+    // right of the accordion column (titles/descriptions start at DESC_LEFT).
+    // Its ink nearly fills its 547px box, so textAlign:center is a no-op here
+    // — moving the box moves the text. Share the column's left edge so the
+    // heading reads as aligned with the column rather than centred over it
+    // (client screenshot 2026-07-21: "The Cappella Edge is aligned in
+    // center, move it to the left").
+    const heading = [...scaler.querySelectorAll('span')]
+      .find(e => (e.textContent || '').trim() === 'The Cappella Edge');
+    if (heading) heading.style.left = DESC_LEFT + 'px';
+
     // Breathing room between an open description and the row beneath it.
     // 24 matches the closed rows' own rhythm (63px row in a ~74-82px slot).
     const PANEL_PAD = 24;
