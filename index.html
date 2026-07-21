@@ -4127,7 +4127,20 @@ class Component extends DCLogic {
     // coordinates. Opening item i pushes the rows/dividers below it down by
     // that item's openH. The baked open state is the tallest layout the
     // section reaches, so content below the section never needs to move.
-    const DESC_LEFT = 755, DESC_WIDTH = 624, DESC_OFFSET = 62;
+    // Column balance: the section's left margin is 68 (the campus image starts
+    // at x 68) but the accordion's dividers ran to 1426, leaving only a 14px
+    // right margin — the text column visibly crowded the page edge. Pull the
+    // column's right edge in to 1372 so both margins are 68. The left edge
+    // (735, the divider's start) is unchanged, so the gutter to the image is
+    // untouched; only the right side moves. Everything that sat at a fixed
+    // inset from the old right edge keeps that inset, so the panel's internal
+    // proportions are preserved rather than just clamped.
+    const COL_LEFT = 735, COL_RIGHT = 1372;        // was 1426 (14px right margin)
+    const DIVIDER_W = COL_RIGHT - COL_LEFT;        // 637, was 691
+    const ICON_INSET = 16, DESC_INSET = 47;        // measured against the old edge
+    const ICON_W = 22;
+    const ICON_LEFT = COL_RIGHT - ICON_INSET - ICON_W;   // 1334, was 1388
+    const DESC_LEFT = 755, DESC_WIDTH = COL_RIGHT - DESC_INSET - DESC_LEFT, DESC_OFFSET = 62;
     const ICON_OFFSET = 20;
     const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)'; // OCI power curve
     const BAKED_OPEN_INDEX = 2, BAKED_SHIFT = 258;
@@ -4175,9 +4188,15 @@ class Component extends DCLogic {
 
     // Divider lines are 691×1 SVGs with transform matrix(-1,0,0,-1,1426,ty)
     const allSVGs = [...scaler.querySelectorAll('svg')];
+    // Match the baked width OR the rebalanced one: dividers are narrowed as
+    // each item is set up, and item 3 (which has no divider in Figma) clones
+    // item 1's — by which point that donor has already been resized.
+    const DIVIDER_TX_RE = new RegExp(
+      'matrix\\([^,]+,[^,]+,[^,]+,[^,]+,\\s*(?:1426|' + COL_RIGHT + '),\\s*([-\\d.]+)\\)');
     const findDivider = (bakedTy) => allSVGs.find(e => {
-      if (e.getAttribute('width') !== '691') return false;
-      const m = (e.getAttribute('style') || '').match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*1426,\s*([-\d.]+)\)/);
+      const w = e.getAttribute('width');
+      if (w !== '691' && w !== String(DIVIDER_W)) return false;
+      const m = (e.getAttribute('style') || '').match(DIVIDER_TX_RE);
       return m && Math.abs(parseFloat(m[1]) - bakedTy) < 8;
     });
 
@@ -4213,7 +4232,7 @@ class Component extends DCLogic {
       // icon reads − like the Figma frame (not the OCI ×)
       const iconContainer = document.createElement('div');
       iconContainer.style.cssText =
-        'position:absolute; left:1388px; width:22px; height:22px;' +
+        'position:absolute; left:' + ICON_LEFT + 'px; width:' + ICON_W + 'px; height:22px;' +
         'display:flex; align-items:center; justify-content:center;' +
         'color:rgb(209,32,47); pointer-events:none;' +
         'transition: top 0.65s ' + EASE + ';';
@@ -4267,9 +4286,17 @@ class Component extends DCLogic {
           donor.parentNode.appendChild(dividerEl);
         }
       }
+      // matrix(-1,...) means the line spans [tx - width, tx], so tx IS the
+      // column's right edge and the width sets where it starts.
       const setDividerTop = dividerEl
-        ? (ty) => { dividerEl.style.transform = 'matrix(-1, 0, 0, -1, 1426, ' + ty + ')'; }
+        ? (ty) => { dividerEl.style.transform = 'matrix(-1, 0, 0, -1, ' + COL_RIGHT + ', ' + ty + ')'; }
         : () => {};
+      if (dividerEl) {
+        // Narrow the baked 691-wide rule to the rebalanced column. Done here
+        // rather than up front because findDivider() matches on width="691".
+        dividerEl.setAttribute('width', DIVIDER_W);
+        dividerEl.style.width = DIVIDER_W + 'px';
+      }
       if (dividerEl) dividerEl.style.transition = 'transform 0.65s ' + EASE;
 
       // Full-row click target — covers entire accordion row from title to icon
