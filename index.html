@@ -4380,6 +4380,8 @@ class Component extends DCLogic {
     // Breathing room between an open description and the row beneath it.
     // 24 matches the closed rows' own rhythm (63px row in a ~74-82px slot).
     const PANEL_PAD = 24;
+    // Resting strength of the row titles; the hovered row goes to full.
+    const TITLE_DIM = '0.75';
     const ICON_OFFSET = 20;
     const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)'; // OCI power curve
     const BAKED_OPEN_INDEX = 2, BAKED_SHIFT = 258;
@@ -4449,7 +4451,11 @@ class Component extends DCLogic {
       titleEl.style.left = DESC_LEFT + 'px';
       titleEl.style.height = rowH + 'px';
       titleEl.style.overflow = 'hidden';
-      titleEl.style.transition = 'top 0.65s ' + EASE;
+      titleEl.style.transition = 'top 0.65s ' + EASE + ', opacity 0.3s ease';
+      // The baked frame ships row 1 at full strength and the rest at 0.75, so
+      // the first title read as emphasised for no reason. Level them all to
+      // the dim value; hover lifts the pointed-at row to full (see below).
+      titleEl.style.opacity = TITLE_DIM;
       const roll = document.createElement('span');
       roll.style.cssText = 'display:block; transition: transform 0.45s ' + EASE + ';';
       const line1 = document.createElement('span');
@@ -4555,6 +4561,12 @@ class Component extends DCLogic {
         const top = item.closedTop + shift;
         item.titleEl.style.top = top + 'px';
         item.iconContainer.style.top = (top + ICON_OFFSET) + 'px';
+        // Full strength on the active row, dim on the rest. Driven from the
+        // open state rather than from mouseenter/mouseleave: hovering a row
+        // below the open one makes it jump UP as that one collapses, which
+        // fires mouseleave on the row you just pointed at — a hover-driven
+        // highlight gets cancelled the instant it is set.
+        item.titleEl.style.opacity = isOpen ? '1' : TITLE_DIM;
 
         // + collapses to − on open (Figma frame shows a minus, not the OCI ×)
         if (window.gsap) {
@@ -4586,6 +4598,13 @@ class Component extends DCLogic {
       });
     };
 
+    // Client (2026-07-21): the description drops down on hover — no click.
+    // Gated to fine pointers on purpose: a tap fires mouseenter AND click, so
+    // without this a tap would open the row and then immediately toggle it
+    // shut. On touch, click stays the only mechanism, exactly as before.
+    // (Same guard _setupMagneticBtn uses.)
+    const HOVER_OPENS = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     items.forEach((item, i) => {
       item.hitArea.addEventListener('click', () => {
         activeIndex = activeIndex === i ? -1 : i;
@@ -4593,6 +4612,14 @@ class Component extends DCLogic {
       });
       // OCI hover: pre-rotate to 90° when hovered (closed), back to 0° on leave
       item.hitArea.addEventListener('mouseenter', () => {
+        // Open BEFORE the icon logic below: that branch is guarded on !isOpen,
+        // so a hover-opened row correctly skips the 90° pre-rotate. Rotating
+        // the container while the vertical bar collapses would draw the "−"
+        // as a vertical bar instead of a horizontal one.
+        if (HOVER_OPENS && activeIndex !== i) {
+          activeIndex = i;
+          layout();
+        }
         item.roll.style.transform = 'translateY(-' + item.rowH + 'px)';
         const isOpen = activeIndex === i;
         if (!isOpen && window.gsap) {
