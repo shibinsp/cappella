@@ -540,7 +540,7 @@ a {
   /* Brand red rather than grey, and strong enough to actually read:
      at rgba(0,0,0,.055) the TEAM watermark was 1.13:1 against the warm
      field and effectively invisible. Decorative only (aria-hidden). */
-  --watermark:  rgba(209, 32, 47, 0.45);
+  --watermark:  #D1202F;
 
   /* Brand red #D1202F measures 4.44:1 as text on the warm card — just under
      AA. site.css:15 already ships a darker red (--cap-red-hover) which hits
