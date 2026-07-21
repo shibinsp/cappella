@@ -984,6 +984,7 @@ class Component extends DCLogic {
       // (Operators marquee removed per client feedback 2026-07-16 — the
       // baked static logo grid + triangle decorations render as designed.)
       safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
+      safe(() => this._setupOperatorTriangles(), 'operatorTriangles');
       safe(() => this._setupBandGrid(), 'bandGrid');
       safe(() => this._setupEdgeImageCut(), 'edgeImageCut');
     }, 1600);
@@ -1142,6 +1143,81 @@ class Component extends DCLogic {
       }
     }
     if (this._runAdjust) this._runAdjust();
+  }
+
+  _setupOperatorTriangles() {
+    // Client 2026-07-21: the red wedges in the operators grid were replicated
+    // from Figma as static decoration, but in the design they are an
+    // ANIMATION — a wedge should arrive on the cell whose logo you point at.
+    // So: hide the three baked static wedges, and wipe one in on hover.
+    //
+    // Decorative and cursor-driven, so it hard-bails on touch and under
+    // reduced motion (same guards as _setupDotGrid / _setupMagneticBtn).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    const scaler = document.getElementById('cap-scaler');
+    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
+
+    // One entry per logo. dx/dy place the wedge's solid red TIP relative to
+    // that logo's own top-left, because the anchor is appended as a CHILD of
+    // the logo: it then rides along with every shift (+260 band, journey
+    // delta) for free, with no data-jorig bookkeeping to keep in sync.
+    // CRIMSON: tip (178, 5966) − logo origin (93, 5983) = (85, −17). 178 is
+    // the column axis its rule runs down; 5966 is where that rule ends at the
+    // top of its row — the same "tip on a grid intersection, wedge fanning
+    // back into the neighbouring cell" rule all three baked wedges follow.
+    const CELLS = [
+      { asset: 'fig-asset-91ee4f07ef1ea5a8', dx: 85, dy: -17 }   // CRIMSON
+    ];
+
+    const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
+    if (!frameRoot || found.some(f => !f.el)) {
+      if ((this._otTries = (this._otTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorTriangles(), 250);
+      return;
+    }
+    if (this._opTriDone) return;
+    this._opTriDone = true;
+
+    // The three baked wedges are the static version being replaced. They are
+    // the only elements in the frame carrying this gradient, so the signature
+    // is a safe selector.
+    const GRAD_SIG = 'linear-gradient(153.033deg';
+    [...frameRoot.querySelectorAll('div')].forEach(el => {
+      const bg = el.style.background || el.style.backgroundImage || '';
+      if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
+    });
+
+    // Verbatim from the baked wedges so the hover one is visually identical.
+    const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
+                 'rgba(255,255,255,0) 42.23%, rgba(255,255,255,0) 78.20%)';
+    const HIDDEN = 'inset(0 100% 0 0)', SHOWN = 'inset(0 0 0 0)';
+
+    found.forEach(({ c, el }) => {
+      // Outer anchor carries the wedge's matrix; matrix(-1,0,0,-1,...) means
+      // the translate IS the red tip and the wedge fans up-and-left from it.
+      const anchor = document.createElement('div');
+      anchor.setAttribute('data-cap-own', '1');
+      anchor.style.cssText =
+        'position:absolute; left:0; top:0; transform-origin:0 0;' +
+        'z-index:5; pointer-events:none;';
+      anchor.style.transform = 'matrix(-1, 0, 0, -1, ' + c.dx + ', ' + c.dy + ')';
+
+      // Inner element carries the paint and the reveal, so the animation
+      // never fights the positioning matrix. Clipping from the tip outward is
+      // what makes it read as being drawn along the rule it sits on.
+      const ink = document.createElement('div');
+      ink.style.cssText =
+        'width:118.514px; height:119.995px; transform-origin:0 0;' +
+        'clip-path:' + HIDDEN + ';' +
+        'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
+        'background:' + GRAD + ';';
+      anchor.appendChild(ink);
+      el.appendChild(anchor);
+
+      el.addEventListener('mouseenter', () => { ink.style.clipPath = SHOWN; });
+      el.addEventListener('mouseleave', () => { ink.style.clipPath = HIDDEN; });
+    });
   }
 
   _setupDotGrid() {
