@@ -767,13 +767,16 @@ class Component extends DCLogic {
                       // that join — the line visibly jogged at the boundary.
                       newTx = tx;
                       if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
-                      // NOTE: the top stub still starts ~10px below where the
-                      // section rail above ends. Nudging its ty does NOT move
-                      // it by that amount — adjustFooter()/the MutationObserver
-                      // re-place these segments from data-original-top, so a
-                      // -10 ty landed the stub 79px high. Left alone
-                      // deliberately; closing it needs that re-placement path
-                      // understood first, not another transform tweak.
+                      // Top stub: baked at ty 10, which left an 8.7px break
+                      // where the section rail above meets the footer. ty 0 is
+                      // the exact join — footer-content y=0 IS where that rail
+                      // terminates — and 54→64 keeps the stub's bottom put.
+                      // Must be an ABSOLUTE value, not a relative nudge: this
+                      // block re-reads the live matrix on every adjustFooter
+                      // run, so an earlier `ty - 10` compounded once per
+                      // MutationObserver fire and drifted the stub 79px high.
+                      // Same reason the bottom segment clamps to 430 above.
+                      else if (ty < 150) { newTy = 0; newW = 64; }
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
                       newTx = 1125;
                       if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
