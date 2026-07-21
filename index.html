@@ -958,7 +958,7 @@ class Component extends DCLogic {
   }
 
   _setupEdgeImageCut() {
-    // Client: 10px gap below The Cappella Edge image. The image ran flush into
+    // Client: 30px gap below The Cappella Edge image. The image ran flush into
     // the next section — its bottom sat at frame-y 3125 and the journey pin
     // starts at 3124.7, a 0.3px overlap. Trim the image instead of moving
     // anything, so every neighbour keeps its baked coordinates.
@@ -968,7 +968,7 @@ class Component extends DCLogic {
       if ((this._eicTries = (this._eicTries || 0) + 1) < 40) setTimeout(() => this._setupEdgeImageCut(), 250);
       return;
     }
-    const BAKED_H = 668, CUT = 10;
+    const BAKED_H = 668, CUT = 30;
     // background-size's height is '100%' in fig-assets.css, i.e. the photo
     // stretches to whatever the box height is — shrinking the box alone would
     // squash it ~1.5% rather than cut it. Pin the photo to its baked height so
