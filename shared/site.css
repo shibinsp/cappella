@@ -537,7 +537,10 @@ a {
   --card-line:  rgba(0, 0, 0, 0.12);
   --card-sheen: rgba(255, 255, 255, 0.45);
   --card-hover: rgba(0, 0, 0, 0.06);
-  --watermark:  rgba(0, 0, 0, 0.055);
+  /* Brand red rather than grey, and strong enough to actually read:
+     at rgba(0,0,0,.055) the TEAM watermark was 1.13:1 against the warm
+     field and effectively invisible. Decorative only (aria-hidden). */
+  --watermark:  rgba(209, 32, 47, 0.20);
 
   /* Brand red #D1202F measures 4.44:1 as text on the warm card — just under
      AA. site.css:15 already ships a darker red (--cap-red-hover) which hits
@@ -563,7 +566,7 @@ a {
   --card-line:  rgba(255, 255, 255, 0.14);
   --card-sheen: rgba(255, 255, 255, 0.05);
   --card-hover: rgba(255, 255, 255, 0.10);
-  --watermark:  rgba(255, 255, 255, 0.06);
+  --watermark:  rgba(255, 255, 255, 0.09);
   --sheen:      rgba(255, 255, 255, 0.10);
 
   --role-ink:   #fff;
