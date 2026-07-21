@@ -585,9 +585,11 @@
          z-4 AND placed after the slab: same z-index, so DOM order breaks the
          tie and this paints above the slab. The baked stats are z-auto and
          would lose to it, so _setupDotGrid lifts them to z-5 (see liftStats).
-         opacity:0 is the resting state — the field only paints near a stat,
-         and the reduced-motion/touch guards bail without ever drawing. -->
-    <canvas id="cap-dotgrid" data-cap-own="1" width="1440" height="1585" style="position: absolute; left: 0; top: 830px; width: 1440px; height: 1585px; z-index: 4; pointer-events: none; opacity: 0;"></canvas>
+         No opacity here: the glow multiplier lives in each dot's alpha now,
+         so the element stays at opacity 1 and is invisible simply because
+         nothing is painted into it. An inline opacity:0 would be permanent —
+         there is no longer any code that raises it back. -->
+    <canvas id="cap-dotgrid" data-cap-own="1" width="1440" height="1585" style="position: absolute; left: 0; top: 830px; width: 1440px; height: 1585px; z-index: 4; pointer-events: none;"></canvas>
 
     <!-- 135 Acres, static (no animation, no odometer via data-cap-odo).
          Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left),
@@ -1165,6 +1167,7 @@ class Component extends DCLogic {
     let smoothX = -9999, smoothY = -9999;
     let sVX = 0, sVY = 0;              // smoothed cursor velocity (the wake direction)
     const R = 150, R2 = R * R;         // cursor influence radius
+    const MASK_R = R + 56;             // == the cull box half-size; alpha must reach 0 here
     const BULGE = 16;                  // how far the surface parts around the cursor
     const rings = [];                  // expanding click/wake ripples
     let lastWake = 0;
@@ -1392,6 +1395,16 @@ class Component extends DCLogic {
             ty += (dy / dist) * BULGE * t * cursorGlow + dragY * t * cursorGlow;
             a = Math.max(a, baseA + (activeA - baseA) * t * cursorGlow);
           }
+
+          // Radial mask out to the cull boundary. The loop only visits dots
+          // inside the dirty box, so without this the ambient shimmer stops
+          // dead at the box edge and the box itself shows up as a faint
+          // RECTANGLE over the red. Measured before adding it: mean alpha
+          // stepped 1.56 -> 0 at the boundary. Applied after the bulge (which
+          // has its own falloff but floors at baseA) and before the ripples,
+          // whose gaussian crests fade out inside their own padded bounds.
+          const mt = 1 - Math.sqrt(dsq) / MASK_R;
+          a *= mt <= 0 ? 0 : mt * mt * (3 - 2 * mt);
 
           // 2. ripple rings — a gaussian crest passing through the dot
           for (const g of rings) {
