@@ -514,76 +514,372 @@ a {
   margin-top: 1.1em;
 }
 
-/* ---------- Team cards ---------- */
-.team-grid {
+/* ==========================================================================
+   Leadership cards (team.html)
+   Replaces the previous .team-card block. Classes are .leader-* and the
+   markup is a 2x2 grid of glass cards with a transparent-PNG portrait
+   bleeding from the bottom-right, a Read More modal, and a pointer-tracked
+   3D tilt. Portrait geometry follows the supplied 348x438 spec.
+   ========================================================================== */
+
+:root {
+  --brand-red:    #D1202F;
+  --section-bg:   var(--cap-warm, #fff0f0);   /* site.css:16 */
+  --modal-accent: rgb(150, 22, 34);
+
+  --ink:        #111;
+  --ink-dim:    rgba(0, 0, 0, 0.66);
+  --ink-faint:  rgba(0, 0, 0, 0.55);
+
+  /* Slightly stronger than a pure-white field needs: on #fff0f0 a 2.8%
+     tint left the cards without visible edges. */
+  --card-fill:  rgba(0, 0, 0, 0.035);
+  --card-line:  rgba(0, 0, 0, 0.12);
+  --card-sheen: rgba(255, 255, 255, 0.45);
+  --card-hover: rgba(0, 0, 0, 0.06);
+  --watermark:  rgba(0, 0, 0, 0.055);
+
+  /* Brand red #D1202F measures 4.44:1 as text on the warm card — just under
+     AA. site.css:15 already ships a darker red (--cap-red-hover) which hits
+     6.2:1, so role text uses that. Chips keep the full brand red: white on
+     #D1202F is 5.3:1 and passes. */
+  --sheen:      rgba(255, 255, 255, 0.55);
+  --role-ink:   var(--cap-red-hover, rgb(170, 20, 34));
+  --chip-bg:    #D1202F;
+  --chip-ink:   #fff;
+
+  --leader-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Optional near-black field, kept for the showpiece variant. */
+:root[data-theme="dark"] {
+  --section-bg: #141416;
+
+  --ink:        #fff;
+  --ink-dim:    rgba(255, 255, 255, 0.74);
+  --ink-faint:  rgba(255, 255, 255, 0.55);
+
+  --card-fill:  rgba(255, 255, 255, 0.06);
+  --card-line:  rgba(255, 255, 255, 0.14);
+  --card-sheen: rgba(255, 255, 255, 0.05);
+  --card-hover: rgba(255, 255, 255, 0.10);
+  --watermark:  rgba(255, 255, 255, 0.06);
+  --sheen:      rgba(255, 255, 255, 0.10);
+
+  --role-ink:   #fff;
+  --chip-bg:    #fff;
+  --chip-ink:   #D1202F;
+}
+
+/* ---------- Section ---------- */
+.leader-section {
+  background: var(--section-bg);
+  color: var(--ink);
+  padding: clamp(70px, 9vw, 130px) 0 clamp(80px, 10vw, 150px);
+}
+
+/* Keeps a descriptive h1 for assistive tech and SEO while the visible
+   headline is the decorative TEAM watermark. */
+.leader-h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.leader-head { text-align: center; margin-bottom: clamp(30px, 4vw, 56px); }
+
+.leader-watermark {
+  font-size: clamp(70px, 12vw, 168px);
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--watermark);
+  line-height: .9;
+  margin: 0;
+  user-select: none;
+  pointer-events: none;
+}
+
+.leader-intro {
+  font-size: clamp(15px, 1.4vw, 19px);
+  line-height: 1.6;
+  color: var(--ink-dim);
+  max-width: 58ch;
+  margin: 18px auto 0;
+}
+
+/* ---------- Cards ---------- */
+.leader-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(24px, 3.5vw, 48px);
+  gap: clamp(24px, 3vw, 40px);
+  perspective: 1400px;          /* shared vanishing point for the tilt */
+  perspective-origin: 50% 40%;
 }
 
-.team-card {
+.leader-card {
   position: relative;
-  border: 1px solid var(--cap-hairline);
-  padding: clamp(24px, 3vw, 40px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  background: var(--cap-white);
+  background-color: var(--card-fill);
+  background-image: linear-gradient(150deg, var(--card-sheen) 0%, transparent 60%);
+  border-radius: 12px;
+  padding: 35px 35px 135px 35px;
+  overflow: hidden;
+  min-height: 420px;
+  transition: background-color .5s var(--leader-ease);
+  /* The spec'd 348px portrait assumes JV's ~940px cards. On the site's own
+     1216px container a card is ~588px, where 348px would leave a ~170px text
+     column. Capped at 270px so the copy keeps a usable measure while the
+     portrait stays the dominant element. */
+  --portrait-w: clamp(190px, 21vw, 270px);
 }
+.leader-card:hover { background-color: var(--card-hover); }
 
-/* Red top bar as a pseudo-element so it can wipe in on reveal.
-   Base state is fully drawn — JS-off and reduced-motion render identically
-   to the old border-top. */
-.team-card::before {
-  content: '';
+/* ---- 3D tilt ----
+   The card itself rotates in the grid's perspective. Depth *inside* the card
+   can't use translateZ: `overflow: hidden` (needed to clip the portrait to the
+   radius) forces transform-style to flat per spec, so the layers are offset in
+   2D at different magnitudes to read as parallax instead.
+   --tx/--ty are pointer position normalised to -1..1, set by JS. */
+.leader-card {
+  --tx: 0; --ty: 0;
+  transform:
+    rotateY(calc(var(--tx) * 5.5deg))
+    rotateX(calc(var(--ty) * -5.5deg))
+    translateY(calc(var(--ty) * -2px));
+  transform-origin: 50% 50%;
+  transition: transform .55s var(--leader-ease), background-color .5s var(--leader-ease);
+}
+/* While the pointer is moving, track it almost immediately; the longer
+   transition above then eases the release on pointerleave. */
+.leader-card.is-tilting { transition: transform .12s linear, background-color .5s var(--leader-ease); }
+
+/* Pointer-following sheen. ::before is already the border, so this is ::after. */
+.leader-card::after {
+  content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--cap-red);
-  transform-origin: left;
+  inset: 0;
+  border-radius: 12px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .45s var(--leader-ease);
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    var(--sheen, rgba(255, 255, 255, .55)), transparent 60%);
+}
+.leader-card:hover::after { opacity: 1; }
+
+/* Parallax layers — magnitudes increase with apparent depth. */
+.leader-card > h2,
+.leader-card > .leader-role { transform: translate3d(calc(var(--tx) * 5px), calc(var(--ty) * 3px), 0); }
+.leader-card > .leader-bio,
+.leader-card > .leader-more,
+.leader-card > .leader-social { transform: translate3d(calc(var(--tx) * 3px), calc(var(--ty) * 2px), 0); }
+
+/* Touch and reduced-motion: no tilt, no sheen, no parallax. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .leader-card,
+  .leader-card > h2, .leader-card > .leader-role, .leader-card > .leader-bio,
+  .leader-card > .leader-more, .leader-card > .leader-social { transform: none !important; }
+  .leader-card::after { display: none; }
 }
 
-.team-card .team-head {
-  display: flex;
-  align-items: center;
-  gap: clamp(16px, 2vw, 26px);
+/* Border on the pseudo-element, per the supplied spec, so it can animate
+   independently and sit above the portrait. */
+.leader-card::before {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: -1px;
+  border: 0.57px solid var(--card-line);
+  border-radius: 12px;
+  opacity: .5;
+  transition: opacity .3s;
+  pointer-events: none;
+  z-index: 3;
 }
+.leader-card:hover::before { opacity: 1; }
 
-.team-card .portrait {
-  width: clamp(104px, 11vw, 148px);
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  object-position: top;
-  flex: 0 0 auto;
-  filter: grayscale(1);
-  transition: filter 0.5s ease;
-}
+/* Copy above the portrait so it stays legible over the cutout's
+   transparent left margin. */
+.leader-card > h2,
+.leader-card > .leader-role,
+.leader-card > .leader-bio,
+.leader-card > .leader-more,
+.leader-card > .leader-social { position: relative; z-index: 2; }
 
-.team-card:hover .portrait {
-  filter: none;
-}
-
-.team-card h2,
-.team-card h3 {
-  font-size: clamp(24px, 2.5vw, 36px);
-  font-weight: 600;
-  line-height: 1.12;
-}
-
-.team-card .role {
-  color: var(--cap-red);
-  font-weight: 500;
+.leader-card h2 {
+  font-size: clamp(20px, 1.9vw, 26px);
+  font-weight: 700;
+  letter-spacing: .02em;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-size: 14px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+  color: var(--ink);
+  max-width: calc(100% - var(--portrait-w) + 40px);
+  /* site.css:45 sets a global overflow-wrap:break-word, which splits long
+     surnames mid-word ("JHUNJHUNWA / LA"). Names must break only at spaces. */
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
+.leader-role {
+  font-size: clamp(15px, 1.3vw, 17px);
+  font-weight: 600;
+  color: var(--role-ink);
+  margin: 0 0 26px;
+}
+
+.leader-bio {
+  font-size: 15.5px;
+  line-height: 1.66;
+  color: var(--ink-dim);
+  margin: 0 0 22px;
+  max-width: calc(100% - var(--portrait-w) + 30px);
+}
+
+/* Senior row (Managing Director, Advisor to the Board) reads larger.
+   The 2-column grid fixes card width, so the hierarchy is carried by
+   height, portrait scale and type size instead.
+   NB: must come AFTER the base rules — `.leader-card--lead h2` and
+   `.leader-card h2` have equal specificity, so source order decides. */
+.leader-card--lead {
+  min-height: 500px;
+  padding: 42px 42px 150px 42px;
+  --portrait-w: clamp(200px, 22vw, 290px);
+}
+.leader-card--lead h2 { font-size: clamp(22px, 2.15vw, 30px); }
+.leader-card--lead .leader-role { font-size: clamp(16px, 1.4vw, 18px); }
+.leader-card--lead .leader-bio { font-size: 16.5px; line-height: 1.68; }
+
+.leader-more {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink); margin-bottom: 18px; width: fit-content;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: inherit;
+}
+.leader-more svg { transition: transform .4s var(--leader-ease); }
+.leader-more:hover svg { transform: translateX(4px); }
+
+.leader-social { display: flex; gap: 10px; }
+.leader-social a {
+  display: grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 3px;
+  background: var(--chip-bg); color: var(--chip-ink);
+  transition: transform .35s var(--leader-ease);
+}
+.leader-social a:hover { transform: translateY(-2px); }
+
+/* Portrait box: spec'd 348x438, bottom-right, z-index 1.
+   object-fit is `contain`, not the spec'd `fill`: the four sources have
+   different native ratios, so `fill` would stretch three of the faces. */
+.leader-portrait {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  z-index: 1;
+  display: block;
+  width: var(--portrait-w);
+  aspect-ratio: 348 / 438;
+  height: auto;
+  object-fit: contain;
+  object-position: bottom right;
+  pointer-events: none;
+  transition: transform .7s var(--leader-ease);
+}
+.leader-card .leader-portrait {
+  transform: translate3d(calc(var(--tx) * -9px), calc(var(--ty) * -6px), 0);
+}
+.leader-card:hover .leader-portrait {
+  transform:
+    translate3d(calc(var(--tx) * -9px), calc(var(--ty) * -6px), 0)
+    translateY(-5px) scale(1.02);
+}
+
+/* ---------- Read-more modal ---------- */
+.premium-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  padding: 20px;
+}
+.premium-modal-overlay[hidden] { display: none; }
+
+.premium-modal-dialog {
+  /* was position:absolute in the supplied CSS, which cancels the overlay's
+     flex centring; and a fixed 700px, which overflows small viewports. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(700px, 100%);
+  max-height: 85vh;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: 'Montserrat', sans-serif;
+  color: #333;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.premium-modal-header {
+  background-color: var(--modal-accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 20px;
+  color: #fff;
+  flex: 0 0 auto;
+}
+.modal-title { margin: 0; font-size: 18px; font-weight: 600; text-transform: lowercase; }
+.close-button {
+  background: none; border: none; color: #fff;
+  font-size: 24px; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 4px;
+}
+.close-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+.premium-modal-body {
+  background-color: var(--modal-accent);
+  color: #fff;
+  padding: 0 30px 30px 30px;
+  line-height: 1.6;
+  font-size: 16px;
+  overflow-y: auto;      /* long bios scroll inside the dialog */
+  flex: 1 1 auto;
+}
+.premium-modal-body p { margin: 0 0 1em; }
+.premium-modal-body p:last-child { margin-bottom: 0; }
+
+.animated.fadeIn { animation: fadeIn .3s ease-in-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) { .animated.fadeIn { animation: none; } }
+
+.leader-bio-full { display: none; }
+
+/* ---------- Responsive ---------- */
 @media (max-width: 899px) {
-  .team-grid {
-    grid-template-columns: 1fr;
+  .leader-grid { grid-template-columns: 1fr; }
+  .leader-card {
+    min-height: 0;
+    --portrait-w: clamp(160px, 40vw, 220px);
+    padding-bottom: calc(var(--portrait-w) * 1.55);
   }
+  .leader-card h2, .leader-bio { max-width: none; }
 }
 
 /* ---------- Data tables (Projects, SKOLEN) ---------- */
@@ -1109,8 +1405,7 @@ html.lenis body {
   .js [data-reveal='clip'][data-reveal-delay='3'] img { transition-delay: 0.3s, 0s, 0s; }
   .js [data-reveal='clip'][data-reveal-delay='4'] img { transition-delay: 0.4s, 0s, 0s; }
 
-  /* ---------- Variant: team card (rise + top-bar wipe) ---------- */
-  .team-card::before,
+  /* ---------- Variant: asset card (rise + top-bar wipe) ---------- */
   .asset-card::before {
     transition: transform 0.8s var(--cap-ease-expo) 0.15s;
   }

@@ -45,8 +45,20 @@ for (const pageDef of PAGES) {
         ).toHaveCount(1);
       }
 
-      // No LinkedIn anchor anywhere (label-only on homepage; no URL exists)
-      await expect(page.locator('a[href*="linkedin"]')).toHaveCount(0);
+      // LinkedIn: team.html carries one real profile link per leader (added
+      // with the leadership card rebuild, 2026-07-22). Every other page still
+      // has none — the homepage reference is label-only.
+      const linkedin = page.locator('a[href*="linkedin"]');
+      if (pageDef.file === 'team.html') {
+        await expect(linkedin).toHaveCount(4);
+        // opened in a new tab, so each must be protected against window.opener
+        const rels = await linkedin.evaluateAll((as) =>
+          as.map((a) => a.getAttribute('rel') || '')
+        );
+        for (const rel of rels) expect(rel).toContain('noopener');
+      } else {
+        await expect(linkedin).toHaveCount(0);
+      }
 
       // No dead-looking anchors (every href non-empty, not "#")
       const hrefs = await page
