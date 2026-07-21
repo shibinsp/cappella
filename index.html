@@ -677,6 +677,15 @@ class Component extends DCLogic {
       };
       this._shiftBelowBand = shiftBelowBand;
 
+      // Footer content sat 8px from the top edge with 63px of dead space
+      // below the partner logos — the client read the left column as crammed
+      // against the footer edge. Push EVERY footer content element down by
+      // this much: the footer box keeps its height and position, the space
+      // just moves from the bottom to the top (35.5 above / 35.5 below). One
+      // knob — the hardcoded tops below all add it, so the columns stay in
+      // step with each other.
+      const FOOTER_CONTENT_NUDGE = 28;
+
       const adjustFooter = () => {
         shiftBelowBand();
         // Journey band gap (pinned journey): shift everything below the
@@ -710,13 +719,13 @@ class Component extends DCLogic {
               // Scale + center the giant white interlocking logo. Sized to
               // fill the left column like the Figma design (~2.05x the JV
               // Ventures wordmark) — the max that clears the "An Initiative
-              // by" row at band-y 380.
+              // by" row at band-y 403.
               const logo = el.querySelector('.fig-asset-c9d8f12cf6e90c99');
               if (logo) {
                 logo.style.width = '390px';
                 logo.style.height = '358px';
                 logo.style.left = '170px';
-                logo.style.top = '8px';
+                logo.style.top = (8 + FOOTER_CONTENT_NUDGE) + 'px';
               }
               
               const redBg = el.querySelector('div');
@@ -783,23 +792,23 @@ class Component extends DCLogic {
               // box, arrow right-aligned and vertically centered in the box.
               const stayInTouch = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'STAY IN TOUCH');
               if (stayInTouch) {
-                stayInTouch.style.top = '300px';
+                stayInTouch.style.top = (300 + FOOTER_CONTENT_NUDGE) + 'px';
                 stayInTouch.style.left = '1124px';
               }
               const designerBox = [...el.querySelectorAll('div')].find(d => d.style.boxShadow && d.style.boxShadow.includes('inset'));
               if (designerBox) {
-                designerBox.style.top = '335px';
+                designerBox.style.top = (335 + FOOTER_CONTENT_NUDGE) + 'px';
                 designerBox.style.left = '1124px';
               }
               const emailInput = el.querySelector('input[type="email"]');
               if (emailInput) {
-                emailInput.style.top = '345px';
+                emailInput.style.top = (345 + FOOTER_CONTENT_NUDGE) + 'px';
                 emailInput.style.left = '1138px';
                 emailInput.style.width = '190px'; // underline ends clear of the arrow
               } else {
                 const emailSpan = [...el.querySelectorAll('span')].find(s => (s.textContent || '').trim() === 'Your Email Id');
                 if (emailSpan) {
-                  emailSpan.style.top = '345px';
+                  emailSpan.style.top = (345 + FOOTER_CONTENT_NUDGE) + 'px';
                   emailSpan.style.left = '1138px';
                 }
               }
@@ -808,7 +817,7 @@ class Component extends DCLogic {
                 return leftVal >= 1300 && leftVal <= 1345;
               });
               if (arrowSvg) {
-                arrowSvg.style.top = '364px';
+                arrowSvg.style.top = (364 + FOOTER_CONTENT_NUDGE) + 'px';
                 arrowSvg.style.left = '1342px'; // right-aligned: box right (1377) − 14 − arrow 21
               }
             } else {
@@ -824,28 +833,28 @@ class Component extends DCLogic {
                   shift = 378; // bottom section elements (Partner logos / credits)
                 }
               }
-              el.style.top = (orig - shift + jd()) + 'px';
+              el.style.top = (orig - shift + jd() + FOOTER_CONTENT_NUDGE) + 'px';
               el.style.zIndex = '3';
 
               // Apply fine alignment corrections for shifted elements
               if (orig === 7994 || orig === 7992 || orig === 7988) {
                 // Align partner logos to the exact same vertical line (relative top ~412px, absolute 7504px)
-                el.style.top = (7764 + jd()) + 'px';
+                el.style.top = (7764 + jd() + FOOTER_CONTENT_NUDGE) + 'px';
               } else if (orig === 8010) {
                 // Limitless logo — below the "Designed by" caption, both
                 // clear of the STAY IN TOUCH box (box bottom ≈ 7745)
                 el.style.left = '1121px'; // column rail + 8px left padding
-                el.style.top = (7791 + jd()) + 'px';
+                el.style.top = (7791 + jd() + FOOTER_CONTENT_NUDGE) + 'px';
               } else if (orig === 7983 || orig === 7978) {
                 // "Designed by" caption — 24px below the STAY IN TOUCH box
                 // (it previously overlapped the box's bottom border), stacked
                 // above the Limitless logo
                 el.style.left = '1121px'; // column rail + 8px left padding
-                el.style.top = (7769 + jd()) + 'px';
+                el.style.top = (7769 + jd() + FOOTER_CONTENT_NUDGE) + 'px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
-                el.style.top = (7732 + jd()) + 'px';
+                el.style.top = (7732 + jd() + FOOTER_CONTENT_NUDGE) + 'px';
               } else if (orig === 7416 || orig === 7458) {
                 // PARTNER email + registered-office address are baked at left 1079,
                 // which leaves them hanging ~34px left of the rest of the right
