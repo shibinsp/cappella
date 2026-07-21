@@ -1027,6 +1027,18 @@ class Component extends DCLogic {
     // above 135 Acres (a clone of the baked AUM dash, same gray).
     const scaler = document.getElementById('cap-scaler');
     if (!scaler || this._bandGridDone) return;
+
+    // Client 2026-07-22: drop the bright dot sitting on the rail crossing by
+    // "16 Assets". It is a baked 88x88 div with a white-to-crimson radial
+    // gradient — purely decorative, and the only radial-gradient in the whole
+    // page, so the signature is an unambiguous selector. Hidden here rather
+    // than edited out of components/, which is a generated Figma export.
+    // Runs before the rails lookup below so an early return can't skip it.
+    const glowDot = [...scaler.querySelectorAll('div')].find(el =>
+      (el.style.background || el.style.backgroundImage || '').indexOf('radial-gradient') !== -1
+    );
+    if (glowDot) glowDot.style.display = 'none';
+
     const rails = [...scaler.querySelectorAll('svg')].filter(el =>
       /^matrix\(0,\s*1,\s*-1,\s*0,\s*(181|1078),\s*(830|888)\)/.test(el.style.transform || '')
     );
