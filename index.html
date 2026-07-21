@@ -1162,13 +1162,17 @@ class Component extends DCLogic {
     // One entry per logo. dx/dy place the wedge's solid red TIP relative to
     // that logo's own top-left, because the anchor is appended as a CHILD of
     // the logo: it then rides along with every shift (+260 band, journey
-    // delta) for free, with no data-jorig bookkeeping to keep in sync.
-    // CRIMSON: tip (178, 5966) − logo origin (93, 5983) = (85, −17). 178 is
-    // the column axis its rule runs down; 5966 is where that rule ends at the
-    // top of its row — the same "tip on a grid intersection, wedge fanning
-    // back into the neighbouring cell" rule all three baked wedges follow.
+    // delta) for free, with no data-jorig bookkeeping to keep in sync. That
+    // matters more than it sounds — this section's rendered y moves between
+    // loads (the journey delta is derived from viewport height), so absolute
+    // coordinates measured in one session are wrong in the next.
+    //
+    // CRIMSON: tip on the x451 vertical where it crosses the horizontal rule
+    // running out from the logo's right edge, so the wedge fans back left
+    // toward the logo and its flat bottom sits on that rule. Measured live:
+    // intersection (451, 9446) − logo origin (93, 9390) = (358, 56).
     const CELLS = [
-      { asset: 'fig-asset-91ee4f07ef1ea5a8', dx: 85, dy: -17 }   // CRIMSON
+      { asset: 'fig-asset-91ee4f07ef1ea5a8', dx: 358, dy: 56 }   // CRIMSON
     ];
 
     const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
