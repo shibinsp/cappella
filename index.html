@@ -4377,6 +4377,9 @@ class Component extends DCLogic {
     // that item's openH. The baked open state is the tallest layout the
     // section reaches, so content below the section never needs to move.
     const DESC_LEFT = 755, DESC_WIDTH = 624, DESC_OFFSET = 62;
+    // Breathing room between an open description and the row beneath it.
+    // 24 matches the closed rows' own rhythm (63px row in a ~74-82px slot).
+    const PANEL_PAD = 24;
     const ICON_OFFSET = 20;
     const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)'; // OCI power curve
     const BAKED_OPEN_INDEX = 2, BAKED_SHIFT = 258;
@@ -4395,7 +4398,7 @@ class Component extends DCLogic {
       {
         title: 'Active asset management',
         text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.',
-        closedTop: 2715, figmaIconTop: 2747, closedDividerTop: 2794, figmaShift: BAKED_SHIFT
+        closedTop: 2715, figmaIconTop: 2747, closedDividerTop: 2794
       },
       {
         title: 'Proven, long-term investor value',
@@ -4498,13 +4501,24 @@ class Component extends DCLogic {
       // size. Measured lazily too: the setup-time measurement can race the
       // Montserrat webfont (clipped text) or run before layout (zero-height
       // mask, which also starves the 0.3-threshold IntersectionObserver).
+      //
+      // openH is how far everything below this row shifts down when it opens.
+      // The next row already sits `nextDelta` below this one in the closed
+      // layout, so only the description's overhang beyond that needs adding:
+      //   description bottom = closedTop + DESC_OFFSET + h
+      //   next row wanted at = description bottom + PANEL_PAD
+      // Client (2026-07-21): the open panel used to be floored at the baked
+      // Figma shift (258), which left ~159px of dead space under the text
+      // before the next row. Sizing to the content removes it. The last row
+      // measures against its own divider, since nothing follows it.
+      const nextDelta = (data[idx + 1] ? data[idx + 1].closedTop : d.closedDividerTop) - d.closedTop;
       const measureOpen = () => {
         const h = Math.ceil(inner.getBoundingClientRect().height / sc());
         if (!h) return 0;
         descWrap.style.height = h + 'px';
-        return Math.max(d.figmaShift || 0, DESC_OFFSET + h + 28);
+        return Math.max(0, DESC_OFFSET + h + PANEL_PAD - nextDelta);
       };
-      const openH = measureOpen() || d.figmaShift || (DESC_OFFSET + 118 + 28);
+      const openH = measureOpen() || Math.max(0, DESC_OFFSET + 118 + PANEL_PAD - nextDelta);
 
       // Divider under this row (item 3's is missing in Figma — clone one)
       const bakedDividerTy = d.closedDividerTop + (idx >= BAKED_OPEN_INDEX ? BAKED_SHIFT : 0);
