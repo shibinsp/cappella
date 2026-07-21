@@ -1167,12 +1167,32 @@ class Component extends DCLogic {
     // loads (the journey delta is derived from viewport height), so absolute
     // coordinates measured in one session are wrong in the next.
     //
-    // CRIMSON: tip on the x451 vertical where it crosses the horizontal rule
-    // running out from the logo's right edge, so the wedge fans back left
-    // toward the logo and its flat bottom sits on that rule. Measured live:
-    // intersection (451, 9446) − logo origin (93, 9390) = (358, 56).
+    // dir is which SIDE of the logo the wedge sits on; it always fans back
+    // toward the logo. Client 2026-07-21: mirrored by column so the wedges
+    // point inward — the two left columns (x178, x451) get 'right', the two
+    // right columns (x726, x1026) get 'left'.
+    //
+    // Tips sit on a column axis where a horizontal rule crosses it, so the
+    // wedge's flat edge rests on that rule. CRIMSON/ISP share the (451, 9446)
+    // intersection and MERAKI/TSUS share (726, 9818), fanning opposite ways —
+    // safe, because each wedge is bound to its own logo's hover and they can
+    // never be on screen together.
     const CELLS = [
-      { asset: 'fig-asset-91ee4f07ef1ea5a8', dx: 358, dy: 56 }   // CRIMSON
+      // --- left columns: wedge to the RIGHT of the logo ---
+      { asset: 'fig-asset-91ee4f07ef1ea5a8', dir: 'right', dx: 358, dy: 56 },  // CRIMSON  tip (451, 9446)
+      { asset: 'fig-asset-1e639ffbc0aca215', dir: 'right', dx: 381, dy: 44 },  // MERAKI   tip (726, 9818)
+
+      // --- right columns: wedge to the LEFT of the logo ---
+      { asset: 'fig-asset-620dc3d6704178dd', dir: 'left', dx: -140, dy: 73 },  // ISP      tip (451, 9446)
+      { asset: 'fig-asset-1462c629c4c2879d', dir: 'left', dx: -157, dy: 47 },  // TSUS     tip (726, 9818)
+
+      // These three have no rule crossing next to them, so their wedges sit
+      // further out and (Lighthouse) with no rule under the flat edge. The
+      // Figma design deliberately has no horizontal at the Lighthouse row —
+      // see the note in _setupOperatorsGridStitch.
+      { asset: 'fig-asset-79356d431474ada0', dir: 'left', dx: -226, dy: 70 },  // JGI       tip (726, 9169)
+      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', dir: 'left', dx: -170, dy: 18 }, // LIGHTHOUSE tip (451, 10062)
+      { asset: 'fig-asset-1ec5ca333db94fc0', dir: 'left', dx: -216, dy: 18 }   // SAINT MARY'S tip (726, 10056)
     ];
 
     const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
@@ -1192,20 +1212,34 @@ class Component extends DCLogic {
       if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
     });
 
-    // Verbatim from the baked wedges so the hover one is visually identical.
+    // Verbatim from the baked wedges so the hover ones are visually identical.
     const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
                  'rgba(255,255,255,0) 42.23%, rgba(255,255,255,0) 78.20%)';
-    const HIDDEN = 'inset(0 100% 0 0)', SHOWN = 'inset(0 0 0 0)';
+    const SHOWN = 'inset(0 0 0 0)';
+
+    // Both matrices are lifted from the baked wedges: -1,0,0,-1 is the form
+    // wedges B and C use (fans up-and-left), 0,-1,1,0 is the form wedge A
+    // uses (fans up-and-right). In both the translate IS the red tip.
+    //
+    // The clip has to flip with the matrix or the wedge wipes in from its far
+    // edge instead of growing out of the tip. Under -1,0,0,-1 local +x maps to
+    // screen -x, so clipping from local right reveals the tip first. Under
+    // 0,-1,1,0 local +y maps to screen +x, so the equivalent is clipping from
+    // local bottom.
+    const FORM = {
+      right: { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
+      left:  { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' }
+    };
 
     found.forEach(({ c, el }) => {
-      // Outer anchor carries the wedge's matrix; matrix(-1,0,0,-1,...) means
-      // the translate IS the red tip and the wedge fans up-and-left from it.
+      const form = FORM[c.dir] || FORM.right;
+
       const anchor = document.createElement('div');
       anchor.setAttribute('data-cap-own', '1');
       anchor.style.cssText =
         'position:absolute; left:0; top:0; transform-origin:0 0;' +
         'z-index:5; pointer-events:none;';
-      anchor.style.transform = 'matrix(-1, 0, 0, -1, ' + c.dx + ', ' + c.dy + ')';
+      anchor.style.transform = form.matrix + c.dx + ', ' + c.dy + ')';
 
       // Inner element carries the paint and the reveal, so the animation
       // never fights the positioning matrix. Clipping from the tip outward is
@@ -1213,14 +1247,14 @@ class Component extends DCLogic {
       const ink = document.createElement('div');
       ink.style.cssText =
         'width:118.514px; height:119.995px; transform-origin:0 0;' +
-        'clip-path:' + HIDDEN + ';' +
+        'clip-path:' + form.hidden + ';' +
         'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
         'background:' + GRAD + ';';
       anchor.appendChild(ink);
       el.appendChild(anchor);
 
       el.addEventListener('mouseenter', () => { ink.style.clipPath = SHOWN; });
-      el.addEventListener('mouseleave', () => { ink.style.clipPath = HIDDEN; });
+      el.addEventListener('mouseleave', () => { ink.style.clipPath = form.hidden; });
     });
   }
 
