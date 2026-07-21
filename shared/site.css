@@ -192,12 +192,23 @@ a {
   height: auto;
 }
 
+/* The wordmark is a drawn logotype, not type — rules.md says reference the real
+   bitmap verbatim, never redraw it. The PNG is white-on-transparent (it suits
+   the red footer), so on this white header we use it as a mask and paint it with
+   the ink token. Crop values are copied from components/fig-assets.css so the
+   lockup matches the homepage exactly; they assume the 214/37 box below.
+   The mask stays on this leaf — see the .site-header note above. */
 .site-logo .site-logo-word {
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: 7px;
-  text-transform: uppercase;
-  color: var(--cap-black);
+  display: block;
+  width: clamp(118px, 13vw, 152px);
+  aspect-ratio: 214 / 37;
+  background-color: var(--cap-black);
+  -webkit-mask: url('../components/assets/7cb777f5a65019d1.png') 50% 16.729% / 100% 164.981% no-repeat;
+          mask: url('../components/assets/7cb777f5a65019d1.png') 50% 16.729% / 100% 164.981% no-repeat;
+  /* text stays in the DOM for assistive tech, hidden visually */
+  text-indent: -9999px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .nav-toggle {
