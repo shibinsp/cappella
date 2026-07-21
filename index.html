@@ -569,15 +569,27 @@
   <div id="cap-scaler" style="width: 1440px; height: 7882px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
     <x-import component-from-global-scope="Frame4" from="./components/Components.bundle.js" hint-size="1440px,8372px"></x-import>
 
-    <!-- Interactive DotGrid canvas over the hero -->
-    <canvas id="cap-dotgrid" width="1440" height="830" style="position: absolute; left: 0; top: 0; width: 1440px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
-
     <!-- Red band extension + notch fill. The baked band ends at 2155 with a
          white staircase notch; this slab keeps it solid AND extends the band
          to 2415 so the full-size staircase fits below all the stats.
          Everything baked below 2158 is shifted +260 at runtime (see
          _shiftBelowBand). -->
     <div style="position: absolute; left: 0; top: 1715px; width: 1440px; height: 700px; background: rgb(209,32,47); z-index: 4;"></div>
+
+    <!-- Interactive DotGrid canvas over the RED STATS BAND (frame y 830-2415).
+         The band's bounds are static: it sits above JBAND_TOP (3140) so
+         shiftJourney never moves it, and above CAP_SHIFT_FROM (2158) so the
+         +260 band extension doesn't either. Kept a #cap-scaler-level sibling
+         because _shiftBelowBand walks frameRoot only — inside the frame it
+         would be shifted.
+         z-4 AND placed after the slab: same z-index, so DOM order breaks the
+         tie and this paints above the slab. The baked stats are z-auto and
+         would lose to it, so _setupDotGrid lifts them to z-5 (see liftStats).
+         No opacity here: the glow multiplier lives in each dot's alpha now,
+         so the element stays at opacity 1 and is invisible simply because
+         nothing is painted into it. An inline opacity:0 would be permanent —
+         there is no longer any code that raises it back. -->
+    <canvas id="cap-dotgrid" data-cap-own="1" width="1440" height="1585" style="position: absolute; left: 0; top: 830px; width: 1440px; height: 1585px; z-index: 4; pointer-events: none;"></canvas>
 
     <!-- 135 Acres, static (no animation, no odometer via data-cap-odo).
          Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left),
@@ -938,7 +950,7 @@ class Component extends DCLogic {
       tryHideLogo();
     })();
 
-    // ===== First-page effects: dot grid + spotlight cursor + nav text scramble =====
+    // ===== Dot grid (stats band cursor field) + nav text scramble =====
     this._setupDotGrid();
     this._setupNavScramble();
 
@@ -1109,22 +1121,58 @@ class Component extends DCLogic {
   }
 
   _setupDotGrid() {
+    // Same guards as _setupMagneticBtn: this is a cursor affordance, so it is
+    // pointless on touch and unwanted under reduced motion. Bailing here also
+    // skips allocating the 250k-dot buffers on phones. The canvas carries
+    // opacity:0 inline, so bailing leaves nothing visible.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const canvas = document.getElementById('cap-dotgrid');
     if (!canvas) { if ((this._dgTries = (this._dgTries || 0) + 1) < 40) setTimeout(() => this._setupDotGrid(), 200); return; }
     const ctx = canvas.getContext('2d');
-    const W = 1440, H = 830, dotSize = 1.4, gap = 1.6, cell = dotSize + gap;
+
+    // The baked band stats are z-auto, and the frame root creates no stacking
+    // context (verified: #cap-scaler's transform is the only one), so they
+    // compete directly with this scaler-level canvas at z-4 and would end up
+    // UNDER it. Lift them to the stats layer exactly as _setupBandGrid does
+    // for the rails. Matched by coordinate — the same idiom _setupStatCounters
+    // uses — and never retained, since _setupStatCounters rewrites their
+    // innerHTML for the odometer roll. Idempotent; retried because the frame
+    // hydrates async.
+    const liftStats = () => {
+      const scaler = document.getElementById('cap-scaler');
+      if (!scaler) return false;
+      // $500 Mn+ wrapper, 16 Assets, its label, and the tagline (the tagline
+      // is not a hotspot, but lifting it keeps a later radius change safe).
+      const want = [[222, 1163], [695, 1603], [755, 1678], [647, 914]];
+      let hit = 0;
+      for (const el of scaler.querySelectorAll('div, span')) {
+        const l = parseFloat(el.style.left), t = parseFloat(el.style.top);
+        if (want.some(([wl, wt]) => l === wl && t === wt)) { el.style.zIndex = '5'; hit++; }
+      }
+      return hit >= want.length;
+    };
+    const tryLift = () => {
+      if (liftStats()) return;
+      if ((this._dgLiftTries = (this._dgLiftTries || 0) + 1) < 40) setTimeout(tryLift, 250);
+    };
+    tryLift();
+
+    // H spans the full red band (frame y 830-2415). This one constant also
+    // drives the ny/cy bounds checks in onMove/onClick below.
+    const W = 1440, H = 1585, dotSize = 1.4, gap = 1.6, cell = dotSize + gap;
     const baseA = 0.16, activeA = 0.95;
     const cols = Math.floor((W + gap) / cell), rows = Math.floor((H + gap) / cell);
     const gridW = cell * cols - gap, gridH = cell * rows - gap;
     const sx = (W - gridW) / 2 + dotSize / 2, sy = (H - gridH) / 2 + dotSize / 2;
-    const dots = [];
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const cx = sx + x * cell, cy = sy + y * cell;
-      dots.push({ cx, cy, ox: 0, oy: 0,
-        p1: cx * 0.011 + cy * 0.006, p2: cy * 0.018, p3: cx * 0.009 + cy * 0.004 });
-    }
-    // Pixel-buffer renderer: 130k+ fillRect calls per frame run at slideshow
-    // speed; writing pixels into one ImageData and blitting it once is ~60fps.
+    // Typed offsets instead of ~250k objects (~30MB + GC pressure). Every
+    // other per-dot value (cx, cy and the three ambient phases) is linear in
+    // row/col, so it is cheaper to recompute inline than to store and load.
+    const N = cols * rows;
+    const OX = new Float32Array(N), OY = new Float32Array(N);
+    // Pixel-buffer renderer: a quarter-million fillRect calls per frame run at
+    // slideshow speed; writing pixels into one ImageData and blitting only the
+    // dirty rect is ~60fps.
     canvas.width = W; canvas.height = H;
     const frame = ctx.createImageData(W, H);
     const px32 = new Uint32Array(frame.data.buffer);
@@ -1143,12 +1191,47 @@ class Component extends DCLogic {
     let smoothX = -9999, smoothY = -9999;
     let sVX = 0, sVY = 0;              // smoothed cursor velocity (the wake direction)
     const R = 150, R2 = R * R;         // cursor influence radius
+    const MASK_R = R + 56;             // == the cull box half-size; alpha must reach 0 here
     const BULGE = 16;                  // how far the surface parts around the cursor
     const rings = [];                  // expanding click/wake ripples
     let lastWake = 0;
     let isMoving = false;
     let cursorGlow = 0;
     let dgIdleTimeout = null;
+
+    // ===== STAT HOTSPOTS =====
+    // The field only wakes near the four stat figures; everywhere else in the
+    // band it stays at hard zero. Rects are canvas-local (frame y - 830) and
+    // hardcoded on purpose: the band's position is static (above both
+    // CAP_SHIFT_FROM and JBAND_TOP) and _fit's uniform scale is already
+    // divided out in onMove, so there is nothing to measure and nothing to
+    // recompute on resize. Hardcoding is also immune to _setupStatCounters
+    // rewriting the stat innerHTML for the odometer roll.
+    // (The baked "10 Years" at 695,2115 is hidden at runtime — not a hotspot.)
+    const BAND_TOP = 830;
+    const HOT = [
+      { x0: 222, y0: 1163 - BAND_TOP, x1: 715,  y1: 1285 - BAND_TOP }, // $500 Mn+ / AUM
+      { x0: 695, y0: 1603 - BAND_TOP, x1: 1067, y1: 1703 - BAND_TOP }, // 16 Assets + label
+      { x0: 214, y0: 1835 - BAND_TOP, x1: 520,  y1: 1935 - BAND_TOP }, // #cap-135
+      { x0: 695, y0: 2138 - BAND_TOP, x1: 1000, y1: 2238 - BAND_TOP }, // #cap-75
+    ];
+    const HOT_IN = 40, HOT_OUT = 230;  // full glow within 40px of a rect, zero past 230
+    // Distance to the nearest rect EDGE, not its centre: the $500 Mn+ block is
+    // 493px wide, so a centre-distance falloff would leave its ends dead.
+    const hotFactor = (x, y) => {
+      let best = Infinity;
+      for (const h of HOT) {
+        const dx = x < h.x0 ? h.x0 - x : (x > h.x1 ? x - h.x1 : 0);
+        const dy = y < h.y0 ? h.y0 - y : (y > h.y1 ? y - h.y1 : 0);
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < best) { best = d; if (best === 0) break; }
+      }
+      if (best >= HOT_OUT) return 0;
+      if (best <= HOT_IN) return 1;
+      const t = 1 - (best - HOT_IN) / (HOT_OUT - HOT_IN);
+      return t * t * (3 - 2 * t);      // smoothstep, matching the cursor falloff below
+    };
+    let clickGlow = 0;                 // proximity captured at click, holds while rings live
 
     const sc = () => { const e = document.getElementById('cap-scaler'); const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); return m ? parseFloat(m[1]) : 1; };
     const onMove = (e) => {
@@ -1163,9 +1246,12 @@ class Component extends DCLogic {
         isMoving = false;
       }, 250); // 250ms idle threshold
 
-      // fast strokes shed small wake ripples behind the cursor, like a hand through water
+      // fast strokes shed small wake ripples behind the cursor, like a hand
+      // through water. Gated on proximity too: a stroke across dead band space
+      // would otherwise queue rings that are invisible but still keep the
+      // draw loop's early-out from firing.
       const speed = Math.hypot(P.vx, P.vy);
-      if (speed > 550 && now - lastWake > 110 && ny > -50 && ny < H + 50) {
+      if (speed > 550 && now - lastWake > 110 && ny > -50 && ny < H + 50 && hotFactor(nx, ny) > 0) {
         lastWake = now;
         rings.push({ x: nx, y: ny, r: 10, speed: 3.2, amp: 7, sigma: 22 });
       }
@@ -1174,23 +1260,28 @@ class Component extends DCLogic {
       const s = sc(), r = canvas.getBoundingClientRect();
       const cx = (e.clientX - r.left) / s, cy = (e.clientY - r.top) / s;
       if (cy < -50 || cy > H + 50) return;
+      const f = hotFactor(cx, cy);
+      if (f <= 0) return;              // outside every stat: stays invisible
+      // Hold the glow up for as long as the ripple lives. Without this the
+      // 250ms idle timer drops isMoving and the field fades out from under
+      // a still-expanding ripple whenever you click without moving.
+      clickGlow = f;
       // a dropped-stone ripple: main crest + a softer follower
       rings.push({ x: cx, y: cy, r: 6, speed: 5.2, amp: 22, sigma: 30 });
       rings.push({ x: cx, y: cy, r: -34, speed: 5.2, amp: 12, sigma: 24 });
     };
+    const onLeave = () => { P.x = -9999; P.y = -9999; isMoving = false; };
     window.addEventListener('mousemove', onMove, { passive: true });
-    window.addEventListener('mouseleave', () => { P.x = -9999; P.y = -9999; isMoving = false; });
+    window.addEventListener('mouseleave', onLeave);
     window.addEventListener('click', onClick);
 
     const draw = () => {
-      // Hero off-screen -> skip all physics/painting, just idle the loop
+      // Band off-screen -> skip all physics/painting, just idle the loop
       const rect = canvas.getBoundingClientRect();
       if (rect.bottom < 0 || rect.top > window.innerHeight) {
         this._dgRaf = requestAnimationFrame(draw);
         return;
       }
-      const T = (this._dgT = (this._dgT || 0) + 0.025); // ambient water time
-      px32.fill(0);
 
       // Spring-smoothed cursor position (organic tracking)
       if (P.x > -9000) {
@@ -1201,10 +1292,19 @@ class Component extends DCLogic {
         smoothX += this._dgVX; smoothY += this._dgVY;
       } else { smoothX = -9999; smoothY = -9999; }
       
-      // Smoothly update cursorGlow multiplier (fast fade in, slow decay on idle)
-      const targetGlow = (isMoving && P.x > -9000) ? 1.0 : 0.0;
+      // Smoothly update cursorGlow multiplier (fast fade in, slow decay on
+      // idle), now gated by distance to the nearest stat. NOTE: no
+      // canvas.style.opacity write — an inline style on a #cap-scaler
+      // descendant every frame wakes the layout MutationObserver, which
+      // costs a full adjustFooter()+_fit() pass on every mouse stop. The glow
+      // is folded into per-dot alpha at the pixel write instead; identical
+      // result, because the 3px dot pitch means dots never overlap.
+      const prox = (P.x > -9000) ? hotFactor(P.x, P.y) : 0;
+      const targetGlow = Math.max(
+        (isMoving && P.x > -9000) ? prox : 0,
+        rings.length ? clickGlow : 0
+      );
       cursorGlow += (targetGlow - cursorGlow) * (isMoving ? 0.12 : 0.06);
-      canvas.style.opacity = cursorGlow;
 
       // Smoothed velocity — decays gently so the wake trails and settles
       sVX += (((P.x > -9000) ? P.vx : 0) - sVX) * 0.06;
@@ -1212,72 +1312,173 @@ class Component extends DCLogic {
       const dragX = Math.max(-30, Math.min(30, sVX * 0.022));
       const dragY = Math.max(-30, Math.min(30, sVY * 0.022));
 
-      // Advance ripples
+      // Advance ripples. Hard radius cap (rather than the canvas diagonal)
+      // keeps the dirty box below from degenerating to the full canvas: at
+      // r=340 a click ripple's amp has already decayed to ~1.8, i.e. invisible.
       for (let i = rings.length - 1; i >= 0; i--) {
         const g = rings[i];
         g.r += g.speed;
         g.amp *= 0.962;
-        if (g.amp < 0.35 || g.r - 4 * g.sigma > Math.hypot(W, H)) rings.splice(i, 1);
+        if (g.amp < 0.35 || g.r > 340) rings.splice(i, 1);
       }
+      if (!rings.length) clickGlow = 0;
 
-      for (const d of dots) {
-        // ambient flowing-water shimmer
-        const wave = fsin(d.p1 + T) + fsin(d.p2 - T * 1.25);
-        const wx = fcos(d.p3 + T * 0.9) * 2.6;
-        const wy = wave * 2.4;
-        let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5));
-
-        // target displacement this frame
-        let tx = 0, ty = 0;
-
-        // 1. surface bulge + directional drag around the cursor (only active/visible when cursorGlow > 0)
-        const dx = d.cx - smoothX, dy = d.cy - smoothY, dsq = dx * dx + dy * dy;
-        const currentR2 = R2 * cursorGlow;
-        if (cursorGlow > 0.005 && dsq <= currentR2) {
-          const dist = Math.sqrt(dsq) || 0.5;
-          const currentR = R * Math.sqrt(cursorGlow);
-          let t = 1 - dist / currentR;
-          t = t * t * (3 - 2 * t); // smoothstep falloff
-          tx += (dx / dist) * BULGE * t * cursorGlow + dragX * t * cursorGlow;
-          ty += (dy / dist) * BULGE * t * cursorGlow + dragY * t * cursorGlow;
-          a = Math.max(a, baseA + (activeA - baseA) * t * cursorGlow);
+      // ===== IDLE EARLY-OUT =====
+      // Away from the stats the field is fully transparent, so there is no
+      // reason to run physics or paint. This is what pays for the band being
+      // ~2x the hero's height: at rest the loop does nothing at all.
+      if (cursorGlow < 0.004 && !rings.length) {
+        if (this._dgWasActive) {
+          // Final clear+blit so no residue is stranded on screen, and relax
+          // every offset — the culled loop below only touches dots near the
+          // cursor, so dots left behind would otherwise stay displaced and
+          // snap on re-entry.
+          // FULL clear+blit, deliberately not the dirty rect: edge dots can
+          // land a pixel or two outside the recorded box (ambient shimmer
+          // offsets them after the box is computed), and a dirty blit would
+          // strand those. Runs once per deactivation, so cost is irrelevant —
+          // and it guarantees the resting canvas is exactly empty.
+          px32.fill(0);
+          ctx.putImageData(frame, 0, 0);
+          this._dgDX = this._dgDY = this._dgDW = this._dgDH = null;
+          OX.fill(0); OY.fill(0);
+          this._dgWasActive = false;
         }
+        this._dgRaf = requestAnimationFrame(draw);
+        return;
+      }
+      this._dgWasActive = true;
+      const T = (this._dgT = (this._dgT || 0) + 0.025); // ambient water time
 
-        // 2. ripple rings — a gaussian crest passing through the dot
-        for (const g of rings) {
-          if (g.r < 0) continue;
-          const bb = g.r + 3.5 * g.sigma;
-          const gx = d.cx - g.x, gy = d.cy - g.y;
-          if (gx > bb || gx < -bb || gy > bb || gy < -bb) continue;
-          const gd = Math.sqrt(gx * gx + gy * gy) || 0.5;
-          const off = gd - g.r;
-          if (off > 3.5 * g.sigma || off < -3.5 * g.sigma) continue;
-          const crest = Math.exp(-(off * off) / (2 * g.sigma * g.sigma));
-          const push = g.amp * crest;
-          tx += (gx / gd) * push;
-          ty += (gy / gd) * push;
-          a = Math.min(0.95, a + crest * (g.amp / 22) * 0.5); // the crest glints
-        }
+      // ===== DIRTY BOX =====
+      // Union of the cursor's influence disc and every live ring, in canvas
+      // px. Everything below (clear, dot loop, blit) is scoped to this, so
+      // cost tracks the influence area rather than the canvas area.
+      let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+      const addBox = (x0, y0, x1, y1) => {
+        if (x0 < bx0) bx0 = x0; if (y0 < by0) by0 = y0;
+        if (x1 > bx1) bx1 = x1; if (y1 > by1) by1 = y1;
+      };
+      if (cursorGlow > 0.004 && smoothX > -9000) {
+        const m = R + 56;              // radius + bulge/drag/ambient headroom
+        addBox(smoothX - m, smoothY - m, smoothX + m, smoothY + m);
+      }
+      for (const g of rings) {
+        const bb = g.r + 3.5 * g.sigma + g.amp + 8;
+        addBox(g.x - bb, g.y - bb, g.x + bb, g.y + bb);
+      }
+      if (bx0 === Infinity) {           // nothing to draw this frame
+        this._dgRaf = requestAnimationFrame(draw);
+        return;
+      }
+      // Pixel rect for this frame, unioned with last frame's so the previous
+      // paint is erased rather than smeared.
+      // 6px pad: the dot loop iterates whole cells, and ambient shimmer nudges
+      // each dot up to ~3px after the box is computed, so edge dots can paint
+      // just outside the raw bounds.
+      const cdx = Math.max(0, Math.floor(bx0) - 6), cdy = Math.max(0, Math.floor(by0) - 6);
+      const cdw = Math.min(W, Math.ceil(bx1) + 6) - cdx, cdh = Math.min(H, Math.ceil(by1) + 6) - cdy;
+      const ux0 = Math.min(cdx, this._dgDX == null ? cdx : this._dgDX);
+      const uy0 = Math.min(cdy, this._dgDY == null ? cdy : this._dgDY);
+      const ux1 = Math.max(cdx + cdw, this._dgDX == null ? cdx + cdw : this._dgDX + this._dgDW);
+      const uy1 = Math.max(cdy + cdh, this._dgDY == null ? cdy + cdh : this._dgDY + this._dgDH);
+      for (let y = uy0; y < uy1; y++) px32.fill(0, y * W + ux0, y * W + ux1);
 
-        // ease toward the target — this is the water smoothness
-        d.ox += (tx - d.ox) * 0.09;
-        d.oy += (ty - d.oy) * 0.09;
+      // Dot index range covering the dirty box
+      const c0 = Math.max(0, Math.floor((bx0 - sx) / cell));
+      const c1 = Math.min(cols - 1, Math.ceil((bx1 - sx) / cell));
+      const r0 = Math.max(0, Math.floor((by0 - sy) / cell));
+      const r1 = Math.min(rows - 1, Math.ceil((by1 - sy) / cell));
 
-        const ix = (d.cx + d.ox + wx) | 0, iy = (d.cy + d.oy + wy) | 0;
-        if (ix >= 0 && ix < W && iy >= 0 && iy < H) {
-          const A = (a * 255) | 0;
-          px32[iy * W + ix] = (A << 24) | 0x00FFFFFF; // white, alpha A (little-endian)
-          if (a > 0.45 && ix + 1 < W && iy + 1 < H) {
-            // bright dots (cursor glow / ripple crests) get a 2x2 glint
-            const A2 = (a * 140) | 0;
-            const half = (A2 << 24) | 0x00FFFFFF;
-            px32[iy * W + ix + 1] = half;
-            px32[(iy + 1) * W + ix] = half;
+      for (let ry = r0; ry <= r1; ry++) {
+        const cy = sy + ry * cell, rowBase = ry * cols;
+        // ambient phases are linear in cx/cy — recomputed rather than stored
+        const p2 = cy * 0.018;
+        for (let rx = c0; rx <= c1; rx++) {
+          const cx = sx + rx * cell, i = rowBase + rx;
+          const p1 = cx * 0.011 + cy * 0.006, p3 = cx * 0.009 + cy * 0.004;
+
+          // ambient flowing-water shimmer
+          const wave = fsin(p1 + T) + fsin(p2 - T * 1.25);
+          const wx = fcos(p3 + T * 0.9) * 2.6;
+          const wy = wave * 2.4;
+          let a = baseA * (0.45 + 0.55 * (wave * 0.5 + 0.5));
+
+          // target displacement this frame
+          let tx = 0, ty = 0;
+
+          // 1. surface bulge + directional drag around the cursor (only active/visible when cursorGlow > 0)
+          const dx = cx - smoothX, dy = cy - smoothY, dsq = dx * dx + dy * dy;
+          const currentR2 = R2 * cursorGlow;
+          if (cursorGlow > 0.005 && dsq <= currentR2) {
+            const dist = Math.sqrt(dsq) || 0.5;
+            const currentR = R * Math.sqrt(cursorGlow);
+            let t = 1 - dist / currentR;
+            t = t * t * (3 - 2 * t); // smoothstep falloff
+            tx += (dx / dist) * BULGE * t * cursorGlow + dragX * t * cursorGlow;
+            ty += (dy / dist) * BULGE * t * cursorGlow + dragY * t * cursorGlow;
+            a = Math.max(a, baseA + (activeA - baseA) * t * cursorGlow);
+          }
+
+          // Radial mask out to the cull boundary. The loop only visits dots
+          // inside the dirty box, so without this the ambient shimmer stops
+          // dead at the box edge and the box itself shows up as a faint
+          // RECTANGLE over the red. Measured before adding it: mean alpha
+          // stepped 1.56 -> 0 at the boundary. Applied after the bulge (which
+          // has its own falloff but floors at baseA) and before the ripples,
+          // whose gaussian crests fade out inside their own padded bounds.
+          const mt = 1 - Math.sqrt(dsq) / MASK_R;
+          a *= mt <= 0 ? 0 : mt * mt * (3 - 2 * mt);
+
+          // 2. ripple rings — a gaussian crest passing through the dot
+          for (const g of rings) {
+            if (g.r < 0) continue;
+            const bb = g.r + 3.5 * g.sigma;
+            const gx = cx - g.x, gy = cy - g.y;
+            if (gx > bb || gx < -bb || gy > bb || gy < -bb) continue;
+            const gd = Math.sqrt(gx * gx + gy * gy) || 0.5;
+            const off = gd - g.r;
+            if (off > 3.5 * g.sigma || off < -3.5 * g.sigma) continue;
+            const crest = Math.exp(-(off * off) / (2 * g.sigma * g.sigma));
+            const push = g.amp * crest;
+            tx += (gx / gd) * push;
+            ty += (gy / gd) * push;
+            a = Math.min(0.95, a + crest * (g.amp / 22) * 0.5); // the crest glints
+          }
+
+          // ease toward the target — this is the water smoothness
+          const ox = (OX[i] += (tx - OX[i]) * 0.09);
+          const oy = (OY[i] += (ty - OY[i]) * 0.09);
+
+          const ix = (cx + ox + wx) | 0, iy = (cy + oy + wy) | 0;
+          if (ix >= 0 && ix < W && iy >= 0 && iy < H) {
+            // cursorGlow folded in here instead of canvas.style.opacity
+            const aOut = a * cursorGlow;
+            const A = (aOut * 255) | 0;
+            if (A > 0) {
+              px32[iy * W + ix] = (A << 24) | 0x00FFFFFF; // white, alpha A (little-endian)
+              if (a > 0.45 && ix + 1 < W && iy + 1 < H) {
+                // bright dots (cursor glow / ripple crests) get a 2x2 glint
+                const half = (((aOut * 140) | 0) << 24) | 0x00FFFFFF;
+                px32[iy * W + ix + 1] = half;
+                px32[(iy + 1) * W + ix] = half;
+              }
+            }
           }
         }
       }
-      ctx.putImageData(frame, 0, 0);
+      // Dirty-rect blit: a full-buffer putImageData uploads 9.1MB every frame
+      // regardless of how little changed, which would swamp the culling above.
+      ctx.putImageData(frame, 0, 0, ux0, uy0, ux1 - ux0, uy1 - uy0);
+      this._dgDX = cdx; this._dgDY = cdy; this._dgDW = cdw; this._dgDH = cdh;
       this._dgRaf = requestAnimationFrame(draw);
+    };
+    this._dgCleanup = () => {
+      if (this._dgRaf) cancelAnimationFrame(this._dgRaf);
+      clearTimeout(dgIdleTimeout);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseleave', onLeave);
+      window.removeEventListener('click', onClick);
     };
     draw();
   }
@@ -4456,6 +4657,7 @@ class Component extends DCLogic {
       window.removeEventListener('scroll', this._updateMenuBtnVisibility);
     }
     if (this._scrollRevealIO) this._scrollRevealIO.disconnect();
+    if (this._dgCleanup) this._dgCleanup();
   }
   renderVals() { return {}; }
 }
