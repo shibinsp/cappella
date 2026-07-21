@@ -985,11 +985,35 @@ class Component extends DCLogic {
       // baked static logo grid + triangle decorations render as designed.)
       safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
       safe(() => this._setupBandGrid(), 'bandGrid');
+      safe(() => this._setupEdgeImageCut(), 'edgeImageCut');
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
     this._t4 = setTimeout(() => this._setupHeroIntro(), 200);
     this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
+  }
+
+  _setupEdgeImageCut() {
+    // Client: 45px gap below The Cappella Edge image, to match the white space
+    // above it. The image ran flush into
+    // the next section — its bottom sat at frame-y 3125 and the journey pin
+    // starts at 3124.7, a 0.3px overlap. Trim the image instead of moving
+    // anything, so every neighbour keeps its baked coordinates.
+    const scaler = document.getElementById('cap-scaler');
+    const img = scaler && scaler.querySelector('.fig-asset-63186349250e044c-069f3173');
+    if (!img) {
+      if ((this._eicTries = (this._eicTries || 0) + 1) < 40) setTimeout(() => this._setupEdgeImageCut(), 250);
+      return;
+    }
+    const BAKED_H = 668, CUT = 45;
+    // background-size's height is '100%' in fig-assets.css, i.e. the photo
+    // stretches to whatever the box height is — shrinking the box alone would
+    // squash it ~1.5% rather than cut it. Pin the photo to its baked height so
+    // the shorter box CLIPS it, and anchor to the top (was 50%) so the whole
+    // 10px comes off the bottom instead of 5px at each end.
+    img.style.height = (BAKED_H - CUT) + 'px';
+    img.style.backgroundSize = '147.178% ' + BAKED_H + 'px';
+    img.style.backgroundPosition = '0.016% 0%';
   }
 
   _setupBandGrid() {
