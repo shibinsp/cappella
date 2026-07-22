@@ -4370,7 +4370,7 @@ class Component extends DCLogic {
     // --- Asset tiles for cities without photo cards (data from the docx) ---
     // Placed over the photo-card grid area, computed from the cards' inline
     // Figma coordinates so the tiles inherit the exact same region.
-    let tilesWrap = null;
+    let tilesWrap = null, tilesRegionH = 0;
     const ensureTilesWrap = () => {
       if (tilesWrap || !cards.length) return tilesWrap;
       let minL = Infinity, minT = Infinity, maxR = 0, maxB = 0;
@@ -4380,6 +4380,7 @@ class Component extends DCLogic {
         maxB = Math.max(maxB, c.frameTop + c.frameH);
       });
       if (!isFinite(minL)) return null;
+      tilesRegionH = maxB - minT; // base Hyderabad card region height
       tilesWrap = document.createElement('div');
       tilesWrap.id = 'cap-portfolio-tiles';
       // Full card-region box with centered content: a city with 1-2 assets
@@ -4391,6 +4392,21 @@ class Component extends DCLogic {
         'align-content:center;' +
         'pointer-events:none;';
       scaler.appendChild(tilesWrap);
+      // Scroll chaining: when a dense city's internal scroll reaches its top or
+      // bottom, hand the wheel back to the page instead of latching on the
+      // region (so passing the last card scrolls the page on to Operators).
+      tilesWrap.addEventListener('wheel', (e) => {
+        if (tilesWrap.scrollHeight <= tilesWrap.clientHeight + 1) return; // not scrollable
+        const step = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // lines → px
+        const atTop = tilesWrap.scrollTop <= 0;
+        const atBottom = tilesWrap.scrollTop + tilesWrap.clientHeight >= tilesWrap.scrollHeight - 1;
+        e.preventDefault();
+        if ((atBottom && step > 0) || (atTop && step < 0)) {
+          window.scrollBy(0, step);     // at a boundary → scroll the page on
+        } else {
+          tilesWrap.scrollTop += step;  // in the middle → scroll the cards
+        }
+      }, { passive: false });
       return tilesWrap;
     };
 
@@ -4400,46 +4416,62 @@ class Component extends DCLogic {
       wrap.innerHTML = '';
       if (cityName === 'Hyderabad') return; // photo cards own this city
       const assets = PORTFOLIO_DATA.filter(a => a.city === cityName);
-      // Placeholder height adapts to city density: Bangalore's 2×3 grid has
-      // to fit the same card region as a 1-2 asset city.
-      const phH = assets.length >= 5 ? 150 : 210;
-      assets.forEach(a => {
+      // Every card is the full Hyderabad height (~480px). A dense city whose
+      // cards run past the base region SCROLLS inside the fixed region — the
+      // region stays put (no baked-content shift, so nothing overlaps) and its
+      // extra rows scroll into view. Cities with up to 4 assets never scroll.
+      const phH = 480;
+      const nameH = 52;
+      const rows = Math.ceil(assets.length / 2);
+      const contentH = rows * (phH + nameH) + 28 * (rows - 1);
+      const regionH = tilesRegionH || 1091;
+      const scrolls = contentH > regionH;
+      wrap.style.height = regionH + 'px';
+      wrap.style.overflowY = scrolls ? 'auto' : 'visible';
+      wrap.style.alignContent = scrolls ? 'start' : 'center';
+      wrap.style.pointerEvents = scrolls ? 'auto' : 'none';
+      const ARROW = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="rgb(209,32,47)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>';
+      assets.forEach((a, i) => {
         const tile = document.createElement('div');
-        tile.style.cssText =
-          'background:rgb(255,255,255); border:1px solid rgba(209,32,47,0.3);' +
-          'border-top:3px solid rgb(209,32,47);' +
-          'pointer-events:auto; opacity:0; overflow:hidden;';
+        tile.style.cssText = 'pointer-events:auto; opacity:0; cursor:pointer;';
+        // Tinted campus photo + name, matching the Hyderabad photo cards: the
+        // crimson tint (#D1202F @ 65.9%) fades to the full-colour photo on
+        // hover with a 1.05x zoom, and a corner arrow slides in — the whole
+        // card links to the portfolio. NOTE: rep-campus-*.jpg are generic
+        // stand-ins (shared with Projects), NOT the actual campuses — replace
+        // with the client's real photography at launch.
         tile.innerHTML =
-          // Image placeholder: brand mark on the red field with a faint
-          // dot-grid texture (no photography exists for these assets — no
-          // stock imagery invented, the C mark holds the slot)
-          '<div style="height:' + phH + 'px; background:rgb(209,32,47);' +
-            'background-image:radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1.6px);' +
-            'background-size:14px 14px;' +
-            'display:flex; align-items:center; justify-content:center;' +
-            'border-bottom:1px solid rgba(209,32,47,0.3);">' +
-            '<img src="./components/assets/eae7f9bdb03982f5.png" alt="" ' +
-              'style="width:64px; height:auto; filter:brightness(0) invert(1); opacity:0.92;">' +
+          '<div style="position:relative; height:' + phH + 'px; overflow:hidden;">' +
+            '<img class="cap-tile-img" src="./components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg" ' +
+              'alt="" loading="lazy" style="position:absolute; inset:0; width:100%; height:100%;' +
+              'object-fit:cover; display:block; transform:scale(1);' +
+              'transition:transform 0.6s cubic-bezier(0.25,1,0.5,1);">' +
+            '<div class="cap-tile-tint" style="position:absolute; inset:0; opacity:1;' +
+              'background:rgba(209,32,47,0.659); pointer-events:none; transition:opacity 0.5s ease;"></div>' +
+            '<div class="cap-tile-arrow" style="position:absolute; bottom:0; right:0; width:55px; height:55px;' +
+              'background:#fff; display:flex; justify-content:center; align-items:center; opacity:0;' +
+              'transform:translate(100%,100%);' +
+              'transition:transform 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.45s ease;">' + ARROW + '</div>' +
           '</div>' +
-          '<div style="padding:24px 28px 26px;">' +
-          '<div style="font-family:Montserrat,sans-serif; font-weight:600; font-size:26px;' +
-            'line-height:1.25; color:rgb(0,0,0);">' + a.name + '</div>' +
-          '<div style="font-family:\'Space Mono\',monospace; font-size:12px; letter-spacing:1.5px;' +
-            'color:rgb(209,32,47); margin-top:10px;">' + a.city.toUpperCase() + ' — EST. ' + a.est + '</div>' +
-          '<div style="display:flex; gap:34px; margin-top:22px; font-family:Montserrat,sans-serif;">' +
-            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.land + '</div>' +
-              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">ACRES</div></div>' +
-            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.bua + '</div>' +
-              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">SF BUA</div></div>' +
-            '<div><div style="font-weight:700; font-size:20px; color:rgb(0,0,0);">' + a.students + ' / ' + a.capacity + '</div>' +
-              '<div style="font-size:11px; color:rgb(120,120,120); margin-top:3px; letter-spacing:1px;">STUDENTS</div></div>' +
-          '</div>' +
-          '</div>';
+          '<div class="cap-tile-name" style="font-family:Montserrat,sans-serif; font-weight:700; font-size:26px;' +
+            'line-height:1.2; color:rgb(0,0,0); text-align:center; margin-top:16px;">' + a.name + '</div>';
+        const img = tile.querySelector('.cap-tile-img');
+        const tint = tile.querySelector('.cap-tile-tint');
+        const arrow = tile.querySelector('.cap-tile-arrow');
+        tile.addEventListener('mouseenter', () => {
+          tint.style.opacity = '0'; img.style.transform = 'scale(1.05)';
+          arrow.style.transform = 'translate(0,0)'; arrow.style.opacity = '1';
+        });
+        tile.addEventListener('mouseleave', () => {
+          tint.style.opacity = '1'; img.style.transform = 'scale(1)';
+          arrow.style.transform = 'translate(100%,100%)'; arrow.style.opacity = '0';
+        });
+        tile.addEventListener('click', () => { window.location.href = 'projects.html'; });
         wrap.appendChild(tile);
-        // Scramble hover on the school name, matching the photo-card labels
-        // (the name div now lives inside the padded text block, after the
-        // placeholder)
-        scrambleText(tile.children[1].firstChild, a.name);
+        // Scramble hover on the school name, matching the Hyderabad photo-card labels
+        scrambleText(tile.querySelector('.cap-tile-name'), a.name);
       });
       const tiles = [...wrap.children];
       if (window.gsap) {
