@@ -403,6 +403,79 @@ a {
   max-width: 52ch;
 }
 
+/* ---------- Hero · Canvas variant (About Us) ----------
+   Centred hero on a warm ground with a soft white glow + crimson haze.
+   Scoped to .page-hero--canvas so the rest of the page (not yet redesigned)
+   is untouched. The warm ground is confined to the hero via its own
+   background rather than the page, so the white sections below still read
+   correctly until they are redesigned in turn. */
+.page-hero--canvas {
+  position: relative;
+  overflow: hidden;
+  background: #f4f1ec;
+  text-align: center;
+  padding-block: clamp(96px, 13vw, 168px) clamp(72px, 10vw, 128px);
+}
+
+.page-hero--canvas .hero-canvas-in {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+}
+
+.page-hero--canvas .hero-glow,
+.page-hero--canvas .hero-haze {
+  position: absolute;
+  left: 50%;
+  border-radius: 9999px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.page-hero--canvas .hero-glow {
+  top: 48%;
+  width: 1150px;
+  height: 1150px;
+  max-width: 150%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.82) 0%, rgba(245, 243, 239, 0) 62%);
+  filter: blur(12px);
+}
+.page-hero--canvas .hero-haze {
+  top: 50%;
+  width: 1000px;
+  height: 1000px;
+  max-width: 132%;
+  background: radial-gradient(circle,
+    rgba(209, 32, 47, 0.30) 0%,
+    rgba(209, 32, 47, 0.14) 34%,
+    rgba(209, 32, 47, 0) 66%);
+  filter: blur(30px);
+}
+
+.page-hero--canvas .hero-pill {
+  display: inline-block;
+  margin: 0 auto;
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+  background: var(--cap-white);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+.page-hero--canvas .hero-title {
+  margin: 26px auto 0;
+  max-width: 15ch;
+  text-wrap: balance;
+}
+
+.page-hero--canvas .hero-intro {
+  margin: 26px auto 0;
+  max-width: 48ch;
+}
+
 /* ---------- Stats strip (red band) ---------- */
 .stats-band {
   background: var(--cap-red);
