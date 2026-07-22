@@ -575,6 +575,43 @@
     });
   }
 
+  /* =====================================================================
+     Contact page map — Leaflet + OpenStreetMap tiles (both vendored /
+     keyless, so there is no third-party embed to fail). The crimson brand
+     pin is a divIcon (inline SVG), so no marker images are needed;
+     scrollWheelZoom is off so scrolling the page never zooms the map.
+     No-ops on every other page (gated on #cap-map + Leaflet present).
+     ===================================================================== */
+  function initContactMap() {
+    var el = document.getElementById('cap-map');
+    if (!el || typeof L === 'undefined') return;
+    var lat = parseFloat(el.getAttribute('data-lat'));
+    var lon = parseFloat(el.getAttribute('data-lon'));
+    var zoom = parseInt(el.getAttribute('data-zoom'), 10) || 15;
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    var map = L.map(el, { scrollWheelZoom: false }).setView([lat, lon], zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var icon = L.divIcon({
+      className: 'cap-pin',
+      html: '<svg width="40" height="40" viewBox="0 0 24 24" fill="rgb(209,32,47)" ' +
+            'stroke="#fff" stroke-width="1.2"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/>' +
+            '<circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>',
+      iconSize: [40, 40], iconAnchor: [20, 38], popupAnchor: [0, -34]
+    });
+    L.marker([lat, lon], { icon: icon, title: 'Niharika Jubilee One' })
+      .addTo(map).bindPopup('Niharika Jubilee One');
+
+    // The map sits in a data-reveal container that may be clipped/animating
+    // as it initialises; recompute its size once it and the fonts settle.
+    setTimeout(function () { map.invalidateSize(); }, 300);
+    window.addEventListener('load', function () { map.invalidateSize(); });
+  }
+
   /* ===================================================================== */
   initLenis();
   initMenu();
@@ -584,4 +621,5 @@
   initReveals();
   initScramble();
   initTilt();
+  initContactMap();
 })();

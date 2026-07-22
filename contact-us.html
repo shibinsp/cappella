@@ -9,10 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared/site.css">
+<link rel="stylesheet" href="components/vendor/leaflet.css">
 <script>document.documentElement.className += ' js';</script>
 <script src="components/vendor/gsap.min.js" defer></script>
 <script src="components/vendor/lenis.min.js" defer></script>
 <script src="components/vendor/split-type.min.js" defer></script>
+<script src="components/vendor/leaflet.js" defer></script>
 <script src="shared/site.js" defer></script>
 </head>
 <body>
@@ -62,14 +64,12 @@
 
   <section class="section" aria-label="Map" style="padding-top: clamp(24px, 3vw, 40px); border-top: none;">
     <div class="container">
-      <div class="map-embed" data-reveal>
-        <iframe
-          src="https://www.google.com/maps?q=Niharika+One,+Road+No.+1,+Jubilee+Hills,+Hyderabad,+Telangana&amp;output=embed"
-          title="Map — Cappella registered office, Niharika One, Jubilee Hills, Hyderabad"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen></iframe>
-      </div>
+      <div id="cap-map" class="map-embed" data-reveal role="img"
+           data-lat="17.4265" data-lon="78.4090" data-zoom="15"
+           aria-label="Map — Cappella registered office, Niharika Jubilee One, Jubilee Hills, Hyderabad"></div>
+      <p class="map-actions" data-reveal>
+        <a class="map-cta" href="https://www.google.com/maps/dir/?api=1&amp;destination=Niharika+Jubilee+One,+Road+No.+1,+Jubilee+Hills,+Hyderabad" target="_blank" rel="noopener">Get Directions</a>
+      </p>
     </div>
   </section>
 

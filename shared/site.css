@@ -1621,17 +1621,39 @@ address {
   border: 1px solid var(--cap-hairline);
 }
 
-.map-embed iframe {
-  display: block;
-  width: 100%;
+/* Leaflet map (contact page), full colour. Leaflet is vendored locally
+   (components/vendor/leaflet.*) — no third-party embed to fail — over
+   OpenStreetMap tiles. The crimson brand pin marks the office. */
+#cap-map {
   height: clamp(320px, 42vw, 520px);
-  border: 0;
-  filter: grayscale(1) contrast(1.04);
-  transition: filter 0.5s ease;
+  background: #e9e4dd;
 }
 
-.map-embed:hover iframe {
-  filter: none;
+.cap-pin {
+  filter: drop-shadow(0 6px 10px rgba(209, 32, 47, 0.5));
+}
+
+.map-actions {
+  margin-top: clamp(16px, 2.4vw, 26px);
+}
+
+/* Get Directions — a compact underlined crimson link (its own class so it
+   stays distinct from the page's primary mailto .contact-cta). */
+.map-cta {
+  display: inline-block;
+  color: var(--cap-red);
+  font-size: clamp(15px, 1.6vw, 19px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding-bottom: 5px;
+  border-bottom: 2px solid var(--cap-red);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.map-cta:hover {
+  color: var(--cap-red-hover);
+  border-color: var(--cap-red-hover);
 }
 
 /* ---------- Footer ---------- */

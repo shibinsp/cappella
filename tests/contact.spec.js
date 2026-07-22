@@ -31,17 +31,23 @@ test.describe('contact-us.html', () => {
     expectNoPageErrors(errors);
   });
 
-  test('nothing invented: no form, no tel links; one client-requested map embed', async ({ page }) => {
+  test('nothing invented: no form, no tel links; the map is the vendored Leaflet map', async ({ page }) => {
     await page.goto('/contact-us.html');
     await expect(page.locator('form')).toHaveCount(0);
     await expect(page.locator('input, textarea, select')).toHaveCount(0);
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
 
-    // Map added per client feedback (2026-07-17 screenshot: "Map, text style")
-    const iframe = page.locator('iframe');
-    await expect(iframe).toHaveCount(1);
-    await expect(iframe).toHaveAttribute('src', /google\.com\/maps/);
-    await expect(iframe).toHaveAttribute('title', /map/i);
+    // The flaky Google Maps embed was replaced with a locally-vendored Leaflet
+    // map over OpenStreetMap tiles — so no third-party iframe.
+    await expect(page.locator('iframe')).toHaveCount(0);
+    const map = page.locator('#cap-map');
+    await expect(map).toHaveCount(1);
+    await expect(map).toHaveAttribute('aria-label', /map/i);
+    // Leaflet initialises the container (it adds .leaflet-container).
+    await expect(page.locator('#cap-map.leaflet-container')).toHaveCount(1);
+    // A Get Directions link points at a maps directions URL.
+    await expect(page.locator('.map-actions a', { hasText: /directions/i }))
+      .toHaveAttribute('href', /maps/);
   });
 
   test('full-page screenshot', async ({ page }, testInfo) => {

@@ -5,24 +5,18 @@
 const base = require('@playwright/test');
 
 /**
- * The Contact page embeds a Google Map (client request, 2026-07-17). Letting
- * it load makes the suite depend on Google's uptime and on this machine's
- * outbound network: the Maps bootstrap dies with ERR_CONNECTION_RESET, or its
- * module loader throws `Could not load "util".` partway through, and an
- * unrelated spec goes red. Neither failure is ever actionable for us.
+ * The Contact page shows a Leaflet map (vendored locally) over OpenStreetMap
+ * tiles. Leaflet itself is served from the repo, but the map tiles come from
+ * tile.openstreetmap.org — letting those load makes the suite depend on OSM's
+ * uptime and this machine's outbound network. So the tiles are blocked here;
+ * the map still initialises without them.
  *
- * So the map never loads under test. What we actually own — that the embed is
- * present, points at maps, is titled, and sits correctly in the layout — is
- * asserted structurally in contact.spec.js and holds without the network.
- *
- * Consequence to know about: a malformed embed URL would not be caught here.
- * The src is a static string in contact-us.html and is visible in every
- * screenshot the client reviews, so that is covered outside the suite.
+ * What we actually own — that the map container is present, initialises
+ * (Leaflet adds .leaflet-container), is titled, and has a Get Directions link
+ * — is asserted structurally in contact.spec.js and holds without the network.
  */
 const THIRD_PARTY_PATTERNS = [
-  '**maps.googleapis.com**',
-  '**maps.gstatic.com**',
-  '**www.google.com/maps**'
+  '**tile.openstreetmap.org**'
 ];
 
 const test = base.test.extend({

@@ -60,10 +60,16 @@ for (const pageDef of PAGES) {
         await expect(linkedin).toHaveCount(0);
       }
 
-      // No dead-looking anchors (every href non-empty, not "#")
+      // No dead-looking anchors (every href non-empty, not "#"). Excludes the
+      // Leaflet map's own controls (contact page) — its zoom buttons use
+      // href="#" by design; that is third-party markup, not ours.
       const hrefs = await page
         .locator('a')
-        .evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+        .evaluateAll((as) =>
+          as
+            .filter((a) => !a.closest('.leaflet-container'))
+            .map((a) => a.getAttribute('href'))
+        );
       for (const h of hrefs) {
         expect(h, 'anchor with empty/# href').toBeTruthy();
         expect(h).not.toBe('#');
