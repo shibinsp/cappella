@@ -525,6 +525,36 @@ a {
   }
 }
 
+/* ---------- Who We Are · Editorial split (About Us) ----------
+   Sticky section heading on the left, prose on the right, on the warm ground
+   so it flows out of the flip-card stats above. Builds on the existing
+   .split / .stack / .section-head primitives; only the ground, the sticky
+   heading and the mono eyebrow are new. */
+.section--who {
+  background: #f4f1ec;
+}
+.section-eyebrow {
+  display: block;
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+  margin: 0 0 12px;
+}
+@media (min-width: 900px) {
+  .section--who .who-head {
+    position: sticky;
+    top: 104px;          /* clears the sticky header */
+    align-self: start;
+  }
+}
+.section--who .who-body p {
+  font-size: clamp(18px, 1.9vw, 23px);
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
 /* ---------- Stats · Flip-card variant (About Us) ----------
    Continues the canvas hero: the red band becomes flip cards on the warm
    ground. Front shows the figure; hovering / focusing a card flips it in 3D
