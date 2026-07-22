@@ -1914,16 +1914,28 @@ class Component extends DCLogic {
     });
 
     // Staggered entrance: line by line, chars cascading within each line.
-    // Base delay syncs with the preloader wipe (slides away at ~1.1s) so the
-    // reveal is actually visible instead of finishing behind the red screen.
-    lineEls.forEach((L, li) => {
-      L.chars.forEach((c, ci) => {
-        setTimeout(() => {
-          c.style.opacity = '1';
-          c.style.transform = 'translateY(0) rotate(0deg)';
-        }, 1150 + li * 140 + ci * 20);
+    // Gated on the preloader actually finishing (the red curtain clearing)
+    // instead of a fixed timer — the curtain wipe runs ~1.1s–2.2s, so a fixed
+    // 1150ms start played the whole reveal behind the curtain and it was gone
+    // by the time the page came into frame. The preloader calls _heroReveal
+    // when it exits; if it already exited we run now, and a safety timeout
+    // guarantees the title is never left hidden.
+    let heroRevealed = false;
+    const runHeroReveal = () => {
+      if (heroRevealed) return;
+      heroRevealed = true;
+      lineEls.forEach((L, li) => {
+        L.chars.forEach((c, ci) => {
+          setTimeout(() => {
+            c.style.opacity = '1';
+            c.style.transform = 'translateY(0) rotate(0deg)';
+          }, li * 140 + ci * 20);
+        });
       });
-    });
+    };
+    if (this._preloaderDone) runHeroReveal();
+    else this._heroReveal = runHeroReveal;
+    setTimeout(runHeroReveal, 3200); // fallback: never leave the title hidden
 
     // Scroll-linked parallax exit — lower lines leave faster for depth
     if (window.gsap && window.ScrollTrigger) {
@@ -2253,6 +2265,8 @@ class Component extends DCLogic {
       nameImg.style.transform = 'none';
       setTimeout(() => {
         preloaderFinished = true;
+        this._preloaderDone = true;
+        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
         document.documentElement.classList.remove('cap-scroll-locked');
         const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
         if (wm) wm.style.opacity = '1';
@@ -2405,6 +2419,9 @@ class Component extends DCLogic {
       // hideHeaderWordmark then handles showing it via preloaderFinished).
       setTimeout(() => {
         preloaderFinished = true;
+        // Curtain has cleared — now let the hero title reveal in frame.
+        this._preloaderDone = true;
+        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
         const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
         if (wm) wm.style.opacity = '1';
         centerWrap.remove();
