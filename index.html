@@ -161,6 +161,13 @@
     ::selection { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
     ::-moz-selection { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
 
+    /* Scroll lock lives on <html>, NOT <body>: on iOS Safari a body-level
+       overflow:hidden does not reliably stop touch scrolling, so the page
+       scrolls behind the preloader and the menu overlay. The subpages
+       already lock <html> for the same reason (shared/site.css) — this is
+       the homepage catching up to that. */
+    html.cap-scroll-locked { overflow: hidden; }
+
     /* Thin brand scrollbar */
     html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 244); }
     ::-webkit-scrollbar { width: 6px; }
@@ -634,6 +641,24 @@
   </svg>
 </template>
 <script type="text/x-dc" data-dc-script>
+// iOS Safari grows and shrinks the visual viewport as its toolbar collapses
+// during scroll, firing `resize` with a changed window.innerHeight. The
+// pinned journey derives BOTH its scroll-track height and its scrub
+// denominator from that value, so a toolbar toggle re-runs layout()
+// mid-scroll: the track resizes under the reader, the scrub progress jumps,
+// and everything below the section shifts. Cache the height and refresh it
+// only when the WIDTH changes (rotation, or a real window resize) — the
+// toolbar never changes width, so this is inert on desktop and stable on
+// phones.
+let _capVH = window.innerHeight;
+let _capVW = window.innerWidth;
+const capVH = () => {
+  if (window.innerWidth !== _capVW) {
+    _capVW = window.innerWidth;
+    _capVH = window.innerHeight;
+  }
+  return _capVH;
+};
 class Component extends DCLogic {
   componentDidMount() {
     const FRAME_W = 1440, FRAME_H = 7472;
@@ -2146,7 +2171,7 @@ class Component extends DCLogic {
     // without making the viewport scrollable early — which would break the
     // browser's scroll restoration on refresh.)
     document.documentElement.style.scrollbarGutter = 'stable';
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('cap-scroll-locked');
 
     // Full-screen red background
     const preloader = document.createElement('div');
@@ -2228,7 +2253,7 @@ class Component extends DCLogic {
       nameImg.style.transform = 'none';
       setTimeout(() => {
         preloaderFinished = true;
-        document.body.style.overflow = '';
+        document.documentElement.classList.remove('cap-scroll-locked');
         const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
         if (wm) wm.style.opacity = '1';
         preloader.style.transition = 'opacity 0.4s ease';
@@ -2268,7 +2293,7 @@ class Component extends DCLogic {
         setTimeout(() => beginExit(retries - 1), 50);
         return;
       }
-      document.body.style.overflow = '';
+      document.documentElement.classList.remove('cap-scroll-locked');
 
       // Refresh mid-page: browsers restore the scroll position, so the header
       // targets sit thousands of px above the viewport — a flight would shoot
@@ -2757,13 +2782,13 @@ class Component extends DCLogic {
       btn.style.opacity = '0';
       btn.style.pointerEvents = 'none';
       if (this._lenis) this._lenis.stop();
-      document.body.style.overflow = 'hidden';
+      document.documentElement.classList.add('cap-scroll-locked');
     };
     const close = () => {
       overlay.classList.remove('cap-menu-open');
       updateMenuBtnVisibility();
       if (this._lenis) this._lenis.start();
-      document.body.style.overflow = '';
+      document.documentElement.classList.remove('cap-scroll-locked');
     };
     btn.addEventListener('click', open);
     overlay.querySelector('#cap-menu-close').addEventListener('click', close);
@@ -2835,7 +2860,7 @@ class Component extends DCLogic {
 
     const computeDelta = () => {
       const s = vp.clientWidth / 1440;
-      const hostFrame = (this._jVH * window.innerHeight) / s;
+      const hostFrame = (this._jVH * capVH()) / s;
       return Math.max(0, Math.round(hostFrame - (JBAND_BOTTOM - JBAND_TOP)));
     };
     this._jComputeDelta = computeDelta;
@@ -2957,7 +2982,7 @@ class Component extends DCLogic {
     // 1600x820 landscape canvas onto a phone leaves a ~200px strip lost in
     // an empty viewport. The mode is fixed per build; crossing the
     // breakpoint on resize tears the section down and rebuilds it.
-    const PORTRAIT = window.innerWidth < Math.min(720, window.innerHeight * 0.85);
+    const PORTRAIT = window.innerWidth < Math.min(720, capVH() * 0.85);
     const CW = PORTRAIT ? 800 : 1600;   // canvas design width
     const CH = PORTRAIT ? 1500 : 820;   // canvas design height
     const HY = PORTRAIT ? 1150 : 715;   // sky-horizon y in canvas coords
@@ -3043,7 +3068,11 @@ class Component extends DCLogic {
     };
 
     host.innerHTML =
-      '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
+      // height: svh (the SMALL viewport height, toolbar shown) so the pin
+      // never exceeds the visible area on iOS. Plain vh first as the
+      // fallback for engines without svh — later declaration wins where
+      // supported.
+      '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;height:100svh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
         // Full-bleed backdrop at pin level: on viewports wider than the
         // 1600:820 design ratio the stage letterboxes horizontally, so the
         // sky/sea must fill the pin, not the stage. The sky img is sized and
@@ -3255,7 +3284,7 @@ class Component extends DCLogic {
       // to the height so the host's BOTTOM edge (red-hairline join) stays.
       const GAP_CLOSE = 15;
       host.style.top = Math.round(vpPageTop + (this._jBandTop - GAP_CLOSE) * s) + 'px';
-      host.style.height = Math.round(this._jVH * window.innerHeight + GAP_CLOSE * s) + 'px';
+      host.style.height = Math.round(this._jVH * capVH() + GAP_CLOSE * s) + 'px';
       const w = pin.clientWidth, h = pin.clientHeight;
       const scale = Math.min(w / CW, h / CH);
       stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
@@ -3320,7 +3349,9 @@ class Component extends DCLogic {
 
     const onScroll = () => {
       const rect = host.getBoundingClientRect();
-      const vh = window.innerHeight;
+      // Must match the height layout() gave the host, or the scrub
+      // denominator disagrees with the track and progress jumps.
+      const vh = capVH();
       const total = host.offsetHeight - vh;
       targetG = total > 0 ? clamp(-rect.top / total, 0, 1) : 0;
       inView = rect.bottom > -300 && rect.top < vh + 300;
@@ -3490,7 +3521,7 @@ class Component extends DCLogic {
 
     rails.forEach((rl) => rl.addEventListener('click', () => {
       const i = parseInt(rl.dataset.i, 10);
-      const total = host.offsetHeight - window.innerHeight;
+      const total = host.offsetHeight - capVH();
       const y = window.scrollY + host.getBoundingClientRect().top + ((i + 0.5) / 3) * total;
       window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
     }));
@@ -3507,7 +3538,7 @@ class Component extends DCLogic {
     const onResize = () => {
       // Crossing the portrait breakpoint (e.g. phone rotation) rebuilds the
       // whole section with the other composition
-      if ((window.innerWidth < Math.min(720, window.innerHeight * 0.85)) !== PORTRAIT) {
+      if ((window.innerWidth < Math.min(720, capVH() * 0.85)) !== PORTRAIT) {
         this._jCleanup();
         host.remove();
         const oldCss = document.getElementById('cap-journey-css');
