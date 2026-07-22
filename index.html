@@ -1860,7 +1860,10 @@ class Component extends DCLogic {
     heroTitle.innerHTML = '';
     const lineEls = lines.map(lineText => {
       const lineMask = document.createElement('span');
-      lineMask.style.cssText = 'display:block; overflow:hidden; white-space:nowrap;';
+      // padding-bottom leaves room inside the overflow:hidden clip for glyph
+      // descenders (g, y, p, j…); the matching negative margin cancels the
+      // added height so the 3-line stack keeps its exact spacing.
+      lineMask.style.cssText = 'display:block; overflow:hidden; white-space:nowrap; padding-bottom:0.25em; margin-bottom:-0.25em;';
       const lineInner = document.createElement('span');
       lineInner.style.cssText = 'display:block; will-change:transform;';
       const chars = [];
