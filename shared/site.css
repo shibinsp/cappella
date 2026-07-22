@@ -531,7 +531,14 @@ a {
    .split / .stack / .section-head primitives; only the ground, the sticky
    heading and the mono eyebrow are new. */
 .section--who {
-  background: #f4f1ec;
+  background: #D1202F;
+}
+/* Header + prose sit on the crimson ground, so they flip to light. */
+.section--who .section-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section--who .section-title {
+  color: var(--cap-white);
 }
 .section-eyebrow {
   display: block;
@@ -553,6 +560,125 @@ a {
   font-size: clamp(18px, 1.9vw, 23px);
   line-height: 1.5;
   max-width: 60ch;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ---------- The Cappella Edge · 3D tilt cards (About Us) ----------
+   Four approach points as a 2×2 grid of cards on the warm ground. Each card
+   tilts in 3D toward the pointer (JS writes --tx/--ty/--mx/--my; motion is
+   all CSS), with a gradient number badge and heading lifted on the Z axis so
+   the card reads as a physical surface. Reuses the Team page's tilt engine
+   via [data-tilt] / .tilt-card in site.js. */
+.section--edge {
+  background: #D1202F;
+}
+/* Header sits directly on the crimson ground, so it flips to light. */
+.section--edge .section-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section--edge .section-title {
+  color: var(--cap-white);
+}
+.section--edge .section-head {
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+.section--edge .edge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(18px, 2vw, 28px);
+  perspective: 1200px;
+}
+/* Card — overrides the base .item row layout entirely. */
+.section--edge .item {
+  position: relative;
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  padding: clamp(30px, 3vw, 46px);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 22px;
+  background: var(--cap-white);
+  transform-style: preserve-3d;
+  --tx: 0;
+  --ty: 0;
+  transform:
+    rotateY(calc(var(--tx) * 5deg))
+    rotateX(calc(var(--ty) * -5deg));
+  transition: transform 0.5s var(--cap-ease-expo), box-shadow 0.4s var(--cap-ease-expo);
+  will-change: transform;
+}
+.section--edge .item:last-child {
+  border-bottom: 1px solid var(--cap-hairline);   /* neutralise base .item:last-child */
+}
+.section--edge .item.is-tilting {
+  transition: transform 0.12s linear, box-shadow 0.4s var(--cap-ease-expo);
+}
+.section--edge .item:hover {
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.35);
+}
+/* Number badge — gradient tile floating above the card surface. */
+.section--edge .item-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  color: var(--cap-white);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0;
+  box-shadow: 0 12px 24px -10px rgba(209, 32, 47, 0.6);
+  transform: translateZ(40px);
+}
+.section--edge .item h3 {
+  font-size: clamp(19px, 1.8vw, 24px);
+  margin-bottom: 12px;
+  transform: translateZ(24px);
+}
+/* Beat the base `.item:hover h3` slide, which would flatten the Z-depth. */
+.section--edge .item:hover h3 {
+  transform: translateZ(24px);
+}
+.section--edge .item .body-copy {
+  max-width: none;
+  transform: translateZ(14px);
+}
+/* Pointer-following sheen. */
+.section--edge .tilt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    600px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.6), transparent 40%);
+  transition: opacity 0.3s ease;
+}
+.section--edge .item:hover .tilt-shine {
+  opacity: 1;
+}
+@media (max-width: 720px) {
+  .section--edge .edge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Touch / reduced-motion: flat cards, no tilt, no depth, no sheen. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .section--edge .item,
+  .section--edge .item-index,
+  .section--edge .item h3,
+  .section--edge .item .body-copy {
+    transform: none !important;
+  }
+  .section--edge .tilt-shine {
+    display: none;
+  }
 }
 
 /* ---------- Stats · Flip-card variant (About Us) ----------

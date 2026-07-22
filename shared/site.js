@@ -478,6 +478,103 @@
     update();
   }
 
+  /* =====================================================================
+     3D tilt for any [data-tilt] grid of .tilt-card children. Pointer
+     position is written into --tx/--ty (-1..1) and --mx/--my (percentages
+     for the sheen); the motion itself lives in CSS. Hit-testing is done
+     against cached grid-relative geometry, never getBoundingClientRect on
+     a tilted card — a rotated card's rect no longer covers the pointer near
+     its corners, which would make pointerleave fire mid-hover and flicker.
+     Generalised from the Team page's per-grid version.
+     ===================================================================== */
+  function initTilt() {
+    var fine = window.matchMedia('(hover: hover)').matches;
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!fine || still) return;
+
+    [].forEach.call(document.querySelectorAll('[data-tilt]'), function (grid) {
+      var cards = [].slice.call(grid.querySelectorAll('.tilt-card'));
+      if (!cards.length) return;
+      var boxes = [], frame = null, pending = null;
+
+      function measure() {
+        cards.forEach(function (c) {
+          c.style.setProperty('--tx', '0');
+          c.style.setProperty('--ty', '0');
+        });
+        var g = grid.getBoundingClientRect();
+        boxes = cards.map(function (c) {
+          var r = c.getBoundingClientRect();
+          return { l: r.left - g.left, t: r.top - g.top, w: r.width, h: r.height };
+        });
+      }
+
+      function reset() {
+        pending = null;
+        if (frame) { cancelAnimationFrame(frame); frame = null; }
+        cards.forEach(function (c) {
+          c.classList.remove('is-tilting');
+          c.style.setProperty('--tx', '0');
+          c.style.setProperty('--ty', '0');
+        });
+      }
+
+      function apply() {
+        frame = null;
+        if (!pending) return;
+        var c = pending.card;
+        c.style.setProperty('--tx', pending.tx.toFixed(3));
+        c.style.setProperty('--ty', pending.ty.toFixed(3));
+        c.style.setProperty('--mx', pending.mx.toFixed(1) + '%');
+        c.style.setProperty('--my', pending.my.toFixed(1) + '%');
+      }
+
+      grid.addEventListener('pointermove', function (e) {
+        if (e.pointerType !== 'mouse') return;
+        var g = grid.getBoundingClientRect();
+        var x = e.clientX - g.left, y = e.clientY - g.top;
+        var hit = -1;
+        for (var i = 0; i < boxes.length; i++) {
+          var b = boxes[i];
+          if (x >= b.l && x <= b.l + b.w && y >= b.t && y <= b.t + b.h) { hit = i; break; }
+        }
+        if (hit === -1) { reset(); return; }
+
+        var b2 = boxes[hit], card = cards[hit];
+        var px = (x - b2.l) / b2.w, py = (y - b2.t) / b2.h;
+        cards.forEach(function (c) {
+          if (c !== card) {
+            c.classList.remove('is-tilting');
+            c.style.setProperty('--tx', '0');
+            c.style.setProperty('--ty', '0');
+          }
+        });
+        pending = {
+          card: card,
+          tx: Math.max(-1, Math.min(1, (px - 0.5) * 2)),
+          ty: Math.max(-1, Math.min(1, (py - 0.5) * 2)),
+          mx: px * 100,
+          my: py * 100
+        };
+        card.classList.add('is-tilting');
+        if (!frame) frame = requestAnimationFrame(apply);
+      });
+
+      grid.addEventListener('pointerleave', reset);
+
+      measure();
+      window.addEventListener('load', measure);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function () { measure(); });
+        ro.observe(grid);
+        cards.forEach(function (c) { ro.observe(c); });
+      } else {
+        window.addEventListener('resize', function () { reset(); measure(); });
+      }
+    });
+  }
+
   /* ===================================================================== */
   initLenis();
   initMenu();
@@ -486,4 +583,5 @@
   initHeroText(); // before initReveals so char mode is set when .is-in lands
   initReveals();
   initScramble();
+  initTilt();
 })();
