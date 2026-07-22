@@ -681,13 +681,128 @@ a {
   }
 }
 
+/* ---------- What We Do · Crimson tilt cards (About Us) ----------
+   Same 3D tilt-card language as The Cappella Edge so this section no longer
+   reads as the odd plain block between the crimson sections. Three strategies
+   in a 3-up grid; the card visuals mirror .section--edge. */
+.section--strategies {
+  background: #D1202F;
+}
+.section--strategies .section-title {
+  color: var(--cap-white);
+}
+.section--strategies .section-head {
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+.section--strategies .strat-intro {
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 62ch;
+  margin-top: 16px;
+}
+.section--strategies .strat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(18px, 2vw, 28px);
+  perspective: 1200px;
+}
+.section--strategies .item {
+  position: relative;
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  padding: clamp(28px, 2.6vw, 40px);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 22px;
+  background: var(--cap-white);
+  transform-style: preserve-3d;
+  --tx: 0;
+  --ty: 0;
+  transform: rotateY(calc(var(--tx) * 5deg)) rotateX(calc(var(--ty) * -5deg));
+  transition: transform 0.5s var(--cap-ease-expo), box-shadow 0.4s var(--cap-ease-expo);
+  will-change: transform;
+}
+.section--strategies .item:last-child {
+  border-bottom: 1px solid var(--cap-hairline);
+}
+.section--strategies .item.is-tilting {
+  transition: transform 0.12s linear, box-shadow 0.4s var(--cap-ease-expo);
+}
+.section--strategies .item:hover {
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.35);
+}
+.section--strategies .item-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  color: var(--cap-white);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0;
+  box-shadow: 0 12px 24px -10px rgba(209, 32, 47, 0.6);
+  transform: translateZ(40px);
+}
+.section--strategies .item h3 {
+  font-size: clamp(19px, 1.8vw, 24px);
+  margin-bottom: 12px;
+  transform: translateZ(24px);
+}
+.section--strategies .item:hover h3 {
+  transform: translateZ(24px);
+}
+.section--strategies .item .body-copy {
+  max-width: none;
+  transform: translateZ(14px);
+}
+.section--strategies .tilt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.6), transparent 40%);
+  transition: opacity 0.3s ease;
+}
+.section--strategies .item:hover .tilt-shine {
+  opacity: 1;
+}
+@media (max-width: 860px) {
+  .section--strategies .strat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .section--strategies .item,
+  .section--strategies .item-index,
+  .section--strategies .item h3,
+  .section--strategies .item .body-copy {
+    transform: none !important;
+  }
+  .section--strategies .tilt-shine {
+    display: none;
+  }
+}
+
 /* ---------- SKOLEN · Crimson band + overlapping table card (About Us) ----------
    Closes the page: the intro sits on a crimson band and the white modules
    table lifts up into it as a rounded, shadowed card. The .table-scroll
    wrapper (role/tabindex kept for a11y + the test contract) becomes the card. */
 .section--skolen {
   padding-block: 0;
-  background: var(--cap-warm);
+  background: #faf1f0;
+}
+/* No divider above SKOLEN — it follows the crimson What We Do section, so the
+   global .section + .section hairline read as an unwanted line across the red.
+   (Higher specificity than `.section + .section` so it wins.) */
+.section + .section--skolen {
+  border-top: none;
 }
 .section--skolen .skolen-band {
   background: #D1202F;
@@ -1107,6 +1222,9 @@ a {
   letter-spacing: .02em;
   text-transform: uppercase;
   line-height: 1.15;
+  /* Reserve two lines so a one-line name and a two-line name in the same
+     row start their role/bio at the same height (names run up to 2 lines). */
+  min-height: 2.3em;
   margin: 0 0 6px;
   color: var(--ink);
   max-width: calc(100% - var(--portrait-w) + 40px);
