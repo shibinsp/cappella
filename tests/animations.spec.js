@@ -5,7 +5,6 @@ const { attachErrorCapture, expectNoPageErrors, PAGES } = require('./helpers');
 
 test.describe('animation system', () => {
   test('counters end on the exact authored strings with no extra DOM', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
     await page.goto('/about-us.html');
     await page.locator('.stats-band').scrollIntoViewIfNeeded();
 
@@ -22,7 +21,6 @@ test.describe('animation system', () => {
 
   for (const pageDef of PAGES) {
     test(`${pageDef.file}: h1 reverts to pristine DOM after the char rise`, async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
       const errors = attachErrorCapture(page);
       await page.goto(`/${pageDef.file}`);
 
@@ -39,7 +37,6 @@ test.describe('animation system', () => {
   }
 
   test('vendor libs present and no console errors', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'load set identical everywhere');
     for (const p of PAGES) {
       const errors = attachErrorCapture(page);
       await page.goto(`/${p.file}`);
@@ -92,7 +89,6 @@ test.describe('homepage preloader', () => {
     }, { timeout: 20000 });
 
   test('flight lands pixel-perfect on the header lockup, then cleans up', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'geometry is asserted at desktop scale');
     testInfo.setTimeout(60000);
     const errors = attachErrorCapture(page);
     // Sample the landing INSIDE the page (a CDP round-trip can race the
@@ -394,7 +390,6 @@ test.describe('pinned journey', () => {
   });
 
   test('content below the pin is shifted and reachable', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'geometry asserted at desktop scale');
     testInfo.setTimeout(90000);
     await page.goto(HOME, { waitUntil: 'networkidle' });
     await page.waitForSelector('#cap-journey', { timeout: 20000 });
@@ -426,7 +421,6 @@ test.describe('reduced motion', () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } });
 
   test('no Lenis, counters static, hero instantly visible', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
     await page.goto('/about-us.html');
     await page.waitForTimeout(400);
 
@@ -509,7 +503,6 @@ test.describe('portfolio counter-scroll columns', () => {
   const CARD_R = '.fig-asset-016a31a2601bd9e3'; // right column
 
   test('columns move oppositely and the motion reverses across centre', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
     await page.goto(HOME, { waitUntil: 'networkidle' });
@@ -559,7 +552,6 @@ test.describe('portfolio counter-scroll columns', () => {
   });
 
   test('reduced motion: cards carry no counter-scroll transform', async ({ browser }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
     testInfo.setTimeout(90000);
     const ctx = await browser.newContext({
       reducedMotion: 'reduce',
@@ -590,7 +582,6 @@ test.describe('footer reveal replays', () => {
   const HOME = '/index.html';
 
   test('choreography retracts off-screen and replays on the next visit', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'behavior is viewport-independent');
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
     await page.goto(HOME, { waitUntil: 'networkidle' });
