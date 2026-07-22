@@ -525,6 +525,116 @@ a {
   }
 }
 
+/* ---------- Stats · Flip-card variant (About Us) ----------
+   Continues the canvas hero: the red band becomes flip cards on the warm
+   ground. Front shows the figure; hovering / focusing a card flips it in 3D
+   to reveal the caption on a crimson back.
+
+   The dl/dd/dt semantics are preserved exactly — dd is the figure (with the
+   count-up + zero child elements the tests assert), dt is the caption — so
+   screen readers still read each as a definition pair regardless of the
+   visual flip, and the exact-text assertions still hold. */
+.stats-band--flip {
+  background: #f4f1ec;
+  color: var(--cap-black);
+  padding-block: clamp(8px, 3vw, 40px) clamp(56px, 8vw, 104px);
+}
+.stats-band--flip .stat-flips {
+  perspective: 1400px;
+}
+.stats-band--flip .flip-card {
+  position: relative;
+  height: 210px;
+  border-left: 0;          /* drop the inherited inverse hairline */
+  padding-left: 0;
+  display: block;
+  border-radius: 20px;
+  outline-offset: 4px;
+}
+.stats-band--flip .flip-card:focus-visible {
+  outline: 2px solid var(--cap-red);
+}
+.stats-band--flip .flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.stats-band--flip .flip-card:hover .flip-inner,
+.stats-band--flip .flip-card:focus-within .flip-inner {
+  transform: rotateY(180deg);
+}
+.stats-band--flip .flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 30px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.stats-band--flip .flip-front {
+  background: var(--cap-white);
+  border: 1px solid var(--cap-hairline);
+  box-shadow: 0 16px 40px rgba(209, 32, 47, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.stats-band--flip .flip-back {
+  transform: rotateY(180deg);
+  color: var(--cap-white);
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  box-shadow: 0 22px 50px rgba(209, 32, 47, 0.28);
+}
+.stats-band--flip .flip-tag {
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+}
+.stats-band--flip .flip-front .stat-number {
+  order: 0;
+  margin: 0;
+  color: var(--cap-black);
+  line-height: 0.95;
+}
+.stats-band--flip .flip-back .stat-caption {
+  order: 0;
+  margin: 0;
+  color: var(--cap-white);
+  font-weight: 500;
+}
+
+/* Reduced motion / no 3D support fallback: no flip. Both faces sit in normal
+   flow, stacked, so the figure AND its caption are visible without any hover.
+   Mirrors how the reveal engine shows counters statically under reduce. */
+@media (prefers-reduced-motion: reduce) {
+  .stats-band--flip .flip-card {
+    height: auto;
+  }
+  .stats-band--flip .flip-inner {
+    transform: none !important;
+    transition: none;
+  }
+  .stats-band--flip .flip-face {
+    position: static;
+    inset: auto;
+    backface-visibility: visible;
+    transform: none;
+    box-shadow: none;
+  }
+  .stats-band--flip .flip-front {
+    border-radius: 20px 20px 0 0;
+    border-bottom: 0;
+  }
+  .stats-band--flip .flip-back {
+    border-radius: 0 0 20px 20px;
+  }
+}
+
 /* ---------- Editorial item lists (Cappella Edge, What We Do, Team) ---------- */
 .item-list {
   display: grid;
