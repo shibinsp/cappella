@@ -1244,11 +1244,12 @@ class Component extends DCLogic {
       // the Figma design deliberately has no horizontal on that row, see the
       // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
       //
-      // Client 2026-07-23: keep the original per-column fan directions (JGI
-      // was briefly flipped upLeft to mirror Figma's "Rectangle 126", then
-      // reverted the same day — the complaint was the fade quality, not the
-      // orientation; see the GRAD ease-out stops below).
-      { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
+      // Client 2026-07-23: JGI joins the mirror set with the others — same
+      // footprint left of its logo, fade angle symmetric with the upLeft
+      // wedges. (It was briefly flipped upLeft across the rail to match
+      // Figma's "Rectangle 126", then reverted the same day — the complaint
+      // was fade quality, not which side of the rail it sits on.)
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upRightMirror', dx: -226, dy: 70 },  // JGI — left of logo, tip (726, 9169)
       { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRightMirror', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
