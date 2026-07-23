@@ -829,6 +829,23 @@ a {
   max-width: 70ch;
   margin-top: clamp(22px, 3vw, 32px);
 }
+/* Client image batch 2026-07-23: the SKOLEN cutaway render sits beside the
+   band copy at desktop, below it on mobile. */
+.section--skolen .skolen-band-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 48px);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .section--skolen .skolen-band-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+.skolen-cutaway {
+  width: 100%;
+  border-radius: 18px;
+}
 /* Card lifts up over the band's lower padding. */
 .section--skolen .skolen-cardwrap {
   margin-top: clamp(-104px, -9vw, -72px);
@@ -854,6 +871,13 @@ a {
   border-radius: 18px;
   box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.45);
   padding: clamp(22px, 2.6vw, 34px);
+}
+.skolen-module__img {
+  width: 100%;
+  aspect-ratio: 1408 / 768;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: clamp(16px, 1.8vw, 22px);
 }
 .skolen-module__name {
   font-size: clamp(17px, 1.5vw, 22px);
