@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Cappella — Contact page
+   [BEHAVIOR] Registered Office address, mailto CTA, Leaflet map embed
+   [PURPOSE]  Contact-only sections
+   Split from shared/site.css 2026-07-23 — block order preserved; every
+   page loads shared/css/shell.css first, then its own file.
+   ========================================================================== */
+
+/* ---------- Contact CTA ---------- */
+.contact-cta {
+  position: relative;
+  display: inline-block;
+  color: var(--cap-red);
+  font-size: clamp(26px, 3.5vw, 52px);
+  font-weight: 600;
+  line-height: 1.15;
+  padding-bottom: 6px;
+}
+
+/* Underline as a pseudo-element so it can wipe in on reveal; base state is
+   fully drawn (JS-off / reduced-motion identical to the old border). */
+.contact-cta::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--cap-red);
+  transform-origin: left;
+}
+
+.contact-cta:hover {
+  color: var(--cap-red-hover);
+}
+
+.contact-cta:hover::after {
+  background: var(--cap-red-hover);
+}
+
+address {
+  font-style: normal;
+}
+
+.address-block {
+  /* Client 2026-07-23: "text should be smaller" — the address was on the
+     same display scale as the mailto CTA beside it; it now uses the
+     body-copy ramp as secondary information. */
+  font-size: clamp(17px, 1.67vw, 24px);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.map-embed {
+  margin-top: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--cap-hairline);
+}
+
+/* Leaflet map (contact page), full colour. Leaflet is vendored locally
+   (components/vendor/leaflet.*) — no third-party embed to fail — over
+   OpenStreetMap tiles. The crimson brand pin marks the office. */
+#cap-map {
+  height: clamp(320px, 42vw, 520px);
+  background: #e9e4dd;
+}
+
+.cap-pin {
+  filter: drop-shadow(0 6px 10px rgba(209, 32, 47, 0.5));
+}
+
+.map-actions {
+  margin-top: clamp(16px, 2.4vw, 26px);
+}
+
+/* Get Directions — a compact underlined crimson link (its own class so it
+   stays distinct from the page's primary mailto .contact-cta). */
+.map-cta {
+  display: inline-block;
+  color: var(--cap-red);
+  font-size: clamp(15px, 1.6vw, 19px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding-bottom: 5px;
+  border-bottom: 2px solid var(--cap-red);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.map-cta:hover {
+  color: var(--cap-red-hover);
+  border-color: var(--cap-red-hover);
+}
+
