@@ -1222,7 +1222,12 @@ class Component extends DCLogic {
     const CELLS = [
       { asset: 'fig-asset-91ee4f07ef1ea5a8', fan: 'upLeft',  dx: 358, dy: 56 },   // CRIMSON — right of logo, tip (451, 9446)
       { asset: 'fig-asset-1e639ffbc0aca215', fan: 'upLeft',  dx: 381, dy: 44 },   // MERAKI  — right of logo, tip (726, 9818)
-      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRight', dx: -140, dy: 73 },  // ISP     — left of logo,  tip (451, 9446)
+
+      // Client 2026-07-23: ISP's wedge should read as CRIMSON's mirror image
+      // (they share the same rail intersection). upRight is a 90-degree
+      // ROTATION — its fade runs at a visibly different angle — so ISP gets
+      // the dedicated mirrored form instead.
+      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRightMirror', dx: -140, dy: 73 },  // ISP — left of logo, tip (451, 9446)
       { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRight', dx: -157, dy: 47 },  // TSUS    — left of logo,  tip (726, 9818)
 
       // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
@@ -1290,7 +1295,13 @@ class Component extends DCLogic {
     // local bottom.
     const FORM = {
       upLeft:  { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
-      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' }
+      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' },
+      // 1,0,0,-1 is a vertical flip: the exact horizontal mirror of the
+      // upLeft wedge, opening right of its tip. Unlike upRight (a rotation,
+      // whose fade runs at a rotated angle), this keeps the fade angle
+      // symmetric with upLeft across the shared rail. Local +x stays screen
+      // +x, so hiding from local right reveals out of the tip, like upLeft.
+      upRightMirror: { matrix: 'matrix(1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' }
     };
 
     found.forEach(({ c, el }) => {
@@ -1329,6 +1340,8 @@ class Component extends DCLogic {
       const W = 118.514, H = 119.995;
       const wedgeBox = c.fan === 'upRight'
         ? { x0: c.dx,     x1: c.dx + H, y0: c.dy - W, y1: c.dy }   // matrix(0,-1,1,0): local h lies along screen x
+        : c.fan === 'upRightMirror'
+        ? { x0: c.dx,     x1: c.dx + W, y0: c.dy - H, y1: c.dy }   // matrix(1,0,0,-1): box up-right of tip
         : { x0: c.dx - W, x1: c.dx,     y0: c.dy - H, y1: c.dy };  // matrix(-1,0,0,-1): box up-left of tip
       const padX = Math.min(0, wedgeBox.x0);
       const padY = Math.min(0, wedgeBox.y0);
