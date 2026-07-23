@@ -1321,11 +1321,22 @@ class Component extends DCLogic {
       // Inner element carries the paint and the reveal, so the animation
       // never fights the positioning matrix. Clipping from the tip outward is
       // what makes it read as being drawn along the rule it sits on.
+      // Client 2026-07-23: "small missing fade" — the gradient's zero-line
+      // exits the 118.5px box geometrically (it would reach zero at ~149px),
+      // so ~5% red was still present at the box's far edge and cut off as a
+      // hard vertical line. The Figma render completes its fade exactly at
+      // the box corner. Feather the far edge (local x=W — the cut edge for
+      // both live forms: screen-left for upLeft, screen-right for the
+      // mirror) with a mask so the tail fades out inside the box instead of
+      // clipping. The tip edge (local x=0, resting on the rail) stays crisp.
+      const EDGE_FEATHER = 'linear-gradient(90deg, #000 80%, rgba(0,0,0,0) 100%)';
       const ink = document.createElement('div');
       ink.style.cssText =
         'width:118.514px; height:119.995px; transform-origin:0 0;' +
         'clip-path:' + form.hidden + ';' +
         'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
+        '-webkit-mask-image:' + EDGE_FEATHER + ';' +
+        'mask-image:' + EDGE_FEATHER + ';' +
         'background:' + GRAD + ';';
       anchor.appendChild(ink);
       el.appendChild(anchor);
