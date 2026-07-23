@@ -86,38 +86,45 @@ test.describe('about-us.html', () => {
     }
   });
 
-  test('SKOLEN — paragraph and module table with exact Indian digit grouping', async ({ page }) => {
+  test('SKOLEN — paragraph and module cards with exact Indian digit grouping', async ({ page }) => {
+    // Client 2026-07-23: the modules table became one card per module, and
+    // the tagline dropped its Space Mono face for the shared Montserrat.
     await page.goto('/about-us.html');
     const section = page.locator('section', { has: page.locator('#skolen') });
 
     await expect(section).toContainText('Greenfield, modular school infrastructure');
+    const taglineFont = await section
+      .locator('.skolen-tagline')
+      .evaluate((el) => getComputedStyle(el).fontFamily);
+    expect(taglineFont).not.toMatch(/Space Mono/);
+
     await expect(section).toContainText(
       'SKOLEN rethinks this approach with standardised, pre-designed campuses that meet the needs of the vast majority of K-12 operators and can be operational without the extended timelines of traditional builds.'
     );
 
-    const wrapper = section.locator('.table-scroll');
-    await expect(wrapper).toHaveAttribute('tabindex', '0');
-    await expect(wrapper).toHaveAttribute('role', 'region');
-    await expect(section.locator('caption')).toHaveText('SKOLEN Modules');
+    await expect(section.locator('.skolen-modules-title')).toHaveText('SKOLEN Modules');
+    const cards = section.locator('.skolen-module');
+    await expect(cards).toHaveCount(3);
 
-    // 4 column headers + 3 row headers
-    await expect(section.locator('thead th[scope="col"]')).toHaveCount(4);
-    await expect(section.locator('tbody th[scope="row"]')).toHaveCount(3);
-
-    // Exact cell strings — tripwire against digit-grouping "fixes"
-    const rows = section.locator('tbody tr');
-    await expect(rows.nth(0)).toContainText('SKOLEN 1-Acre');
-    await expect(rows.nth(0)).toContainText('1 acre');
-    await expect(rows.nth(0)).toContainText('70,000–75,000 sq ft');
-    await expect(rows.nth(0)).toContainText('900–1,100');
-    await expect(rows.nth(1)).toContainText('SKOLEN 2-Acre');
-    await expect(rows.nth(1)).toContainText('2 acres');
-    await expect(rows.nth(1)).toContainText('1,40,000–1,50,000 sq ft');
-    await expect(rows.nth(1)).toContainText('2,000–2,200');
-    await expect(rows.nth(2)).toContainText('SKOLEN 3-Acre');
-    await expect(rows.nth(2)).toContainText('3 acres');
-    await expect(rows.nth(2)).toContainText('2,80,000–3,00,000 sq ft');
-    await expect(rows.nth(2)).toContainText('3,000–3,300');
+    // Exact strings per card — tripwire against digit-grouping "fixes"
+    const MODULES = [
+      ['SKOLEN 1-Acre', '1 acre', '70,000–75,000 sq ft', '900–1,100'],
+      ['SKOLEN 2-Acre', '2 acres', '1,40,000–1,50,000 sq ft', '2,000–2,200'],
+      ['SKOLEN 3-Acre', '3 acres', '2,80,000–3,00,000 sq ft', '3,000–3,300']
+    ];
+    for (let i = 0; i < MODULES.length; i++) {
+      const [name, land, bua, capacity] = MODULES[i];
+      const card = cards.nth(i);
+      await expect(card.locator('.skolen-module__name')).toHaveText(name);
+      const labels = card.locator('dt');
+      await expect(labels.nth(0)).toHaveText('Land');
+      await expect(labels.nth(1)).toHaveText('Built-up Area');
+      await expect(labels.nth(2)).toHaveText('Capacity');
+      const values = card.locator('dd');
+      await expect(values.nth(0)).toHaveText(land);
+      await expect(values.nth(1)).toHaveText(bua);
+      await expect(values.nth(2)).toHaveText(capacity);
+    }
   });
 
   test('full-page screenshot', async ({ page }, testInfo) => {
