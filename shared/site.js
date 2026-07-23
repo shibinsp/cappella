@@ -4,7 +4,20 @@
    variant scroll-reveal engine, SplitType hero text (split → animate →
    revert), the About stat count-up, the nav scramble hover, and the mobile
    slide-in menu. Every system honours prefers-reduced-motion; every vendor
-   lib is optional (typeof-guarded) so a failed load degrades gracefully. */
+   lib is optional (typeof-guarded) so a failed load degrades gracefully.
+
+   STRUCTURE — shared shell behaviors (pages: about, team, contact, projects)
+     1. Lenis smooth scrolling        [chrome]   momentum scroll
+     2. Mobile menu                   [chrome]   slide-in panel + backdrop
+     3. Page enter                    [chrome]   header fade-down once
+     4. Stat count-up                 [about]    rAF text tween on stats
+     5. Variant dispatch helpers      [reveals]  stagger delays, footer formula
+     6. Reveal engine                 [reveals]  IntersectionObserver, .is-in
+     7. Hero text                     [reveals]  SplitType masked rises
+     8. Nav scramble hover            [chrome]   homepage-signature scramble
+     9. Tilt cards                    [about/team] pointer 3D tilt + modal
+   Page-specific code lives in shared/js/<page>.js; homepage logic is the
+   inline data-dc-script in index.html (DC runtime requires it inline). */
 (function () {
   'use strict';
 

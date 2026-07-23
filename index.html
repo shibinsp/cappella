@@ -120,6 +120,29 @@ const capVH = () => {
   return _capVH;
 };
 class Component extends DCLogic {
+  /* ================================================================
+     STRUCTURE — homepage logic, grouped by page section (top to
+     bottom of the page). Method order in a class body has no runtime
+     meaning; execution order is fixed inside componentDidMount.
+     NOTE: this class MUST stay inline — support.js (the DC runtime)
+     loads it from <script data-dc-script>.textContent.
+       BOOT & FRAME SHIFTS: componentDidMount
+       PRELOADER & HERO: _setupPreloader, _setupHeroIntro, _setupHeroTitle, _setupHeroZoom, _setupSplitText
+       STATS BAND: _setupBandGrid, _setupStatCounters, _setupReveal, _setupDotGrid
+       JOURNEY: _setupJourneyBand, _setupJourneyPinned
+       PORTFOLIO: _setupPortfolioInteraction
+       OPERATORS: _setupOperatorsGridStitch, _setupOperatorTriangles
+       EDGE: _setupEdgeImageCut, _setupAccordion
+       FOOTER: _setupFooterAnimations
+       PAGE CHROME: _setupMenuOverlay, _setupNavScramble, _setupScrollProgress, _setupMagneticBtn, _setupGrain, _setupMetaLabels, _setupScrollReveals
+       LIFECYCLE: componentWillUnmount, renderVals
+     ================================================================ */
+
+  /* ================================================================
+     [SECTION]  BOOT & FRAME SHIFTS
+     [BEHAVIOR] Runs first; owns the +260 band shift, adjustFooter, the hydration MutationObserver and viewport fitting
+     ================================================================ */
+
   componentDidMount() {
     const FRAME_W = 1440, FRAME_H = 7472;
 
@@ -495,28 +518,556 @@ class Component extends DCLogic {
     this._t5 = setTimeout(() => this._setupHeroTitle(), 250);
   }
 
-  _setupEdgeImageCut() {
-    // Client: 45px gap below The Cappella Edge image, to match the white space
-    // above it. The image ran flush into
-    // the next section — its bottom sat at frame-y 3125 and the journey pin
-    // starts at 3124.7, a 0.3px overlap. Trim the image instead of moving
-    // anything, so every neighbour keeps its baked coordinates.
-    const scaler = document.getElementById('cap-scaler');
-    const img = scaler && scaler.querySelector('.fig-asset-63186349250e044c-069f3173');
-    if (!img) {
-      if ((this._eicTries = (this._eicTries || 0) + 1) < 40) setTimeout(() => this._setupEdgeImageCut(), 250);
+  /* ================================================================
+     [SECTION]  PRELOADER & HERO
+     [BEHAVIOR] Red curtain preloader, hero title char reveal, hero zoom, split-text lines
+     ================================================================ */
+
+  _setupPreloader() {
+    // --- OCI-style sequential loader ---
+    // Reserve the vertical scrollbar gutter permanently: the page always
+    // scrolls once loaded, but during the preloader the scrollbar would
+    // otherwise TOGGLE as content height settles — shifting the centered
+    // lockup's layout box mid-flight and spoiling the landing.
+    // (scrollbar-gutter, unlike overflow-y:scroll, reserves the space
+    // without making the viewport scrollable early — which would break the
+    // browser's scroll restoration on refresh.)
+    document.documentElement.style.scrollbarGutter = 'stable';
+    document.documentElement.classList.add('cap-scroll-locked');
+
+    // Full-screen red background
+    const preloader = document.createElement('div');
+    preloader.style.cssText =
+      'position:fixed; inset:0; background:rgb(209,32,47); z-index:9999;' +
+      // Exit is a TRAVELING diagonal fade — the panel never moves. A 3×-
+      // viewport gradient mask (transparent toward the top-right, opaque
+      // toward the bottom-left, wide soft feather between) slides diagonally
+      // via mask-position, so every region fades exactly as the band passes
+      // it: the dissolve visibly sweeps right → left the whole second. The
+      // late opacity fade is a safety net for the final state.
+      'transition:mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
+      '-webkit-mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
+      'opacity 0.4s ease 0.7s;' +
+      'mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
+      '-webkit-mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
+      'mask-size:300% 300%; -webkit-mask-size:300% 300%;' +
+      'mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat;' +
+      'mask-position:0% 100%; -webkit-mask-position:0% 100%;' +
+      'will-change:mask-position, opacity;';
+    document.body.appendChild(preloader);
+
+    // Hide the actual header logo on page initially so we don't see double.
+    // The wordmark lives in the async Figma bundle and can render AFTER the
+    // preloader has already exited (slow/hard refresh) — in that case show it
+    // immediately instead of hiding it forever.
+    let preloaderFinished = false;
+    const hideHeaderWordmark = () => {
+      const el = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+      if (!el) {
+        setTimeout(hideHeaderWordmark, 50);
+        return;
+      }
+      el.style.transition = 'opacity 0.25s ease';
+
+      // (No separate C icon in the header — the wordmark stands alone at
+      // its baked Figma position.)
+      if (preloaderFinished) {
+        el.style.opacity = '1';
+      } else {
+        el.style.opacity = '0';
+      }
+    };
+    hideHeaderWordmark();
+
+    // --- Center logo content ---
+    const centerWrap = document.createElement('div');
+    centerWrap.style.cssText =
+      'position:fixed; inset:0; z-index:10000; pointer-events:none;' +
+      'display:flex; flex-direction:column; align-items:center; justify-content:center;';
+    document.body.appendChild(centerWrap);
+
+    const logoImg = document.createElement('img');
+    logoImg.src = './components/assets/eae7f9bdb03982f5.png';
+    logoImg.style.cssText =
+      'width:90px; height:auto; opacity:0; transform:scale(0.7);' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
+      'filter:brightness(0) invert(1);'; // Make it white on red
+    centerWrap.appendChild(logoImg);
+
+    const nameImg = document.createElement('img');
+    nameImg.src = './components/assets/7cb777f5a65019d1.png';
+    nameImg.style.cssText =
+      'width:160px; height:auto; margin-top:18px; opacity:0;' +
+      'transform:translateY(12px);' +
+      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
+      'filter:brightness(0) invert(1);'; // White on red
+    centerWrap.appendChild(nameImg);
+
+    // === Reduced motion: brand moment without the choreography ===
+    // Curtain + lockup appear instantly, hold briefly, then the whole
+    // preloader fades out. No pop, no flight, no curtain slide.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      logoImg.style.transition = 'none';
+      nameImg.style.transition = 'none';
+      logoImg.style.opacity = '1';
+      logoImg.style.transform = 'none';
+      nameImg.style.opacity = '1';
+      nameImg.style.transform = 'none';
+      setTimeout(() => {
+        preloaderFinished = true;
+        this._preloaderDone = true;
+        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
+        document.documentElement.classList.remove('cap-scroll-locked');
+        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+        if (wm) wm.style.opacity = '1';
+        preloader.style.transition = 'opacity 0.4s ease';
+        centerWrap.style.transition = 'opacity 0.4s ease';
+        preloader.style.opacity = '0';
+        centerWrap.style.opacity = '0';
+        setTimeout(() => {
+          centerWrap.remove();
+          preloader.remove();
+        }, 450);
+      }, 700);
       return;
     }
-    const BAKED_H = 668, CUT = 45;
-    // background-size's height is '100%' in fig-assets.css, i.e. the photo
-    // stretches to whatever the box height is — shrinking the box alone would
-    // squash it ~1.5% rather than cut it. Pin the photo to its baked height so
-    // the shorter box CLIPS it, and anchor to the top (was 50%) so the whole
-    // 10px comes off the bottom instead of 5px at each end.
-    img.style.height = (BAKED_H - CUT) + 'px';
-    img.style.backgroundSize = '147.178% ' + BAKED_H + 'px';
-    img.style.backgroundPosition = '0.016% 0%';
+
+    // === Sequential timing (no crosshair lines, no circles) ===
+    // Step 1: Logo icon pops in (200ms)
+    setTimeout(() => {
+      logoImg.style.opacity = '1';
+      logoImg.style.transform = 'scale(1)';
+    }, 200);
+
+    // Step 2: Name text slides up (400ms)
+    setTimeout(() => {
+      nameImg.style.opacity = '1';
+      nameImg.style.transform = 'translateY(0)';
+    }, 400);
+
+    // Step 3: Exit (1100ms) — the red curtain wipes away diagonally (top-
+    // right → bottom-left) with a fade while the centered lockup flies to
+    // the header and CROSSFADES into the real one.
+    // If the async frame hasn't hydrated the header targets yet, hold the
+    // curtain briefly (up to 500ms in 50ms steps) — a flight into the real
+    // header beats the fade fallback whenever it's achievable.
+    const beginExit = (retries) => {
+      const headerWordmark = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+      if (!headerWordmark && window.scrollY <= 80 && retries > 0) {
+        setTimeout(() => beginExit(retries - 1), 50);
+        return;
+      }
+      document.documentElement.classList.remove('cap-scroll-locked');
+
+      // Refresh mid-page: browsers restore the scroll position, so the header
+      // targets sit thousands of px above the viewport — a flight would shoot
+      // the lockup off-screen. Fade it out in place instead and show the
+      // header (via preloaderFinished) for when the user scrolls back up.
+      const scrolledAway = window.scrollY > 80;
+
+      if (scrolledAway || !headerWordmark) {
+        preloaderFinished = true;
+        const exitEase =
+          'transform 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.35s ease, filter 0.4s ease';
+        logoImg.style.transition = exitEase;
+        nameImg.style.transition = exitEase;
+        logoImg.style.transform = 'translateY(-14px)';
+        nameImg.style.transform = 'translateY(-14px)';
+        logoImg.style.opacity = '0';
+        nameImg.style.opacity = '0';
+        // Release the invert as the curtain fades under the lockup.
+        logoImg.style.filter = 'none';
+        nameImg.style.filter = 'none';
+      } else {
+        // --- Exact FLIP: pivot both images at their top-left corner so the
+        // corner-to-corner deltas ARE the transform (the previous version
+        // scaled about the center, landing ~25–30px off target). Origins are
+        // switched while the transforms are identity, so nothing jumps.
+        logoImg.style.transformOrigin = '0 0';
+        nameImg.style.transformOrigin = '0 0';
+
+        // Neutralize any still-running entrance transition first: on slow
+        // loads the wordmark can be mid-rise (translateY residual) at exit
+        // time, and measuring that interpolated box would bake the residual
+        // into the landing. All of this happens before the next paint, so
+        // the snap to identity is never visible.
+        nameImg.style.transition = 'none';
+        nameImg.style.transform = 'none';
+        nameImg.style.opacity = '1';
+        logoImg.style.transition = 'none';
+        logoImg.style.transform = 'none';
+        logoImg.style.opacity = '1';
+
+        // Force the post-overflow-reset reflow, then measure and launch
+        // synchronously (an rAF here would stall in throttled/occluded
+        // renderers, freezing the lockup mid-screen). The scrollbar gutter
+        // is reserved permanently, so these rects are layout-stable.
+        void document.body.offsetHeight;
+        {
+          const nameRect = nameImg.getBoundingClientRect();
+          const wordmarkRect = headerWordmark.getBoundingClientRect();
+          // Debug/E2E hook: the exact pre-flight base box this flight was
+          // computed from (tests validate the landing without racing the
+          // animation timeline).
+          window.__capPreFlight = { x: nameRect.left, y: nameRect.top, w: nameRect.width, h: nameRect.height };
+          // Width-matched scale + top-left alignment: the CAPPELLA row of the
+          // full PNG lands exactly over the header crop; the tagline below it
+          // dissolves in the crossfade.
+          const nameScale = wordmarkRect.width / nameRect.width;
+          const nameTx = wordmarkRect.left - nameRect.left;
+          const nameTy = wordmarkRect.top - nameRect.top;
+
+          // The curtain fades during the flight, so release the white-on-red
+          // invert filter in step — the wordmark darkens to its natural color
+          // as the page lightens underneath (never white-on-white).
+          nameImg.style.transition =
+            'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.3s ease, filter 0.5s ease';
+          nameImg.style.transform = `translate(${nameTx}px, ${nameTy}px) scale(${nameScale})`;
+          nameImg.style.filter = 'none';
+
+          // No C icon lives in the header — the centered icon rises out and
+          // fades while the wordmark makes the flight alone.
+          logoImg.style.transition =
+            'transform 0.6s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease, filter 0.5s ease';
+          logoImg.style.transform = 'translateY(-40px) scale(0.85)';
+          logoImg.style.opacity = '0';
+          logoImg.style.filter = 'none';
+
+          // Crossfade handoff at 600ms — and RE-TARGET: the scaler's fit/font
+          // timers can reflow the header during the flight, drifting the
+          // targets a few px. The flown pair's untransformed boxes are stable
+          // (fixed overlay), so recompute against the targets' CURRENT rects
+          // and glide the final stretch into the exact fresh position while
+          // the real lockup fades in underneath.
+          setTimeout(() => {
+            const wmNow = headerWordmark.getBoundingClientRect();
+            const glide = 'transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease';
+
+            nameImg.style.transition = glide;
+            nameImg.style.transform =
+              `translate(${wmNow.left - nameRect.left}px, ${wmNow.top - nameRect.top}px) ` +
+              `scale(${wmNow.width / nameRect.width})`;
+
+            headerWordmark.style.opacity = '1';
+            nameImg.style.opacity = '0';
+          }, 600);
+        }
+      }
+
+      // Diagonal traveling fade: sliding the mask from its opaque bottom-left
+      // corner to its transparent top-right corner sweeps the feathered
+      // dissolve band across the screen from the top-RIGHT corner to the
+      // bottom-LEFT. The mask moves; the panel itself stays put (a moving
+      // diagonal panel previously exposed a broken-looking corner strip).
+      preloader.style.maskPosition = '100% 0%';
+      preloader.style.webkitMaskPosition = '100% 0%';
+      preloader.style.opacity = '0';
+
+      // Clean up and restore header logo opacity when preloader completes.
+      // Re-query instead of using the refs captured at 1100ms — on slow loads
+      // the wordmark renders late and those refs are null (the retry loop in
+      // hideHeaderWordmark then handles showing it via preloaderFinished).
+      setTimeout(() => {
+        preloaderFinished = true;
+        // Curtain has cleared — now let the hero title reveal in frame.
+        this._preloaderDone = true;
+        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
+        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
+        if (wm) wm.style.opacity = '1';
+        centerWrap.remove();
+        preloader.remove();
+      }, 1080); // after the 600ms retarget + 350ms glide settle
+    };
+    setTimeout(() => beginExit(10), 1100);
   }
+
+  _setupHeroIntro() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // 1. VERTICAL GRID LINES REVEAL (scales scaleX from 0 to 1 for rotated 90deg SVGs)
+    const svgs = [...scaler.querySelectorAll('svg')].filter(el => {
+      const transform = el.style.transform || '';
+      if (!(transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0'))) return false;
+      // Rotated svgs are positioned by the matrix ty, NOT style.top — the
+      // old `style.top || 0` default adopted the portfolio's red rail lines
+      // (3,700px down the page) and the appended scaleX then broke the
+      // journey band's anchored matrix shift, stranding them off-position.
+      const mm = transform.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*[-\d.]+,\s*([-\d.]+)\)/);
+      const y = mm ? parseFloat(mm[1]) : (parseFloat(el.style.top) || 0);
+      return y <= 1000;
+    });
+
+    svgs.forEach((el, idx) => {
+      const originalTransform = el.style.transform || '';
+      el.style.transformOrigin = '0 0';
+      el.style.transform = originalTransform + ' scaleX(0)';
+      el.style.transition = 'transform 1.6s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      setTimeout(() => {
+        el.style.transform = originalTransform + ' scaleX(1)';
+      }, 100 + idx * 80);
+    });
+
+    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL (hero region only)
+    // Position must come from the RENDERED rect: nested spans (e.g. the
+    // "$500" / "16 Assets" stats) carry no inline top, and the old
+    // `style.top || 0` default let them into the hero filter — their
+    // word-wrap containers (inline-block, overflow:hidden, va:bottom,
+    // margin-right .22em) then broke the odometer baseline and tracking.
+    const scRectHero = scaler.getBoundingClientRect();
+    const mHero = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+    const sHero = mHero ? parseFloat(mHero[1]) : 1;
+    const headings = [...scaler.querySelectorAll('span, p, h1, h2, h3')].filter(el => {
+      const r = el.getBoundingClientRect();
+      const top = r.height ? (r.top - scRectHero.top) / sHero : (parseFloat(el.style.top) || 0);
+      if (top > 850) return false;
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      const txt = (el.textContent || '').trim();
+      return fontSize >= 24 && txt.length > 3 && !el.querySelector('*') && txt !== 'CAPPELLA';
+    });
+
+    headings.forEach((el) => {
+      const originalText = el.textContent || '';
+      el.innerHTML = '';
+      
+      const words = originalText.split(/\s+/);
+      const wordSpans = words.map(word => {
+        const charSpans = word.split('').map(char => {
+          const s = document.createElement('span');
+          s.textContent = char;
+          s.style.display = 'inline-block';
+          s.style.opacity = '0';
+          s.style.transform = 'translateY(110%)';
+          s.style.transition = 'transform 0.8s cubic-bezier(0.215, 0.61, 0.355, 1), opacity 0.8s ease';
+          return s;
+        });
+        
+        const wordContainer = document.createElement('span');
+        wordContainer.style.display = 'inline-block';
+        wordContainer.style.overflow = 'hidden';
+        wordContainer.style.whiteSpace = 'nowrap';
+        wordContainer.style.verticalAlign = 'bottom';
+        wordContainer.style.marginRight = '0.22em';
+        
+        charSpans.forEach(cs => wordContainer.appendChild(cs));
+        return { container: wordContainer, chars: charSpans };
+      });
+
+      wordSpans.forEach(ws => el.appendChild(ws.container));
+
+      const allChars = wordSpans.flatMap(ws => ws.chars);
+
+      setTimeout(() => {
+        allChars.forEach((cs, cIdx) => {
+          setTimeout(() => {
+            cs.style.opacity = '1';
+            cs.style.transform = 'translateY(0)';
+          }, cIdx * 20);
+        });
+      }, 250);
+    });
+  }
+
+  _setupHeroTitle() {
+    // The 100px headline ("India's Leading / Edu-Infra Asset / Management
+    // Company") is a single span with <br> children, so the generic char
+    // reveal above skips it (!el.querySelector('*')). Animate it here:
+    // per-line masks, chars rising with a settle rotation, then a
+    // scroll-linked exit where each line drifts up into its mask and fades.
+    const scaler = document.getElementById('cap-scaler');
+    const heroTitle = scaler && [...scaler.querySelectorAll('span')].find(el => {
+      const top = parseFloat(el.style.top) || 0;
+      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
+      return top < 850 && fs >= 90;
+    });
+    if (!heroTitle) {
+      if ((this._htTries = (this._htTries || 0) + 1) < 40) setTimeout(() => this._setupHeroTitle(), 200);
+      return;
+    }
+    if (heroTitle.dataset.capAnimated) return;
+    heroTitle.dataset.capAnimated = '1';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Rebuild the span preserving its <br> line structure
+    const lines = [];
+    let current = [];
+    [...heroTitle.childNodes].forEach(n => {
+      if (n.nodeType === Node.ELEMENT_NODE && n.tagName === 'BR') {
+        lines.push(current.join(' '));
+        current = [];
+      } else if (n.textContent && n.textContent.trim()) {
+        current.push(n.textContent.trim());
+      }
+    });
+    if (current.length) lines.push(current.join(' '));
+    if (!lines.length) return;
+
+    heroTitle.innerHTML = '';
+    const lineEls = lines.map(lineText => {
+      const lineMask = document.createElement('span');
+      // padding-bottom leaves room inside the overflow:hidden clip for glyph
+      // descenders (g, y, p, j…); the matching negative margin cancels the
+      // added height so the 3-line stack keeps its exact spacing.
+      lineMask.style.cssText = 'display:block; overflow:hidden; white-space:nowrap; padding-bottom:0.25em; margin-bottom:-0.25em;';
+      const lineInner = document.createElement('span');
+      lineInner.style.cssText = 'display:block; will-change:transform;';
+      const chars = [];
+      lineText.split(/\s+/).forEach((word, wi, arr) => {
+        const w = document.createElement('span');
+        w.style.cssText = 'display:inline-block; white-space:nowrap;' +
+          (wi < arr.length - 1 ? ' margin-right:0.25em;' : '');
+        word.split('').forEach(ch => {
+          const c = document.createElement('span');
+          c.textContent = ch;
+          c.style.cssText =
+            'display:inline-block; opacity:0;' +
+            'transform:translateY(115%) rotate(6deg); transform-origin:0% 100%;' +
+            'transition: transform 1.05s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease;';
+          w.appendChild(c);
+          chars.push(c);
+        });
+        lineInner.appendChild(w);
+      });
+      lineMask.appendChild(lineInner);
+      heroTitle.appendChild(lineMask);
+      return { lineInner, chars };
+    });
+
+    // Staggered entrance: line by line, chars cascading within each line.
+    // Gated on the preloader actually finishing (the red curtain clearing)
+    // instead of a fixed timer — the curtain wipe runs ~1.1s–2.2s, so a fixed
+    // 1150ms start played the whole reveal behind the curtain and it was gone
+    // by the time the page came into frame. The preloader calls _heroReveal
+    // when it exits; if it already exited we run now, and a safety timeout
+    // guarantees the title is never left hidden.
+    let heroRevealed = false;
+    const runHeroReveal = () => {
+      if (heroRevealed) return;
+      heroRevealed = true;
+      lineEls.forEach((L, li) => {
+        L.chars.forEach((c, ci) => {
+          setTimeout(() => {
+            c.style.opacity = '1';
+            c.style.transform = 'translateY(0) rotate(0deg)';
+          }, li * 140 + ci * 20);
+        });
+      });
+    };
+    if (this._preloaderDone) runHeroReveal();
+    else this._heroReveal = runHeroReveal;
+    setTimeout(runHeroReveal, 3200); // fallback: never leave the title hidden
+
+    // Scroll-linked parallax exit — lower lines leave faster for depth
+    if (window.gsap && window.ScrollTrigger) {
+      lineEls.forEach((L, li) => {
+        window.gsap.to(L.lineInner, {
+          y: -(40 + li * 30),
+          opacity: 0,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: document.getElementById('cap-viewport'),
+            start: 'top top',
+            end: () => '+=' + window.innerHeight * 0.8,
+            scrub: true
+          }
+        });
+      });
+    }
+  }
+
+  _setupHeroZoom() {
+    // 4. Parallax Hero Zoom
+    if (!window.gsap || !window.ScrollTrigger) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+    
+    const heroWrapper = [...scaler.querySelectorAll('div')].find(e => {
+      const style = e.getAttribute('style') || '';
+      return style.includes('width: 1440') && style.includes('height: 830.204');
+    });
+
+    if (heroWrapper) {
+      heroWrapper.style.transformOrigin = '50% 100%'; // Zoom from bottom center slightly
+      window.gsap.to(heroWrapper, {
+        scale: 1.15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: document.body,
+          start: "top top",
+          end: "1200px", // Scroll distance
+          scrub: true
+        }
+      });
+    }
+  }
+
+  _setupSplitText() {
+    // 5. Staggered Line-Split Quote Reveal
+    if (!window.gsap || !window.ScrollTrigger || !window.SplitType) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // Apply to main body paragraphs (the ones used for cap-scroll-reveal)
+    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
+    });
+
+    bodyParas.forEach((el) => {
+      // Clean up previous classes to avoid conflicts
+      el.classList.remove('cap-scroll-reveal');
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+
+      // Use SplitType to split text into lines
+      const split = new window.SplitType(el, { types: 'lines' });
+      
+      // Wrap each line in an overflow hidden mask
+      split.lines.forEach(line => {
+        const wrapper = document.createElement('div');
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.verticalAlign = 'top';
+        wrapper.style.padding = '0';
+        wrapper.style.margin = '0';
+        line.parentNode.insertBefore(wrapper, line);
+        wrapper.appendChild(line);
+        // Initial state for GSAP
+        window.gsap.set(line, { yPercent: 100 });
+      });
+
+      window.ScrollTrigger.create({
+        trigger: el,
+        start: "top 90%",
+        onEnter: () => {
+          window.gsap.to(split.lines, {
+            yPercent: 0,
+            duration: 1.2,
+            ease: "power4.out",
+            stagger: 0.08
+          });
+        }
+      });
+    });
+  }
+
+  /* ================================================================
+     [SECTION]  STATS BAND
+     [BEHAVIOR] Red band rail grid + Edge divider anchor, odometer stat counters, staircase reveal, cursor dot-grid
+     ================================================================ */
 
   _setupBandGrid() {
     // Client ("not fixed"): the stats band's rail grid must run the FULL
@@ -600,291 +1151,212 @@ class Component extends DCLogic {
     }
   }
 
-  _setupOperatorsGridStitch() {
-    // Client feedback: the Lighthouse logo floats free of the operators
-    // hairline grid (the baked design gives every other logo a crossing
-    // line) and sits slightly off the grid axes. Stitch it in:
-    //  - a design-matching hairline across its row, spanning the section's
-    //    two verticals (x 448 → 1019), rendered behind the logos exactly
-    //    like Saint Mary's own dash
-    //  - align the logo to ISP's column axis and Saint Mary's row axis
-    // The hairline is injected with PRE-SHIFT coordinates and no
-    // data-cap-own, so the band shift (+260) and journey delta adopt it
-    // like any baked frame element — correct on every viewport and resize.
+  _setupStatCounters() {
+    // PREMIUM PASS: odometer digit rolls. Every large stat figure (leaf nodes,
+    // >=55px — catches "$500", "135 Acres", "16 Assets", "75 Years+", "10 Years")
+    // rolls each digit through a masked 0-9 column into place.
     const scaler = document.getElementById('cap-scaler');
-    // The segments must live INSIDE the imported frame subtree: both
-    // shiftBelowBand and shiftJourney only walk frameRoot, so a scaler-
-    // level child would never be shifted into place.
-    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
-    const lh = scaler && scaler.querySelector('.fig-asset-55a8dd7666421f70-d65f9521');
-    const sm = scaler && scaler.querySelector('.fig-asset-1ec5ca333db94fc0');
-    const isp = scaler && scaler.querySelector('.fig-asset-620dc3d6704178dd');
-    if (!lh || !sm || !isp || !frameRoot) {
-      if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
-      return;
-    }
-    if (this._opStitchDone) return;
-    this._opStitchDone = true;
+    if (!scaler) return;
 
-    // JGI's logo is a transparent circular PNG, so the x1026 grid vertical
-    // showed through it (the rectangular logos mask crossing lines with
-    // their own white boxes). A white backing makes it mask the line the
-    // same way — invisible against the section's white page.
-    const jgi = scaler.querySelector('.fig-asset-79356d431474ada0');
-    if (jgi) jgi.style.backgroundColor = '#fff';
-
-    // Row axis = Saint Mary's vertical centre, in the post-band-shift
-    // domain the journey bookkeeping stores (jorig = baked + 260).
-    const jorigOf = (el) => parseFloat(el.getAttribute('data-jorig-top') || el.style.top) || 0;
-    const smCenter = jorigOf(sm) + (parseFloat(sm.style.height) || 0) / 2;
-
-    // Align Lighthouse: row axis via jorig (the journey shift re-derives
-    // style.top from it on every pass), column axis via left (untouched by
-    // the shift machinery).
-    const lhH = parseFloat(lh.style.height) || 0;
-    lh.setAttribute('data-jorig-top', String(smCenter - lhH / 2));
-    const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
-    lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
-
-    // (The crossing hairline previously injected at this row was removed
-    // 2026-07-17: the Figma design has no horizontal line at the Lighthouse
-    // row — the grid verticals simply end/gap around it.)
-
-    // Center-column vertical (Figma): runs down the x726 column, gapping
-    // around the LIGHTHOUSE wordmark, then continuing to the footer band.
-    // The baked element for it (the hidden 1581-long svg) got stranded at
-    // the wrong span by the band/journey shifts — rebuild it as two clones
-    // positioned from live geometry, adopted by the shift machinery via
-    // data-jorig-ty (+ data-cap-shifted so shiftBelowBand won't re-shift).
-    const donor = scaler.querySelector('svg[width="1581"]');
-    if (donor && !scaler.querySelector('[data-cap-centerline]')) {
-      const srect = scaler.getBoundingClientRect();
-      const mSc = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
-      const sc2 = mSc ? parseFloat(mSc[1]) : 1;
-      const cvTop = (el) => (el.getBoundingClientRect().top - srect.top) / sc2;
-      const cvBottom = (el) => (el.getBoundingClientRect().bottom - srect.top) / sc2;
-      const band = scaler.querySelector('[data-original-top="7352"]');
-      const jd = this._jDelta || 0;
-      const mkSeg = (topY, bottomY) => {
-        const len = bottomY - topY;
-        if (len <= 10) return;
-        const el = donor.cloneNode(true);
-        el.setAttribute('data-cap-centerline', '1');
-        el.setAttribute('data-cap-shifted', '1');
-        el.setAttribute('data-jorig-ty', String(bottomY - jd));
-        el.style.display = '';
-        el.style.transform = 'matrix(0, -1, 1, 0, 726, ' + bottomY.toFixed(1) + ') scaleX(' + (len / 1581).toFixed(5) + ')';
-        donor.parentElement.appendChild(el);
-      };
-      if (band) {
-        mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
-        mkSeg(cvBottom(lh) + 18, cvTop(band));
+    // Hide the baked "135 Acres / Total Land Area" and "75 Years" stats:
+    // both are replaced by the white #cap-135 / #cap-75 blocks (the baked
+    // copies' inherited color renders black in some browsers, and they'd
+    // sit inside the relocated staircase zone).
+    [...scaler.querySelectorAll('span, div')].forEach(el => {
+      if (el.closest('#cap-135') || el.closest('#cap-75')) return;
+      const top = parseFloat(el.style.top) || 0;
+      if (top < 1700 || top > 2200) return;
+      const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
+      if (t === 'Total Land Area' || t === 'Leadership Experience' ||
+          (/Acres$/.test(t) && parseFloat(el.style.left) < 400) ||
+          (/Years\+?$/.test(t) && parseFloat(el.style.left) > 600)) {
+        el.style.display = 'none';
       }
-    }
-    if (this._runAdjust) this._runAdjust();
+    });
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Natural glyph widths per element font (canvas measureText): the digit
+    // masks are sized to their OWN digit's width so a stat renders exactly
+    // as wide as the plain text would (a column's widest-digit width used to
+    // pad "1"s and squeeze "0"s, stretching stats past the Figma tracking).
+    const measCtx = document.createElement('canvas').getContext('2d');
+    const naturalW = (el, text) => {
+      const cs = window.getComputedStyle(el);
+      measCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      let w = measCtx.measureText(text).width;
+      const ls = parseFloat(cs.letterSpacing);
+      if (!isNaN(ls)) w += ls * text.length;
+      return w;
+    };
+    const els = [...scaler.querySelectorAll('div, span')].filter(el => {
+      if (el.querySelector('*') || el.dataset.capOdo) return false;
+      const txt = (el.textContent || '').trim();
+      if (!txt || txt.length > 12 || !/\d/.test(txt)) return false;
+      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
+      return fs >= 55;
+    });
+    els.forEach(el => {
+      el.dataset.capOdo = '1';
+      el.dataset.capOdoText = (el.textContent || '').trim();
+      if (reduced) return; // leave static text
+      // Rebuild from the RAW text: leading/trailing spaces are real layout
+      // (e.g. "$500 " ahead of an inline "Mn+" sibling) — trimming them
+      // glued the unit to the digits.
+      const txt = (el.textContent || '').replace(/[\u2028\u2029]/g, ' ');
+      el.textContent = '';
+      const rolls = [];
+      [...txt].forEach(ch => {
+        if (!/\d/.test(ch)) {
+          const s = document.createElement('span');
+          s.textContent = ch;
+          s.style.whiteSpace = 'pre';
+          el.appendChild(s);
+          return;
+        }
+        // Mask holds a column of 0-9 twice; rolling to 10+digit passes a full
+        // cycle before landing. Initially shows the real digit (offset digit).
+        const digit = parseInt(ch, 10);
+        const mask = document.createElement('span');
+        // An overflow:hidden inline-block baselines at its bottom EDGE, not the
+        // glyph's baseline, so the digit (which sits ~0.137em higher inside the
+        // 1em box) rides up above the surrounding "$"/"Mn+" text. Nudge the mask
+        // down by that descent so the digit baseline lands on the text baseline.
+        mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:-0.137em;';
+        mask.style.width = naturalW(el, ch).toFixed(2) + 'px';
+        const col = document.createElement('span');
+        col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
+        for (let r = 0; r < 2; r++) {
+          for (let d = 0; d <= 9; d++) {
+            const cell = document.createElement('span');
+            cell.textContent = String(d);
+            cell.style.cssText = 'display:block; height:1em; line-height:1em;';
+            col.appendChild(cell);
+          }
+        }
+        mask.appendChild(col);
+        el.appendChild(mask);
+        rolls.push({ col, digit });
+      });
+      if (!rolls.length) return;
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          io.disconnect();
+          rolls.forEach(({ col, digit }, i) => {
+            col.style.transition = 'none';
+            col.style.transform = 'translateY(0)';
+            void col.offsetHeight; // reflow so the jump to 0 doesn't animate
+            col.style.transition = 'transform 1.5s var(--cap-ease-expo) ' + (i * 0.09) + 's';
+            col.style.transform = 'translateY(-' + (10 + digit) + 'em)';
+          });
+        });
+      }, { threshold: 0.4 });
+      io.observe(el);
+    });
+
+    // Value/unit tracking ("$500 Mn+"): the baked value span carries a fixed
+    // width with dead room after the digits, so the unit drifted wide of the
+    // Figma tracking. Release the width and guarantee exactly one word space
+    // between value and unit. Re-run on delays: the frame can re-render.
+    const tightenValueUnitPairs = () => {
+      // A line-split pass can race the odometer and wrap a stat's content in
+      // an inline-block overflow:hidden line mask — which baselines at its
+      // BOTTOM edge, sinking the digits ~10px below the unit. Unwrap any
+      // such foreign wrapper (our digit masks stay: they hold the columns).
+      const unwrapForeign = (host) => {
+        for (const child of [...host.children]) {
+          const st = child.style;
+          if (st.overflow !== 'hidden' || st.display !== 'inline-block') continue;
+          if (st.height === '1em') continue; // our own digit mask
+          const containsMask = [...child.querySelectorAll('span')].some(
+            s2 => s2.style.overflow === 'hidden'
+          );
+          if (containsMask) {
+            // foreign wrapper AROUND our digit masks → unwrap (our own
+            // masks contain only the rolling column, never another
+            // overflow-hidden span)
+            while (child.firstChild) host.insertBefore(child.firstChild, child);
+            child.remove();
+          } else if (!(child.textContent || '').trim() && !child.firstElementChild) {
+            child.remove(); // empty leftover wrapper
+          }
+        }
+      };
+      for (const odoEl of scaler.querySelectorAll('[data-cap-odo]')) unwrapForeign(odoEl);
+      for (const mnEl of scaler.querySelectorAll('span')) {
+        const unit = (mnEl.textContent || '').trim();
+        if (unit !== 'Mn+' && unit !== 'Mn' && unit !== 'Cr+' && unit !== 'Cr') continue;
+        if (!mnEl.getClientRects().length) continue;
+        const prev = mnEl.previousElementSibling;
+        if (!prev || !/\d/.test(prev.textContent || '')) continue;
+        unwrapForeign(prev); // re-rendered copies can lose data-cap-odo
+        if (!prev.dataset.capPairTight) {
+          prev.dataset.capPairTight = '1';
+          prev.style.width = 'auto';
+        }
+        if (!/\s$/.test(prev.textContent || '')) {
+          const sp = document.createElement('span');
+          sp.textContent = ' ';
+          sp.style.whiteSpace = 'pre';
+          prev.appendChild(sp);
+        }
+      }
+    };
+    tightenValueUnitPairs();
+    setTimeout(tightenValueUnitPairs, 800);
+    setTimeout(tightenValueUnitPairs, 2000);
+    setTimeout(tightenValueUnitPairs, 4000);
   }
 
-  _setupOperatorTriangles() {
-    // Client 2026-07-21: the red wedges in the operators grid were replicated
-    // from Figma as static decoration, but in the design they are an
-    // ANIMATION — a wedge should arrive on the cell whose logo you point at.
-    // So: hide the three baked static wedges, and wipe one in on hover.
-    //
-    // Decorative and cursor-driven, so it hard-bails on touch and under
-    // reduced motion (same guards as _setupDotGrid / _setupMagneticBtn).
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-    const scaler = document.getElementById('cap-scaler');
-    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
-
-    // One entry per logo. dx/dy place the wedge's solid red TIP relative to
-    // that logo's own top-left, because the anchor is appended as a CHILD of
-    // the logo: it then rides along with every shift (+260 band, journey
-    // delta) for free, with no data-jorig bookkeeping to keep in sync. That
-    // matters more than it sounds — this section's rendered y moves between
-    // loads (the journey delta is derived from viewport height), so absolute
-    // coordinates measured in one session are wrong in the next.
-    //
-    // `fan` picks the matrix form — which way the wedge opens out from its
-    // tip — and the trailing comment says where that puts it relative to its
-    // logo. Those are two different things: Saint Mary's wedge sits BELOW its
-    // logo while still fanning up-right, so naming the field after the side
-    // would be a lie.
-    //
-    // Client 2026-07-21: mirrored by column so the wedges point inward — the
-    // two left columns (x178, x451) sit to the right of their logo, the two
-    // right columns (x726, x1026) to the left.
-    //
-    // Tips sit on a column axis where a horizontal rule crosses it, so the
-    // wedge's flat edge rests on that rule. CRIMSON/ISP share the (451, 9446)
-    // intersection and MERAKI/TSUS share (726, 9818), fanning opposite ways —
-    // safe, because each wedge is bound to its own logo's hover and they can
-    // never be on screen together.
-    const CELLS = [
-      { asset: 'fig-asset-91ee4f07ef1ea5a8', fan: 'upLeft',  dx: 358, dy: 56 },   // CRIMSON — right of logo, tip (451, 9446)
-      { asset: 'fig-asset-1e639ffbc0aca215', fan: 'upLeft',  dx: 381, dy: 44 },   // MERAKI  — right of logo, tip (726, 9818)
-
-      // Client 2026-07-23: ISP's wedge should read as CRIMSON's mirror image
-      // (they share the same rail intersection). upRight is a 90-degree
-      // ROTATION — its fade runs at a visibly different angle — so ISP gets
-      // the dedicated mirrored form instead.
-      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRightMirror', dx: -140, dy: 73 },  // ISP — left of logo, tip (451, 9446)
-      // Client 2026-07-23: TSUS mirrors MERAKI across their shared rail, same
-      // treatment as the ISP/CRIMSON pair below.
-      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRightMirror', dx: -157, dy: 47 },  // TSUS — left of logo, tip (726, 9818)
-
-      // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
-      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule —
-      // exactly where baked wedge A sat. Client 2026-07-23: switched from
-      // wedge A's rotated up-right form to the mirror form, so its fade angle
-      // matches the upLeft wedges like the rest of the mirrored set.
-      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRightMirror', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
-
-      // No rule crosses beside these two, so their wedges sit further out than
-      // the rest, and Lighthouse's has no rule under its flat edge at all —
-      // the Figma design deliberately has no horizontal on that row, see the
-      // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
-      //
-      // Client 2026-07-23: JGI joins the mirror set with the others — same
-      // footprint left of its logo, fade angle symmetric with the upLeft
-      // wedges. (It was briefly flipped upLeft across the rail to match
-      // Figma's "Rectangle 126", then reverted the same day — the complaint
-      // was fade quality, not which side of the rail it sits on.)
-      { asset: 'fig-asset-79356d431474ada0', fan: 'upRightMirror', dx: -226, dy: 70 },  // JGI — left of logo, tip (726, 9169)
-      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRightMirror', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
-    ];
-
-    const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
-    if (!frameRoot || found.some(f => !f.el)) {
-      if ((this._otTries = (this._otTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorTriangles(), 250);
+  _setupReveal() {
+    const reveal = document.getElementById('cap-reveal');
+    const stat75 = document.getElementById('cap-75');
+    if (!reveal) return;
+    // Reduced motion: show the finished state immediately, no scroll scrub
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      [...reveal.querySelectorAll('.cap-stair')].forEach(s => { s.style.transform = 'scaleX(1)'; });
+      if (stat75) { stat75.style.opacity = '1'; stat75.style.transform = 'none'; }
       return;
     }
-    if (this._opTriDone) return;
-    this._opTriDone = true;
+    const stairs = [...reveal.querySelectorAll('.cap-stair')];
+    const N = stairs.length;
+    const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
+    const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-    // The three baked wedges are the static version being replaced. They are
-    // the only elements in the frame carrying this gradient, so the signature
-    // is a safe selector.
-    const GRAD_SIG = 'linear-gradient(153.033deg';
-    [...frameRoot.querySelectorAll('div')].forEach(el => {
-      const bg = el.style.background || el.style.backgroundImage || '';
-      if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
-    });
+    this._onRevealScroll = () => {
+      const r = reveal.getBoundingClientRect();
+      const vh = window.innerHeight;
+      
+      // Calculate progress p: 0 when the reveal top is near the bottom of viewport, 
+      // 1 when it's well above it.
+      const p = clamp((vh * 0.85 - r.top) / (vh * 0.85));
+      
+      // We want a staggered reveal starting from the bottom stair (index 3) to the top stair (index 0)
+      const span = 0.55;
+      const stagger = 0.15;
+      
+      stairs.forEach((stair, i) => {
+        // Since i=0 is top, i=1 is middle, i=2 is bottom,
+        // and we want bottom (i=2) to start first, middle (i=1) second, top (i=0) third:
+        const delay = (N - 1 - i) * stagger;
+        const stairProgress = clamp((p - delay) / span);
+        const easedProgress = easeInOutQuad(stairProgress);
+        
+        stair.style.transform = 'scaleX(' + easedProgress + ')';
+      });
 
-    // Client 2026-07-23: the baked two-stop gradient read as a solid
-    // hard-edged triangle next to the Figma render ("the fade is
-    // incomplete"). Same stops, different interpolation: CSS ramps the two
-    // stops LINEARLY, while Figma renders them as an ease-out decay — half
-    // gone by 14% of the gradient line, a long feathered tail after. These
-    // intermediate stops are the Figma render's measured redness profile
-    // (sampled along the reference PNG's diagonal at 5% steps), so the CSS
-    // piecewise-linear ramp traces Figma's curve. Alpha-only stops on the
-    // constant brand red: over the white page redness is proportional to
-    // alpha, so measured redness maps 1:1 onto these values.
-    const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
-                 'rgba(209,32,47,0.82) 5%, rgba(209,32,47,0.62) 10%, ' +
-                 'rgba(209,32,47,0.44) 15%, rgba(209,32,47,0.29) 20%, ' +
-                 'rgba(209,32,47,0.17) 25%, rgba(209,32,47,0.085) 30%, ' +
-                 'rgba(209,32,47,0.03) 36%, rgba(209,32,47,0) 42.23%, ' +
-                 'rgba(255,255,255,0) 78.20%)';
-    const SHOWN = 'inset(0 0 0 0)';
-
-    // Both matrices are lifted from the baked wedges: -1,0,0,-1 is the form
-    // wedges B and C use (fans up-and-left), 0,-1,1,0 is the form wedge A
-    // uses (fans up-and-right). In both the translate IS the red tip.
-    //
-    // The clip has to flip with the matrix or the wedge wipes in from its far
-    // edge instead of growing out of the tip. Under -1,0,0,-1 local +x maps to
-    // screen -x, so clipping from local right reveals the tip first. Under
-    // 0,-1,1,0 local +y maps to screen +x, so the equivalent is clipping from
-    // local bottom.
-    const FORM = {
-      upLeft:  { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
-      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' },
-      // 1,0,0,-1 is a vertical flip: the exact horizontal mirror of the
-      // upLeft wedge, opening right of its tip. Unlike upRight (a rotation,
-      // whose fade runs at a rotated angle), this keeps the fade angle
-      // symmetric with upLeft across the shared rail. Local +x stays screen
-      // +x, so hiding from local right reveals out of the tip, like upLeft.
-      upRightMirror: { matrix: 'matrix(1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' }
+      if (stat75) {
+        // Rise WITH the stairs, not after them: the old window (0.55 → 0.95)
+        // needed the stair container at the viewport top for full opacity,
+        // so in normal scrolling the stat read as empty red space ("design
+        // incomplete" — client). Full by p 0.6, i.e. as the stairs build.
+        const fp = clamp((p - 0.15) / 0.45);
+        stat75.style.opacity = String(fp);
+        stat75.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
+      }
     };
-
-    found.forEach(({ c, el }) => {
-      const form = FORM[c.fan] || FORM.upLeft;
-
-      const anchor = document.createElement('div');
-      anchor.setAttribute('data-cap-own', '1');
-      anchor.style.cssText =
-        'position:absolute; left:0; top:0; transform-origin:0 0;' +
-        'z-index:5; pointer-events:none;';
-      anchor.style.transform = form.matrix + c.dx + ', ' + c.dy + ')';
-
-      // Inner element carries the paint and the reveal, so the animation
-      // never fights the positioning matrix. Clipping from the tip outward is
-      // what makes it read as being drawn along the rule it sits on.
-      // Client 2026-07-23: "small missing fade" — the gradient's zero-line
-      // exits the 118.5px box geometrically (it would reach zero at ~149px),
-      // so ~5% red was still present at the box's far edge and cut off as a
-      // hard vertical line. The Figma render completes its fade exactly at
-      // the box corner. Feather the far edge (local x=W — the cut edge for
-      // both live forms: screen-left for upLeft, screen-right for the
-      // mirror) with a mask so the tail fades out inside the box instead of
-      // clipping. The tip edge (local x=0, resting on the rail) stays crisp.
-      const EDGE_FEATHER = 'linear-gradient(90deg, #000 80%, rgba(0,0,0,0) 100%)';
-      const ink = document.createElement('div');
-      ink.style.cssText =
-        'width:118.514px; height:119.995px; transform-origin:0 0;' +
-        'clip-path:' + form.hidden + ';' +
-        'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
-        '-webkit-mask-image:' + EDGE_FEATHER + ';' +
-        'mask-image:' + EDGE_FEATHER + ';' +
-        'background:' + GRAD + ';';
-      anchor.appendChild(ink);
-      el.appendChild(anchor);
-
-      // Client 2026-07-23: "the animation is not complete." Two causes, both
-      // from the hitbox being only the logo's own small box while the wedge
-      // paints OUTSIDE it (dx up to ±358): (a) drifting the cursor toward the
-      // appearing wedge fired mouseleave and reversed the wipe mid-flight;
-      // (b) sweeping across a shallow logo never left the wipe time to run.
-      //
-      // Fix 1 — hover pad: an invisible hitbox spanning logo ∪ wedge box, so
-      // pointing anywhere in the cell keeps the wedge alive. Child of the
-      // logo like the anchor, for the same shift-riding reason. Pads never
-      // overlap a neighbouring logo: adjacent cells only touch at the shared
-      // column axes (CRIMSON|ISP at x451, MERAKI|TSUS at x726).
-      const W = 118.514, H = 119.995;
-      const wedgeBox = c.fan === 'upRight'
-        ? { x0: c.dx,     x1: c.dx + H, y0: c.dy - W, y1: c.dy }   // matrix(0,-1,1,0): local h lies along screen x
-        : c.fan === 'upRightMirror'
-        ? { x0: c.dx,     x1: c.dx + W, y0: c.dy - H, y1: c.dy }   // matrix(1,0,0,-1): box up-right of tip
-        : { x0: c.dx - W, x1: c.dx,     y0: c.dy - H, y1: c.dy };  // matrix(-1,0,0,-1): box up-left of tip
-      const padX = Math.min(0, wedgeBox.x0);
-      const padY = Math.min(0, wedgeBox.y0);
-      const pad = document.createElement('div');
-      pad.setAttribute('data-cap-own', '1');
-      pad.style.cssText =
-        'position:absolute;' +
-        'left:' + padX + 'px; top:' + padY + 'px;' +
-        'width:' + (Math.max(parseFloat(el.style.width) || 0, wedgeBox.x1) - padX) + 'px;' +
-        'height:' + (Math.max(parseFloat(el.style.height) || 0, wedgeBox.y1) - padY) + 'px;' +
-        'z-index:4; pointer-events:auto; background:transparent;';
-      el.appendChild(pad);
-
-      // Fix 2 — linger: retract only after the 0.42s wipe has had time to
-      // finish, so even a fast sweep shows the complete wedge. Re-entering
-      // during the linger cancels the retract.
-      let hideT = null;
-      pad.addEventListener('mouseenter', () => {
-        clearTimeout(hideT);
-        ink.style.clipPath = SHOWN;
-      });
-      pad.addEventListener('mouseleave', () => {
-        clearTimeout(hideT);
-        hideT = setTimeout(() => { ink.style.clipPath = form.hidden; }, 450);
-      });
-    });
+    this._onRevealScroll();
+    window.addEventListener('scroll', this._onRevealScroll, { passive: true });
+    window.addEventListener('resize', this._onRevealScroll);
   }
 
   _setupDotGrid() {
@@ -1250,1198 +1722,10 @@ class Component extends DCLogic {
     draw();
   }
 
-  _setupNavScramble() {
-    const labels = ['ABOUT US', 'PROJECTS', 'TEAM', 'CONTACT US'];
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*<>/';
-    const spans = [...document.querySelectorAll('#cap-scaler span')].filter((s) => {
-      const t = (s.textContent || '').trim();
-      const r = s.getBoundingClientRect();
-      return labels.includes(t) && r.top < 300;
-    });
-    if (spans.length < 4 && (this._navTries = (this._navTries || 0) + 1) < 40) {
-      setTimeout(() => this._setupNavScramble(), 200);
-      return;
-    }
-    const reducedNav = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    spans.forEach((el) => {
-      const target = (el.textContent || '').trim();
-      el.classList.add('cap-nav'); // nowrap exception — keeps CONTACT US on one line
-      el.style.cursor = 'pointer';
-      if (reducedNav) return; // keep the affordance, skip the scramble motion
-      let iv = null;
-      el.addEventListener('mouseenter', () => {
-        let frame = 0;
-        clearInterval(iv);
-        iv = setInterval(() => {
-          el.textContent = target.split('').map((c, i) => {
-            if (c === ' ') return ' ';
-            if (i < frame / 2.4) return target[i];
-            return chars[Math.floor(Math.random() * chars.length)];
-          }).join('');
-          frame++;
-          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
-        }, 32);
-      });
-    });
-  }
-
-  _setupScrollProgress() {
-    // Thin brand-red hairline along the top tracking scroll position.
-    if (document.getElementById('cap-progress')) return;
-    const bar = document.createElement('div');
-    bar.id = 'cap-progress';
-    document.body.appendChild(bar);
-    let ticking = false;
-    const update = () => {
-      ticking = false;
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
-      bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
-    };
-    this._onProgressScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    };
-    window.addEventListener('scroll', this._onProgressScroll, { passive: true });
-    window.addEventListener('resize', this._onProgressScroll);
-    update();
-  }
-
-  _setupMagneticBtn() {
-    // Magnetic pull on the circular menu button: within 110px the button
-    // leans toward the cursor (max 8px), easing back on exit. Composes with
-    // the CSS hover scale via the --capMx/--capMy/--capMs custom properties.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const btn = document.getElementById('cap-menu-btn');
-    if (!btn) {
-      if ((this._magTries = (this._magTries || 0) + 1) < 20) {
-        setTimeout(() => this._setupMagneticBtn(), 250);
-      }
-      return;
-    }
-    const RADIUS = 110;
-    const PULL = 8;
-    this._onMagneticMove = (e) => {
-      if (btn.style.opacity === '0' || btn.style.pointerEvents === 'none') return;
-      const r = btn.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const dx = e.clientX - cx;
-      const dy = e.clientY - cy;
-      const dist = Math.hypot(dx, dy);
-      if (dist < RADIUS) {
-        const f = (1 - dist / RADIUS) * PULL;
-        btn.style.setProperty('--capMx', ((dx / dist) * f || 0).toFixed(1) + 'px');
-        btn.style.setProperty('--capMy', ((dy / dist) * f || 0).toFixed(1) + 'px');
-      } else {
-        btn.style.setProperty('--capMx', '0px');
-        btn.style.setProperty('--capMy', '0px');
-      }
-    };
-    window.addEventListener('mousemove', this._onMagneticMove, { passive: true });
-  }
-
-  _setupHeroIntro() {
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
-
-    // 1. VERTICAL GRID LINES REVEAL (scales scaleX from 0 to 1 for rotated 90deg SVGs)
-    const svgs = [...scaler.querySelectorAll('svg')].filter(el => {
-      const transform = el.style.transform || '';
-      if (!(transform.includes('matrix(0,1,-1,0') || transform.includes('matrix(0, 1, -1, 0'))) return false;
-      // Rotated svgs are positioned by the matrix ty, NOT style.top — the
-      // old `style.top || 0` default adopted the portfolio's red rail lines
-      // (3,700px down the page) and the appended scaleX then broke the
-      // journey band's anchored matrix shift, stranding them off-position.
-      const mm = transform.match(/matrix\([^,]+,[^,]+,[^,]+,[^,]+,\s*[-\d.]+,\s*([-\d.]+)\)/);
-      const y = mm ? parseFloat(mm[1]) : (parseFloat(el.style.top) || 0);
-      return y <= 1000;
-    });
-
-    svgs.forEach((el, idx) => {
-      const originalTransform = el.style.transform || '';
-      el.style.transformOrigin = '0 0';
-      el.style.transform = originalTransform + ' scaleX(0)';
-      el.style.transition = 'transform 1.6s cubic-bezier(0.16, 1, 0.3, 1)';
-      
-      setTimeout(() => {
-        el.style.transform = originalTransform + ' scaleX(1)';
-      }, 100 + idx * 80);
-    });
-
-    // 2. SPLIT-TEXT CHAR STAGGER WAVE REVEAL (hero region only)
-    // Position must come from the RENDERED rect: nested spans (e.g. the
-    // "$500" / "16 Assets" stats) carry no inline top, and the old
-    // `style.top || 0` default let them into the hero filter — their
-    // word-wrap containers (inline-block, overflow:hidden, va:bottom,
-    // margin-right .22em) then broke the odometer baseline and tracking.
-    const scRectHero = scaler.getBoundingClientRect();
-    const mHero = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
-    const sHero = mHero ? parseFloat(mHero[1]) : 1;
-    const headings = [...scaler.querySelectorAll('span, p, h1, h2, h3')].filter(el => {
-      const r = el.getBoundingClientRect();
-      const top = r.height ? (r.top - scRectHero.top) / sHero : (parseFloat(el.style.top) || 0);
-      if (top > 850) return false;
-      const style = window.getComputedStyle(el);
-      const fontSize = parseFloat(style.fontSize) || 0;
-      const txt = (el.textContent || '').trim();
-      return fontSize >= 24 && txt.length > 3 && !el.querySelector('*') && txt !== 'CAPPELLA';
-    });
-
-    headings.forEach((el) => {
-      const originalText = el.textContent || '';
-      el.innerHTML = '';
-      
-      const words = originalText.split(/\s+/);
-      const wordSpans = words.map(word => {
-        const charSpans = word.split('').map(char => {
-          const s = document.createElement('span');
-          s.textContent = char;
-          s.style.display = 'inline-block';
-          s.style.opacity = '0';
-          s.style.transform = 'translateY(110%)';
-          s.style.transition = 'transform 0.8s cubic-bezier(0.215, 0.61, 0.355, 1), opacity 0.8s ease';
-          return s;
-        });
-        
-        const wordContainer = document.createElement('span');
-        wordContainer.style.display = 'inline-block';
-        wordContainer.style.overflow = 'hidden';
-        wordContainer.style.whiteSpace = 'nowrap';
-        wordContainer.style.verticalAlign = 'bottom';
-        wordContainer.style.marginRight = '0.22em';
-        
-        charSpans.forEach(cs => wordContainer.appendChild(cs));
-        return { container: wordContainer, chars: charSpans };
-      });
-
-      wordSpans.forEach(ws => el.appendChild(ws.container));
-
-      const allChars = wordSpans.flatMap(ws => ws.chars);
-
-      setTimeout(() => {
-        allChars.forEach((cs, cIdx) => {
-          setTimeout(() => {
-            cs.style.opacity = '1';
-            cs.style.transform = 'translateY(0)';
-          }, cIdx * 20);
-        });
-      }, 250);
-    });
-  }
-
-  _setupHeroTitle() {
-    // The 100px headline ("India's Leading / Edu-Infra Asset / Management
-    // Company") is a single span with <br> children, so the generic char
-    // reveal above skips it (!el.querySelector('*')). Animate it here:
-    // per-line masks, chars rising with a settle rotation, then a
-    // scroll-linked exit where each line drifts up into its mask and fades.
-    const scaler = document.getElementById('cap-scaler');
-    const heroTitle = scaler && [...scaler.querySelectorAll('span')].find(el => {
-      const top = parseFloat(el.style.top) || 0;
-      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
-      return top < 850 && fs >= 90;
-    });
-    if (!heroTitle) {
-      if ((this._htTries = (this._htTries || 0) + 1) < 40) setTimeout(() => this._setupHeroTitle(), 200);
-      return;
-    }
-    if (heroTitle.dataset.capAnimated) return;
-    heroTitle.dataset.capAnimated = '1';
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // Rebuild the span preserving its <br> line structure
-    const lines = [];
-    let current = [];
-    [...heroTitle.childNodes].forEach(n => {
-      if (n.nodeType === Node.ELEMENT_NODE && n.tagName === 'BR') {
-        lines.push(current.join(' '));
-        current = [];
-      } else if (n.textContent && n.textContent.trim()) {
-        current.push(n.textContent.trim());
-      }
-    });
-    if (current.length) lines.push(current.join(' '));
-    if (!lines.length) return;
-
-    heroTitle.innerHTML = '';
-    const lineEls = lines.map(lineText => {
-      const lineMask = document.createElement('span');
-      // padding-bottom leaves room inside the overflow:hidden clip for glyph
-      // descenders (g, y, p, j…); the matching negative margin cancels the
-      // added height so the 3-line stack keeps its exact spacing.
-      lineMask.style.cssText = 'display:block; overflow:hidden; white-space:nowrap; padding-bottom:0.25em; margin-bottom:-0.25em;';
-      const lineInner = document.createElement('span');
-      lineInner.style.cssText = 'display:block; will-change:transform;';
-      const chars = [];
-      lineText.split(/\s+/).forEach((word, wi, arr) => {
-        const w = document.createElement('span');
-        w.style.cssText = 'display:inline-block; white-space:nowrap;' +
-          (wi < arr.length - 1 ? ' margin-right:0.25em;' : '');
-        word.split('').forEach(ch => {
-          const c = document.createElement('span');
-          c.textContent = ch;
-          c.style.cssText =
-            'display:inline-block; opacity:0;' +
-            'transform:translateY(115%) rotate(6deg); transform-origin:0% 100%;' +
-            'transition: transform 1.05s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.5s ease;';
-          w.appendChild(c);
-          chars.push(c);
-        });
-        lineInner.appendChild(w);
-      });
-      lineMask.appendChild(lineInner);
-      heroTitle.appendChild(lineMask);
-      return { lineInner, chars };
-    });
-
-    // Staggered entrance: line by line, chars cascading within each line.
-    // Gated on the preloader actually finishing (the red curtain clearing)
-    // instead of a fixed timer — the curtain wipe runs ~1.1s–2.2s, so a fixed
-    // 1150ms start played the whole reveal behind the curtain and it was gone
-    // by the time the page came into frame. The preloader calls _heroReveal
-    // when it exits; if it already exited we run now, and a safety timeout
-    // guarantees the title is never left hidden.
-    let heroRevealed = false;
-    const runHeroReveal = () => {
-      if (heroRevealed) return;
-      heroRevealed = true;
-      lineEls.forEach((L, li) => {
-        L.chars.forEach((c, ci) => {
-          setTimeout(() => {
-            c.style.opacity = '1';
-            c.style.transform = 'translateY(0) rotate(0deg)';
-          }, li * 140 + ci * 20);
-        });
-      });
-    };
-    if (this._preloaderDone) runHeroReveal();
-    else this._heroReveal = runHeroReveal;
-    setTimeout(runHeroReveal, 3200); // fallback: never leave the title hidden
-
-    // Scroll-linked parallax exit — lower lines leave faster for depth
-    if (window.gsap && window.ScrollTrigger) {
-      lineEls.forEach((L, li) => {
-        window.gsap.to(L.lineInner, {
-          y: -(40 + li * 30),
-          opacity: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: document.getElementById('cap-viewport'),
-            start: 'top top',
-            end: () => '+=' + window.innerHeight * 0.8,
-            scrub: true
-          }
-        });
-      });
-    }
-  }
-
-  _setupScrollReveals() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
-
-    // Helper: get element's true top in page (px), accounting for scaler scale
-    const getScaledTop = (el) => {
-      const s = parseFloat((scaler.style.transform || 'scale(1)').match(/scale\(([^)]+)\)/)?.[1] || '1');
-      const r = el.getBoundingClientRect();
-      return r.top + window.scrollY;
-    };
-
-    // --- Classify elements by which section they're likely in ---
-    // Strategy: find key heading/block elements by text content and position,
-    // then add reveal classes + observe with IntersectionObserver.
-
-    const addReveal = (el, cls = 'cap-scroll-reveal', delay = '') => {
-      el.classList.add(cls);
-      if (delay) el.classList.add(delay);
-    };
-
-    // Observe and fire
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('cap-revealed');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
-    // SECTION HEADINGS — find large text nodes that are section titles
-    const sectionHeadings = [...scaler.querySelectorAll('span, div')].filter(el => {
-      const txt = (el.textContent || '').trim();
-      const style = window.getComputedStyle(el);
-      const fontSize = parseFloat(style.fontSize) || 0;
-      return fontSize >= 40 && txt.length > 3 && txt.length < 60;
-    });
-    // The named 55px section titles get the editorial clip-wipe. IMPORTANT:
-    // clip-path zeroes the element's IntersectionObserver area (a fully
-    // clipped target never intersects), so wiped elements are revealed by a
-    // scroll-position check instead — getBoundingClientRect ignores clip.
-    const WIPE_TITLES = ['OUR JOURNEY', 'OUR PORTFOLIO', 'OPERATORS', 'THE CAPPELLA EDGE'];
-    const wipeEls = [];
-    const normTxt = (el) =>
-      (el.textContent || '').replace(/[\u2028\s]+/g, ' ').trim().toUpperCase();
-    // Look across ALL large-text candidates for the named titles (they are
-    // not reliably inside the first-20 slice used for the generic pass).
-    sectionHeadings.forEach((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight) return; // hero area: skip
-      if (WIPE_TITLES.includes(normTxt(el)) && !el.classList.contains('cap-wipe-reveal')) {
-        addReveal(el, 'cap-wipe-reveal');
-        wipeEls.push(el);
-      }
-    });
-    sectionHeadings.slice(0, 20).forEach((el, i) => {
-      // Skip elements in the hero (visible on page load)
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight) return;
-      if (el.classList.contains('cap-wipe-reveal')) return; // wipe pass owns it
-      addReveal(el, 'cap-scroll-reveal');
-      io.observe(el);
-    });
-    if (wipeEls.length) {
-      let wipeTick = false;
-      const checkWipes = () => {
-        wipeTick = false;
-        for (let i = wipeEls.length - 1; i >= 0; i--) {
-          const r = wipeEls[i].getBoundingClientRect();
-          if (r.top < window.innerHeight * 0.88 && r.bottom > 0) {
-            wipeEls[i].classList.add('cap-revealed');
-            wipeEls.splice(i, 1);
-          }
-        }
-        if (!wipeEls.length) window.removeEventListener('scroll', onWipeScroll);
-      };
-      const onWipeScroll = () => {
-        if (!wipeTick) { wipeTick = true; requestAnimationFrame(checkWipes); }
-      };
-      window.addEventListener('scroll', onWipeScroll, { passive: true });
-      checkWipes();
-    }
-
-    // STAT NUMBERS — large metric text ($500 Mn+, 135 Acres, 16 Assets, 75 Years+)
-    const statNums = [...scaler.querySelectorAll('span, div')].filter(el => {
-      const txt = (el.textContent || '').trim();
-      return /^(\$?\d+\s*\w*[+]?)$/.test(txt) || txt.match(/^\d.*[+]$/);
-    });
-    statNums.forEach((el, i) => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight) return;
-      addReveal(el, 'cap-scale-reveal', 'cap-delay-' + Math.min(i + 1, 5));
-      io.observe(el);
-    });
-
-    // BODY PARAGRAPHS — description text blocks
-    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
-      const txt = (el.textContent || '').trim();
-      const style = window.getComputedStyle(el);
-      const fontSize = parseFloat(style.fontSize) || 0;
-      // Exclude the footer address (the only text with a 6-digit postal
-      // code): the line-split froze it at a too-narrow wrap; left alone it
-      // renders at its baked 291px width, matching the Figma line breaks.
-      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
-      // hydration the computed size can read wrong and let them through;
-      // wrapping them in line masks breaks the odometer baseline (an
-      // inline-block with overflow:hidden baselines at its bottom edge).
-      const inlineFs = parseFloat(el.style.fontSize) || 0;
-      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
-    });
-    bodyParas.forEach((el, i) => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight) return;
-      addReveal(el, 'cap-scroll-reveal', 'cap-delay-' + (i % 3 + 1));
-      io.observe(el);
-    });
-
-    this._scrollRevealIO = io;
-
-    // Initialize Lenis Smooth Scroll & Sync GSAP Ticker
-    if (window.Lenis && window.gsap && window.ScrollTrigger) {
-      this._lenis = new window.Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // OCI style easing
-      });
-      this._lenis.on('scroll', window.ScrollTrigger.update);
-      window.gsap.ticker.add((time) => {
-        this._lenis.raf(time * 1000);
-      });
-      window.gsap.ticker.lagSmoothing(0);
-    }
-
-    this._setupHeroZoom();
-    this._setupSplitText();
-
-    // ===== NAV → PAGE NAVIGATION =====
-    // The nav/footer labels are Figma-materialized <span>s, not anchors.
-    // They now navigate to the real standalone pages (About / Projects /
-    // Team / Contact) instead of scrolling within the frame. role="link" +
-    // tabindex + Enter make the converted spans keyboard-operable. The
-    // scramble hover (_setupNavScramble) binds separately and is unaffected.
-    const navItems = [
-      { text: 'ABOUT US', href: 'about-us.html' },
-      { text: 'PROJECTS', href: 'projects.html' },
-      { text: 'PORTFOLIO', href: 'projects.html' },
-      { text: 'TEAM', href: 'team.html' },
-      { text: 'CONTACT US', href: 'contact-us.html' }
-    ];
-
-    // The frame hydrates asynchronously — retry until the nav spans exist
-    // (a one-shot timer left the nav dead on slow loads).
-    const bindNav = (tries) => {
-      let bound = 0;
-      navItems.forEach(item => {
-        const els = [...scaler.querySelectorAll('span')].filter(el =>
-          (el.textContent || '').replace(/\s+/g, '').toUpperCase() === item.text.replace(/\s+/g, '')
-        );
-        els.forEach(el => {
-          if (el._capNavBound) { bound++; return; }
-          el._capNavBound = true;
-          bound++;
-          el.style.cursor = 'pointer';
-          el.setAttribute('role', 'link');
-          el.setAttribute('tabindex', '0');
-          const go = () => { window.location.href = item.href; };
-          el.addEventListener('click', go);
-          el.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-        });
-      });
-      if (bound < 4 && tries > 0) setTimeout(() => bindNav(tries - 1), 200);
-    };
-    setTimeout(() => bindNav(40), 500);
-
-    // ===== FOOTER EMAIL INPUT =====
-    setTimeout(() => {
-      const emailSpan = [...scaler.querySelectorAll('span')].find(el => 
-        (el.textContent || '').trim() === 'Your Email Id'
-      );
-      if (emailSpan) {
-        const input = document.createElement('input');
-        input.type = 'email';
-        input.placeholder = 'Your Email Id';
-        input.style.position = 'absolute';
-        input.style.left = emailSpan.style.left || '1138px';
-        input.style.top = emailSpan.style.top || '345px';
-        input.style.width = emailSpan.style.width || '180px';
-        input.style.height = '35px';
-        input.style.background = 'transparent';
-        input.style.border = 'none';
-        input.style.outline = 'none';
-        input.style.fontFamily = emailSpan.style.fontFamily || 'Montserrat, sans-serif';
-        input.style.fontSize = emailSpan.style.fontSize || '14px';
-        input.style.fontWeight = emailSpan.style.fontWeight || '500';
-        input.style.color = 'rgb(255,255,255)';
-        input.style.borderBottom = '1px solid rgba(255,255,255,0.4)';
-        
-        emailSpan.parentNode.replaceChild(input, emailSpan);
-
-        const arrowSvg = [...input.parentNode.querySelectorAll('svg')].find(s => 
-          s.style.left === '1307px' || (parseFloat(s.style.left) >= 1300 && parseFloat(s.style.left) <= 1320)
-        );
-        if (arrowSvg) {
-          arrowSvg.style.cursor = 'pointer';
-          arrowSvg.addEventListener('click', () => {
-            if (input.value) {
-              alert(`Thank you for subscribing, ${input.value}!`);
-              input.value = '';
-            } else {
-              alert('Please enter a valid email address.');
-            }
-          });
-        }
-      }
-    }, 500);
-  }
-
-  _setupPreloader() {
-    // --- OCI-style sequential loader ---
-    // Reserve the vertical scrollbar gutter permanently: the page always
-    // scrolls once loaded, but during the preloader the scrollbar would
-    // otherwise TOGGLE as content height settles — shifting the centered
-    // lockup's layout box mid-flight and spoiling the landing.
-    // (scrollbar-gutter, unlike overflow-y:scroll, reserves the space
-    // without making the viewport scrollable early — which would break the
-    // browser's scroll restoration on refresh.)
-    document.documentElement.style.scrollbarGutter = 'stable';
-    document.documentElement.classList.add('cap-scroll-locked');
-
-    // Full-screen red background
-    const preloader = document.createElement('div');
-    preloader.style.cssText =
-      'position:fixed; inset:0; background:rgb(209,32,47); z-index:9999;' +
-      // Exit is a TRAVELING diagonal fade — the panel never moves. A 3×-
-      // viewport gradient mask (transparent toward the top-right, opaque
-      // toward the bottom-left, wide soft feather between) slides diagonally
-      // via mask-position, so every region fades exactly as the band passes
-      // it: the dissolve visibly sweeps right → left the whole second. The
-      // late opacity fade is a safety net for the final state.
-      'transition:mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
-      '-webkit-mask-position 1.0s cubic-bezier(0.77,0,0.175,1),' +
-      'opacity 0.4s ease 0.7s;' +
-      'mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
-      '-webkit-mask-image:linear-gradient(225deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, #000 65%, #000 100%);' +
-      'mask-size:300% 300%; -webkit-mask-size:300% 300%;' +
-      'mask-repeat:no-repeat; -webkit-mask-repeat:no-repeat;' +
-      'mask-position:0% 100%; -webkit-mask-position:0% 100%;' +
-      'will-change:mask-position, opacity;';
-    document.body.appendChild(preloader);
-
-    // Hide the actual header logo on page initially so we don't see double.
-    // The wordmark lives in the async Figma bundle and can render AFTER the
-    // preloader has already exited (slow/hard refresh) — in that case show it
-    // immediately instead of hiding it forever.
-    let preloaderFinished = false;
-    const hideHeaderWordmark = () => {
-      const el = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-      if (!el) {
-        setTimeout(hideHeaderWordmark, 50);
-        return;
-      }
-      el.style.transition = 'opacity 0.25s ease';
-
-      // (No separate C icon in the header — the wordmark stands alone at
-      // its baked Figma position.)
-      if (preloaderFinished) {
-        el.style.opacity = '1';
-      } else {
-        el.style.opacity = '0';
-      }
-    };
-    hideHeaderWordmark();
-
-    // --- Center logo content ---
-    const centerWrap = document.createElement('div');
-    centerWrap.style.cssText =
-      'position:fixed; inset:0; z-index:10000; pointer-events:none;' +
-      'display:flex; flex-direction:column; align-items:center; justify-content:center;';
-    document.body.appendChild(centerWrap);
-
-    const logoImg = document.createElement('img');
-    logoImg.src = './components/assets/eae7f9bdb03982f5.png';
-    logoImg.style.cssText =
-      'width:90px; height:auto; opacity:0; transform:scale(0.7);' +
-      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
-      'filter:brightness(0) invert(1);'; // Make it white on red
-    centerWrap.appendChild(logoImg);
-
-    const nameImg = document.createElement('img');
-    nameImg.src = './components/assets/7cb777f5a65019d1.png';
-    nameImg.style.cssText =
-      'width:160px; height:auto; margin-top:18px; opacity:0;' +
-      'transform:translateY(12px);' +
-      'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
-      'filter:brightness(0) invert(1);'; // White on red
-    centerWrap.appendChild(nameImg);
-
-    // === Reduced motion: brand moment without the choreography ===
-    // Curtain + lockup appear instantly, hold briefly, then the whole
-    // preloader fades out. No pop, no flight, no curtain slide.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      logoImg.style.transition = 'none';
-      nameImg.style.transition = 'none';
-      logoImg.style.opacity = '1';
-      logoImg.style.transform = 'none';
-      nameImg.style.opacity = '1';
-      nameImg.style.transform = 'none';
-      setTimeout(() => {
-        preloaderFinished = true;
-        this._preloaderDone = true;
-        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
-        document.documentElement.classList.remove('cap-scroll-locked');
-        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-        if (wm) wm.style.opacity = '1';
-        preloader.style.transition = 'opacity 0.4s ease';
-        centerWrap.style.transition = 'opacity 0.4s ease';
-        preloader.style.opacity = '0';
-        centerWrap.style.opacity = '0';
-        setTimeout(() => {
-          centerWrap.remove();
-          preloader.remove();
-        }, 450);
-      }, 700);
-      return;
-    }
-
-    // === Sequential timing (no crosshair lines, no circles) ===
-    // Step 1: Logo icon pops in (200ms)
-    setTimeout(() => {
-      logoImg.style.opacity = '1';
-      logoImg.style.transform = 'scale(1)';
-    }, 200);
-
-    // Step 2: Name text slides up (400ms)
-    setTimeout(() => {
-      nameImg.style.opacity = '1';
-      nameImg.style.transform = 'translateY(0)';
-    }, 400);
-
-    // Step 3: Exit (1100ms) — the red curtain wipes away diagonally (top-
-    // right → bottom-left) with a fade while the centered lockup flies to
-    // the header and CROSSFADES into the real one.
-    // If the async frame hasn't hydrated the header targets yet, hold the
-    // curtain briefly (up to 500ms in 50ms steps) — a flight into the real
-    // header beats the fade fallback whenever it's achievable.
-    const beginExit = (retries) => {
-      const headerWordmark = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-      if (!headerWordmark && window.scrollY <= 80 && retries > 0) {
-        setTimeout(() => beginExit(retries - 1), 50);
-        return;
-      }
-      document.documentElement.classList.remove('cap-scroll-locked');
-
-      // Refresh mid-page: browsers restore the scroll position, so the header
-      // targets sit thousands of px above the viewport — a flight would shoot
-      // the lockup off-screen. Fade it out in place instead and show the
-      // header (via preloaderFinished) for when the user scrolls back up.
-      const scrolledAway = window.scrollY > 80;
-
-      if (scrolledAway || !headerWordmark) {
-        preloaderFinished = true;
-        const exitEase =
-          'transform 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.35s ease, filter 0.4s ease';
-        logoImg.style.transition = exitEase;
-        nameImg.style.transition = exitEase;
-        logoImg.style.transform = 'translateY(-14px)';
-        nameImg.style.transform = 'translateY(-14px)';
-        logoImg.style.opacity = '0';
-        nameImg.style.opacity = '0';
-        // Release the invert as the curtain fades under the lockup.
-        logoImg.style.filter = 'none';
-        nameImg.style.filter = 'none';
-      } else {
-        // --- Exact FLIP: pivot both images at their top-left corner so the
-        // corner-to-corner deltas ARE the transform (the previous version
-        // scaled about the center, landing ~25–30px off target). Origins are
-        // switched while the transforms are identity, so nothing jumps.
-        logoImg.style.transformOrigin = '0 0';
-        nameImg.style.transformOrigin = '0 0';
-
-        // Neutralize any still-running entrance transition first: on slow
-        // loads the wordmark can be mid-rise (translateY residual) at exit
-        // time, and measuring that interpolated box would bake the residual
-        // into the landing. All of this happens before the next paint, so
-        // the snap to identity is never visible.
-        nameImg.style.transition = 'none';
-        nameImg.style.transform = 'none';
-        nameImg.style.opacity = '1';
-        logoImg.style.transition = 'none';
-        logoImg.style.transform = 'none';
-        logoImg.style.opacity = '1';
-
-        // Force the post-overflow-reset reflow, then measure and launch
-        // synchronously (an rAF here would stall in throttled/occluded
-        // renderers, freezing the lockup mid-screen). The scrollbar gutter
-        // is reserved permanently, so these rects are layout-stable.
-        void document.body.offsetHeight;
-        {
-          const nameRect = nameImg.getBoundingClientRect();
-          const wordmarkRect = headerWordmark.getBoundingClientRect();
-          // Debug/E2E hook: the exact pre-flight base box this flight was
-          // computed from (tests validate the landing without racing the
-          // animation timeline).
-          window.__capPreFlight = { x: nameRect.left, y: nameRect.top, w: nameRect.width, h: nameRect.height };
-          // Width-matched scale + top-left alignment: the CAPPELLA row of the
-          // full PNG lands exactly over the header crop; the tagline below it
-          // dissolves in the crossfade.
-          const nameScale = wordmarkRect.width / nameRect.width;
-          const nameTx = wordmarkRect.left - nameRect.left;
-          const nameTy = wordmarkRect.top - nameRect.top;
-
-          // The curtain fades during the flight, so release the white-on-red
-          // invert filter in step — the wordmark darkens to its natural color
-          // as the page lightens underneath (never white-on-white).
-          nameImg.style.transition =
-            'transform 0.85s cubic-bezier(0.77,0,0.175,1), opacity 0.3s ease, filter 0.5s ease';
-          nameImg.style.transform = `translate(${nameTx}px, ${nameTy}px) scale(${nameScale})`;
-          nameImg.style.filter = 'none';
-
-          // No C icon lives in the header — the centered icon rises out and
-          // fades while the wordmark makes the flight alone.
-          logoImg.style.transition =
-            'transform 0.6s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease, filter 0.5s ease';
-          logoImg.style.transform = 'translateY(-40px) scale(0.85)';
-          logoImg.style.opacity = '0';
-          logoImg.style.filter = 'none';
-
-          // Crossfade handoff at 600ms — and RE-TARGET: the scaler's fit/font
-          // timers can reflow the header during the flight, drifting the
-          // targets a few px. The flown pair's untransformed boxes are stable
-          // (fixed overlay), so recompute against the targets' CURRENT rects
-          // and glide the final stretch into the exact fresh position while
-          // the real lockup fades in underneath.
-          setTimeout(() => {
-            const wmNow = headerWordmark.getBoundingClientRect();
-            const glide = 'transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease';
-
-            nameImg.style.transition = glide;
-            nameImg.style.transform =
-              `translate(${wmNow.left - nameRect.left}px, ${wmNow.top - nameRect.top}px) ` +
-              `scale(${wmNow.width / nameRect.width})`;
-
-            headerWordmark.style.opacity = '1';
-            nameImg.style.opacity = '0';
-          }, 600);
-        }
-      }
-
-      // Diagonal traveling fade: sliding the mask from its opaque bottom-left
-      // corner to its transparent top-right corner sweeps the feathered
-      // dissolve band across the screen from the top-RIGHT corner to the
-      // bottom-LEFT. The mask moves; the panel itself stays put (a moving
-      // diagonal panel previously exposed a broken-looking corner strip).
-      preloader.style.maskPosition = '100% 0%';
-      preloader.style.webkitMaskPosition = '100% 0%';
-      preloader.style.opacity = '0';
-
-      // Clean up and restore header logo opacity when preloader completes.
-      // Re-query instead of using the refs captured at 1100ms — on slow loads
-      // the wordmark renders late and those refs are null (the retry loop in
-      // hideHeaderWordmark then handles showing it via preloaderFinished).
-      setTimeout(() => {
-        preloaderFinished = true;
-        // Curtain has cleared — now let the hero title reveal in frame.
-        this._preloaderDone = true;
-        if (this._heroReveal) { this._heroReveal(); this._heroReveal = null; }
-        const wm = document.querySelector('.fig-asset-7cb777f5a65019d1-0d894d80');
-        if (wm) wm.style.opacity = '1';
-        centerWrap.remove();
-        preloader.remove();
-      }, 1080); // after the 600ms retarget + 350ms glide settle
-    };
-    setTimeout(() => beginExit(10), 1100);
-  }
-
-  _setupHeroZoom() {
-    // 4. Parallax Hero Zoom
-    if (!window.gsap || !window.ScrollTrigger) return;
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
-    
-    const heroWrapper = [...scaler.querySelectorAll('div')].find(e => {
-      const style = e.getAttribute('style') || '';
-      return style.includes('width: 1440') && style.includes('height: 830.204');
-    });
-
-    if (heroWrapper) {
-      heroWrapper.style.transformOrigin = '50% 100%'; // Zoom from bottom center slightly
-      window.gsap.to(heroWrapper, {
-        scale: 1.15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: document.body,
-          start: "top top",
-          end: "1200px", // Scroll distance
-          scrub: true
-        }
-      });
-    }
-  }
-
-  _setupSplitText() {
-    // 5. Staggered Line-Split Quote Reveal
-    if (!window.gsap || !window.ScrollTrigger || !window.SplitType) return;
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
-
-    // Apply to main body paragraphs (the ones used for cap-scroll-reveal)
-    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
-      const txt = (el.textContent || '').trim();
-      const style = window.getComputedStyle(el);
-      const fontSize = parseFloat(style.fontSize) || 0;
-      // Exclude the footer address (the only text with a 6-digit postal
-      // code): the line-split froze it at a too-narrow wrap; left alone it
-      // renders at its baked 291px width, matching the Figma line breaks.
-      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
-      // hydration the computed size can read wrong and let them through;
-      // wrapping them in line masks breaks the odometer baseline (an
-      // inline-block with overflow:hidden baselines at its bottom edge).
-      const inlineFs = parseFloat(el.style.fontSize) || 0;
-      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
-      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
-    });
-
-    bodyParas.forEach((el) => {
-      // Clean up previous classes to avoid conflicts
-      el.classList.remove('cap-scroll-reveal');
-      el.style.opacity = '1';
-      el.style.transform = 'none';
-
-      // Use SplitType to split text into lines
-      const split = new window.SplitType(el, { types: 'lines' });
-      
-      // Wrap each line in an overflow hidden mask
-      split.lines.forEach(line => {
-        const wrapper = document.createElement('div');
-        wrapper.style.overflow = 'hidden';
-        wrapper.style.display = 'inline-block';
-        wrapper.style.verticalAlign = 'top';
-        wrapper.style.padding = '0';
-        wrapper.style.margin = '0';
-        line.parentNode.insertBefore(wrapper, line);
-        wrapper.appendChild(line);
-        // Initial state for GSAP
-        window.gsap.set(line, { yPercent: 100 });
-      });
-
-      window.ScrollTrigger.create({
-        trigger: el,
-        start: "top 90%",
-        onEnter: () => {
-          window.gsap.to(split.lines, {
-            yPercent: 0,
-            duration: 1.2,
-            ease: "power4.out",
-            stagger: 0.08
-          });
-        }
-      });
-    });
-  }
-
-  _setupFooterAnimations() {
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler || this._footerAnimated) return;
-    this._footerAnimated = true;
-
-    // The global "white-space: normal !important" rule collapses the footer
-    // address's authored newlines; restore pre-line on just that span so it
-    // wraps to the Figma line layout (inline !important beats the stylesheet).
-    const addrSpan = [...scaler.querySelectorAll('span')].find(
-      el => el.childElementCount === 0 && /niharika/i.test(el.textContent || '')
-    );
-    if (addrSpan) addrSpan.style.setProperty('white-space', 'pre-line', 'important');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const m = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
-    const scale = m ? parseFloat(m[1]) : 1;
-    const scalerRect = scaler.getBoundingClientRect();
-    const frameBox = (el) => {
-      const r = el.getBoundingClientRect();
-      return { top: (r.top - scalerRect.top) / scale, left: (r.left - scalerRect.left) / scale,
-               w: r.width / scale, h: r.height / scale };
-    };
-    const hasMatrix = (el) => ((el.getAttribute('style') || '').includes('matrix'));
-
-    // ===== FOOTER REVEAL =====
-    const footer = [...scaler.querySelectorAll('div')].find(d => d.getAttribute('data-original-top') === '7352');
-    if (!footer) return;
-    const footerTopFrame = parseFloat(footer.style.top) || 7352;
-
-    // Underline-wipe hover on footer links
-    const linkTexts = ['ABOUT US', 'PORTFOLIO', 'TEAM', 'CONTACT US', 'LINKEDIN', 'PARTNER@CAPPELLA.IN'];
-    [...footer.querySelectorAll('span')].forEach(sp => {
-      const t = (sp.textContent || '').trim().toUpperCase();
-      if (linkTexts.includes(t)) {
-        sp.classList.add('cap-ft-link');
-        sp.style.cursor = 'pointer';
-        // The 4 nav labels get page navigation from the navItems loop above.
-        // The email label opens mail here; LINKEDIN stays label-only (no URL
-        // exists in the source material — none invented).
-        if (t === 'PARTNER@CAPPELLA.IN') {
-          sp.setAttribute('role', 'link');
-          sp.setAttribute('tabindex', '0');
-          const mail = () => { window.location.href = 'mailto:partner@cappella.in'; };
-          sp.addEventListener('click', mail);
-          sp.addEventListener('keydown', (e) => { if (e.key === 'Enter') mail(); });
-        }
-      }
-    });
-
-    // Email input focus states + arrow nudge
-    const emailInput = footer.querySelector('input[type="email"]');
-    if (emailInput) {
-      emailInput.style.transition = 'border-color 0.4s ease';
-      emailInput.addEventListener('focus', () => { emailInput.style.borderBottom = '1px solid rgba(255,255,255,0.95)'; });
-      emailInput.addEventListener('blur', () => { emailInput.style.borderBottom = '1px solid rgba(255,255,255,0.4)'; });
-    }
-    const arrow = [...footer.querySelectorAll('svg')].find(sv => {
-      const l = parseFloat(sv.style.left);
-      return l >= 1300 && l <= 1345;
-    });
-    if (arrow) {
-      arrow.style.transition = 'transform 0.35s var(--cap-ease-power)';
-      arrow.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(5px)'; });
-      arrow.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
-    }
-
-    if (reduced) return;
-
-    // Stage every footer element: big C logo wipes in, the rest rise
-    // column-by-column (delay keyed to their position in the footer)
-    const bigLogo = footer.querySelector('.fig-asset-c9d8f12cf6e90c99');
-    const kids = [...footer.children].filter(el => {
-      if (parseFloat(el.style.width) > 1400) return false; // red background slab
-      return true;
-    });
-    const staged = [];
-    kids.forEach(el => {
-      const b = frameBox(el);
-      const relTop = b.top - footerTopFrame;
-      const delay = 0.15 + (b.left / 1440) * 0.4 + Math.max(0, relTop / 530) * 0.15;
-      // Each element gets a show/hide PAIR so the choreography is two-way:
-      // it retracts once the footer leaves the viewport and replays on the
-      // next visit (hide() is also the initial state).
-      if (el === bigLogo) {
-        // Big C: clip wipe + a soft scale settle
-        el.style.transition =
-          'clip-path 1.1s var(--cap-ease-expo) 0.1s, transform 1.1s var(--cap-ease-expo) 0.1s';
-        staged.push({
-          show() { el.style.clipPath = 'inset(0 0% 0 0)'; el.style.transform = 'scale(1)'; },
-          hide() { el.style.clipPath = 'inset(0 100% 0 0)'; el.style.transform = 'scale(1.04)'; }
-        });
-      } else if (el.tagName.toLowerCase() === 'svg' || hasMatrix(el)) {
-        // Divider hairlines carry Figma matrix transforms — never touch
-        // transform; draw them downward via clip only. transform stays in
-        // the transition list so the arrow's hover nudge keeps easing.
-        el.style.transition =
-          'clip-path 1.2s var(--cap-ease-expo) 0.2s, transform 0.35s var(--cap-ease-power)';
-        staged.push({
-          show() { el.style.clipPath = 'inset(0 0 -2% 0)'; },
-          hide() { el.style.clipPath = 'inset(0 0 100% 0)'; }
-        });
-      } else {
-        // Text/content children: fade + rise (the transform channel is free
-        // — the old curtain scrub is long gone)
-        el.style.transition =
-          'opacity 0.85s var(--cap-ease-expo) ' + delay + 's, ' +
-          'transform 0.85s var(--cap-ease-expo) ' + delay + 's';
-        staged.push({
-          show() { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; },
-          hide() { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }
-        });
-      }
-    });
-    staged.forEach(p => p.hide()); // arm the entrance
-
-    // Two-way gate with hysteresis: the choreography plays on the first
-    // visible sliver of the footer and RETRACTS once the footer has fully
-    // left the viewport — so the entrance replays on every visit (reverse
-    // is armed off-screen, never mid-view, so it can't flicker). Show fires
-    // on ~2% of the footer's visible height (a few px — at wide viewports
-    // the scaled footer is far taller than the screen, so percentage-of-
-    // element thresholds can never be large).
-    let footerShown = false;
-    const setShown = (on) => {
-      if (on === footerShown) return;
-      footerShown = on;
-      if (on) {
-        staged.forEach(p => p.show());
-        // Releases the CSS-held hidden state of the footer's out-of-container
-        // siblings (staggered rise, see the stylesheet)
-        scaler.classList.add('cap-footer-in');
-      } else {
-        staged.forEach(p => p.hide());
-        scaler.classList.remove('cap-footer-in');
-      }
-    };
-    const gate = () => {
-      const r = footer.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const overlap = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-      const frac = overlap / Math.min(r.height || 1, vh);
-      if (!footerShown && frac > 0.02) setShown(true);
-      else if (footerShown && frac <= 0) setShown(false);
-    };
-    this._footerGate = gate;
-    window.addEventListener('scroll', gate, { passive: true });
-    // IO backs up the scroll listener (e.g. programmatic jumps that land
-    // without further scroll events)
-    const io = new IntersectionObserver(gate, { threshold: [0, 0.01, 0.05] });
-    io.observe(footer);
-    gate();
-
-    // ===== FOOTER SIBLINGS: CSS-CLASS REVEAL (re-hydration-proof) =====
-    // History: a scroll-scrubbed "curtain" ghosted these siblings above the
-    // footer, and per-element inline hide-then-show reveals raced the DC
-    // frame's RE-HYDRATION (which replaces the footer DOM after setup) and
-    // could strand the footer invisible.
-    //
-    // The current mechanism cannot strand: the hidden state lives in CSS,
-    // keyed off the data-original-top tags that adjustFooter re-applies on
-    // every re-hydration, gated by #cap-scaler:not(.cap-footer-in). The
-    // .cap-footer-in gate (see setShown above) is global and two-way with
-    // hysteresis — shown while any sliver of the footer is on screen,
-    // retracted only once it has fully left, so it replays per visit and a
-    // re-created element automatically re-acquires whichever state is
-    // current. Transforms are translateY only and never cross the footer's
-    // top edge, so the old ghost is impossible too.
-  }
-
-  _setupMenuOverlay() {
-    if (document.getElementById('cap-menu-btn')) return;
-
-    const btn = document.createElement('div');
-    btn.id = 'cap-menu-btn';
-    btn.innerHTML = `
-      <svg viewBox="0 0 20 14" fill="none" stroke="rgb(209, 32, 47)" stroke-width="2.5" stroke-linecap="round">
-        <line x1="0" y1="1.25" x2="20" y2="1.25"></line>
-        <line x1="0" y1="7" x2="20" y2="7"></line>
-        <line x1="0" y1="12.75" x2="20" y2="12.75"></line>
-      </svg>
-    `;
-    document.body.appendChild(btn);
-
-    // Replace the baked Figma menu square (solid red box, hero top-right)
-    // with the white Cappella C mark (user request 2026-07-17) — retried
-    // until the frame hydrates. top:25 sits below every band-shift
-    // threshold, so no exemption bookkeeping is needed, but the attributes
-    // keep it out of the passes regardless.
-    const replaceBakedMenuBox = () => {
-      const scaler = document.getElementById('cap-scaler');
-      if (!scaler) return false;
-      const box = [...scaler.querySelectorAll('div')].find((e) => {
-        const st = e.getAttribute('style') || '';
-        return parseFloat(e.style.left) === 1360 && parseFloat(e.style.top) === 25 &&
-               st.includes('209, 32, 47') && Math.abs(parseFloat(e.style.width) - 56) < 2;
-      });
-      if (!box) return false;
-      box.style.display = 'none';
-      if (!scaler.querySelector('.cap-hero-mark')) {
-        const img = document.createElement('img');
-        img.src = './components/assets/c9d8f12cf6e90c99.png';
-        img.alt = 'Cappella';
-        img.className = 'cap-hero-mark';
-        img.setAttribute('data-cap-own', '1');
-        img.setAttribute('data-jexempt', '1');
-        img.style.cssText =
-          'position:absolute; left:1362px; top:29px; width:52px; height:48px;' +
-          'object-fit:contain; z-index:5; pointer-events:none;';
-        scaler.appendChild(img);
-      }
-      return true;
-    };
-    if (!replaceBakedMenuBox()) {
-      let boxTries = 0;
-      const boxTimer = setInterval(() => {
-        if (replaceBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
-      }, 250);
-    }
-
-    const overlay = document.createElement('div');
-    overlay.id = 'cap-menu-overlay';
-    overlay.innerHTML =
-      '<div id="cap-menu-backdrop"></div>' +
-      '<aside id="cap-menu-panel">' +
-        '<div class="cap-menu-top">' +
-          '<span class="cap-menu-tag">MENU</span>' +
-          '<button id="cap-menu-close">CLOSE</button>' +
-        '</div>' +
-        // Main links are real page navigations; the EXPLORE row below keeps
-        // data-target in-page scrolling (its handler selects a[data-target]).
-        '<nav class="cap-menu-links">' +
-          '<div class="cap-menu-mask"><a href="about-us.html">About Us</a></div>' +
-          '<div class="cap-menu-mask"><a href="projects.html">Portfolio</a></div>' +
-          '<div class="cap-menu-mask"><a href="team.html">Team</a></div>' +
-          '<div class="cap-menu-mask"><a href="contact-us.html">Contact Us</a></div>' +
-        '</nav>' +
-        '<div class="cap-menu-row">' +
-          '<span class="cap-menu-label">EXPLORE</span>' +
-          '<div class="cap-menu-info">' +
-            '<a data-target="2400">The Cappella Edge</a><br>' +
-            '<a data-target="3200">Our Journey</a><br>' +
-            '<a data-target="5460">Operators</a>' +
-          '</div>' +
-        '</div>' +
-        '<div class="cap-menu-row">' +
-          '<span class="cap-menu-label">STAY IN TOUCH</span>' +
-          '<div class="cap-menu-info">' +
-            '<a href="mailto:partner@cappella.in">partner@cappella.in</a><br>' +
-            'Suite 303, Niharika Jubilee One, Jubilee Hills,<br>Road No. 1, Hyderabad, Telangana 500033' +
-          '</div>' +
-        '</div>' +
-        '<div class="cap-menu-email">' +
-          '<input type="email" placeholder="Email address">' +
-          '<button aria-label="Subscribe">&#8594;</button>' +
-          '</div>' +
-      '</aside>';
-    document.body.appendChild(overlay);
-
-    // Staggered rise for the big links (transition-delay set per index)
-    const links = [...overlay.querySelectorAll('.cap-menu-links a')];
-    links.forEach((a, i) => { a.style.transitionDelay = (0.12 + i * 0.07) + 's, 0s'; });
-
-    // Dynamic scroll-based visibility check
-    const updateMenuBtnVisibility = () => {
-      if (overlay.classList.contains('cap-menu-open')) return;
-      const vp = document.getElementById('cap-viewport');
-      const s = vp ? vp.clientWidth / 1440 : 1;
-      const threshold = 180 * s;
-      if (window.scrollY > threshold) {
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-      } else {
-        btn.style.opacity = '0';
-        btn.style.pointerEvents = 'none';
-      }
-    };
-
-    const open = () => {
-      overlay.classList.add('cap-menu-open');
-      btn.style.opacity = '0';
-      btn.style.pointerEvents = 'none';
-      if (this._lenis) this._lenis.stop();
-      document.documentElement.classList.add('cap-scroll-locked');
-    };
-    const close = () => {
-      overlay.classList.remove('cap-menu-open');
-      updateMenuBtnVisibility();
-      if (this._lenis) this._lenis.start();
-      document.documentElement.classList.remove('cap-scroll-locked');
-    };
-    btn.addEventListener('click', open);
-    overlay.querySelector('#cap-menu-close').addEventListener('click', close);
-    overlay.querySelector('#cap-menu-backdrop').addEventListener('click', close);
-    this._onMenuKey = (e) => { if (e.key === 'Escape') close(); };
-    window.addEventListener('keydown', this._onMenuKey);
-
-    // Listen to scroll to update button visibility
-    window.addEventListener('scroll', updateMenuBtnVisibility, { passive: true });
-    this._updateMenuBtnVisibility = updateMenuBtnVisibility; // Store reference for clean-up
-    updateMenuBtnVisibility(); // Run initially
-
-    // Section links: close, then glide to the target (frame px -> page px)
-    [...overlay.querySelectorAll('a[data-target]')].forEach(a => {
-      a.addEventListener('click', () => {
-        let frameTop = parseFloat(a.dataset.target);
-        // Targets below the journey band gap shift with it
-        if (frameTop > 3889) frameTop += (this._jDelta || 0);
-        const vp = document.getElementById('cap-viewport');
-        const target = frameTop * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
-        close();
-        setTimeout(() => {
-          if (this._lenis) this._lenis.scrollTo(target);
-          else window.scrollTo({ top: target, behavior: 'smooth' });
-        }, 250);
-      });
-    });
-
-    // Email subscribe — same behaviour as the footer input
-    const email = overlay.querySelector('.cap-menu-email input');
-    overlay.querySelector('.cap-menu-email button').addEventListener('click', () => {
-      if (email.value && email.value.includes('@')) {
-        alert('Thank you for subscribing, ' + email.value + '!');
-        email.value = '';
-      } else {
-        alert('Please enter a valid email address.');
-      }
-    });
-  }
-
-  _setupGrain() {
-    if (document.getElementById('cap-grain')) return;
-    const g = document.createElement('div');
-    g.id = 'cap-grain';
-    document.body.appendChild(g);
-  }
-
-  _setupMetaLabels() {
-    // Editorial [ NN — SECTION ] reference labels removed per client request.
-    return;
-  }
+  /* ================================================================
+     [SECTION]  JOURNEY
+     [BEHAVIOR] Old band hide/shift (delta) and the pinned journey with phases, buildings and curve
+     ================================================================ */
 
   _setupJourneyBand() {
     // Opens a dynamic scroll gap in the frame for the pinned journey and
@@ -3188,213 +2472,10 @@ class Component extends DCLogic {
     };
   }
 
-  _setupStatCounters() {
-    // PREMIUM PASS: odometer digit rolls. Every large stat figure (leaf nodes,
-    // >=55px — catches "$500", "135 Acres", "16 Assets", "75 Years+", "10 Years")
-    // rolls each digit through a masked 0-9 column into place.
-    const scaler = document.getElementById('cap-scaler');
-    if (!scaler) return;
-
-    // Hide the baked "135 Acres / Total Land Area" and "75 Years" stats:
-    // both are replaced by the white #cap-135 / #cap-75 blocks (the baked
-    // copies' inherited color renders black in some browsers, and they'd
-    // sit inside the relocated staircase zone).
-    [...scaler.querySelectorAll('span, div')].forEach(el => {
-      if (el.closest('#cap-135') || el.closest('#cap-75')) return;
-      const top = parseFloat(el.style.top) || 0;
-      if (top < 1700 || top > 2200) return;
-      const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
-      if (t === 'Total Land Area' || t === 'Leadership Experience' ||
-          (/Acres$/.test(t) && parseFloat(el.style.left) < 400) ||
-          (/Years\+?$/.test(t) && parseFloat(el.style.left) > 600)) {
-        el.style.display = 'none';
-      }
-    });
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Natural glyph widths per element font (canvas measureText): the digit
-    // masks are sized to their OWN digit's width so a stat renders exactly
-    // as wide as the plain text would (a column's widest-digit width used to
-    // pad "1"s and squeeze "0"s, stretching stats past the Figma tracking).
-    const measCtx = document.createElement('canvas').getContext('2d');
-    const naturalW = (el, text) => {
-      const cs = window.getComputedStyle(el);
-      measCtx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
-      let w = measCtx.measureText(text).width;
-      const ls = parseFloat(cs.letterSpacing);
-      if (!isNaN(ls)) w += ls * text.length;
-      return w;
-    };
-    const els = [...scaler.querySelectorAll('div, span')].filter(el => {
-      if (el.querySelector('*') || el.dataset.capOdo) return false;
-      const txt = (el.textContent || '').trim();
-      if (!txt || txt.length > 12 || !/\d/.test(txt)) return false;
-      const fs = parseFloat(window.getComputedStyle(el).fontSize) || 0;
-      return fs >= 55;
-    });
-    els.forEach(el => {
-      el.dataset.capOdo = '1';
-      el.dataset.capOdoText = (el.textContent || '').trim();
-      if (reduced) return; // leave static text
-      // Rebuild from the RAW text: leading/trailing spaces are real layout
-      // (e.g. "$500 " ahead of an inline "Mn+" sibling) — trimming them
-      // glued the unit to the digits.
-      const txt = (el.textContent || '').replace(/[\u2028\u2029]/g, ' ');
-      el.textContent = '';
-      const rolls = [];
-      [...txt].forEach(ch => {
-        if (!/\d/.test(ch)) {
-          const s = document.createElement('span');
-          s.textContent = ch;
-          s.style.whiteSpace = 'pre';
-          el.appendChild(s);
-          return;
-        }
-        // Mask holds a column of 0-9 twice; rolling to 10+digit passes a full
-        // cycle before landing. Initially shows the real digit (offset digit).
-        const digit = parseInt(ch, 10);
-        const mask = document.createElement('span');
-        // An overflow:hidden inline-block baselines at its bottom EDGE, not the
-        // glyph's baseline, so the digit (which sits ~0.137em higher inside the
-        // 1em box) rides up above the surrounding "$"/"Mn+" text. Nudge the mask
-        // down by that descent so the digit baseline lands on the text baseline.
-        mask.style.cssText = 'display:inline-block; overflow:hidden; height:1em; line-height:1em; vertical-align:-0.137em;';
-        mask.style.width = naturalW(el, ch).toFixed(2) + 'px';
-        const col = document.createElement('span');
-        col.style.cssText = 'display:block; will-change:transform; transform:translateY(-' + digit + 'em);';
-        for (let r = 0; r < 2; r++) {
-          for (let d = 0; d <= 9; d++) {
-            const cell = document.createElement('span');
-            cell.textContent = String(d);
-            cell.style.cssText = 'display:block; height:1em; line-height:1em;';
-            col.appendChild(cell);
-          }
-        }
-        mask.appendChild(col);
-        el.appendChild(mask);
-        rolls.push({ col, digit });
-      });
-      if (!rolls.length) return;
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          io.disconnect();
-          rolls.forEach(({ col, digit }, i) => {
-            col.style.transition = 'none';
-            col.style.transform = 'translateY(0)';
-            void col.offsetHeight; // reflow so the jump to 0 doesn't animate
-            col.style.transition = 'transform 1.5s var(--cap-ease-expo) ' + (i * 0.09) + 's';
-            col.style.transform = 'translateY(-' + (10 + digit) + 'em)';
-          });
-        });
-      }, { threshold: 0.4 });
-      io.observe(el);
-    });
-
-    // Value/unit tracking ("$500 Mn+"): the baked value span carries a fixed
-    // width with dead room after the digits, so the unit drifted wide of the
-    // Figma tracking. Release the width and guarantee exactly one word space
-    // between value and unit. Re-run on delays: the frame can re-render.
-    const tightenValueUnitPairs = () => {
-      // A line-split pass can race the odometer and wrap a stat's content in
-      // an inline-block overflow:hidden line mask — which baselines at its
-      // BOTTOM edge, sinking the digits ~10px below the unit. Unwrap any
-      // such foreign wrapper (our digit masks stay: they hold the columns).
-      const unwrapForeign = (host) => {
-        for (const child of [...host.children]) {
-          const st = child.style;
-          if (st.overflow !== 'hidden' || st.display !== 'inline-block') continue;
-          if (st.height === '1em') continue; // our own digit mask
-          const containsMask = [...child.querySelectorAll('span')].some(
-            s2 => s2.style.overflow === 'hidden'
-          );
-          if (containsMask) {
-            // foreign wrapper AROUND our digit masks → unwrap (our own
-            // masks contain only the rolling column, never another
-            // overflow-hidden span)
-            while (child.firstChild) host.insertBefore(child.firstChild, child);
-            child.remove();
-          } else if (!(child.textContent || '').trim() && !child.firstElementChild) {
-            child.remove(); // empty leftover wrapper
-          }
-        }
-      };
-      for (const odoEl of scaler.querySelectorAll('[data-cap-odo]')) unwrapForeign(odoEl);
-      for (const mnEl of scaler.querySelectorAll('span')) {
-        const unit = (mnEl.textContent || '').trim();
-        if (unit !== 'Mn+' && unit !== 'Mn' && unit !== 'Cr+' && unit !== 'Cr') continue;
-        if (!mnEl.getClientRects().length) continue;
-        const prev = mnEl.previousElementSibling;
-        if (!prev || !/\d/.test(prev.textContent || '')) continue;
-        unwrapForeign(prev); // re-rendered copies can lose data-cap-odo
-        if (!prev.dataset.capPairTight) {
-          prev.dataset.capPairTight = '1';
-          prev.style.width = 'auto';
-        }
-        if (!/\s$/.test(prev.textContent || '')) {
-          const sp = document.createElement('span');
-          sp.textContent = ' ';
-          sp.style.whiteSpace = 'pre';
-          prev.appendChild(sp);
-        }
-      }
-    };
-    tightenValueUnitPairs();
-    setTimeout(tightenValueUnitPairs, 800);
-    setTimeout(tightenValueUnitPairs, 2000);
-    setTimeout(tightenValueUnitPairs, 4000);
-  }
-
-  _setupReveal() {
-    const reveal = document.getElementById('cap-reveal');
-    const stat75 = document.getElementById('cap-75');
-    if (!reveal) return;
-    // Reduced motion: show the finished state immediately, no scroll scrub
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      [...reveal.querySelectorAll('.cap-stair')].forEach(s => { s.style.transform = 'scaleX(1)'; });
-      if (stat75) { stat75.style.opacity = '1'; stat75.style.transform = 'none'; }
-      return;
-    }
-    const stairs = [...reveal.querySelectorAll('.cap-stair')];
-    const N = stairs.length;
-    const clamp = (v) => v < 0 ? 0 : v > 1 ? 1 : v;
-    const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-    this._onRevealScroll = () => {
-      const r = reveal.getBoundingClientRect();
-      const vh = window.innerHeight;
-      
-      // Calculate progress p: 0 when the reveal top is near the bottom of viewport, 
-      // 1 when it's well above it.
-      const p = clamp((vh * 0.85 - r.top) / (vh * 0.85));
-      
-      // We want a staggered reveal starting from the bottom stair (index 3) to the top stair (index 0)
-      const span = 0.55;
-      const stagger = 0.15;
-      
-      stairs.forEach((stair, i) => {
-        // Since i=0 is top, i=1 is middle, i=2 is bottom,
-        // and we want bottom (i=2) to start first, middle (i=1) second, top (i=0) third:
-        const delay = (N - 1 - i) * stagger;
-        const stairProgress = clamp((p - delay) / span);
-        const easedProgress = easeInOutQuad(stairProgress);
-        
-        stair.style.transform = 'scaleX(' + easedProgress + ')';
-      });
-
-      if (stat75) {
-        // Rise WITH the stairs, not after them: the old window (0.55 → 0.95)
-        // needed the stair container at the viewport top for full opacity,
-        // so in normal scrolling the stat read as empty red space ("design
-        // incomplete" — client). Full by p 0.6, i.e. as the stairs build.
-        const fp = clamp((p - 0.15) / 0.45);
-        stat75.style.opacity = String(fp);
-        stat75.style.transform = 'translateY(' + (30 * (1 - fp)) + 'px)';
-      }
-    };
-    this._onRevealScroll();
-    window.addEventListener('scroll', this._onRevealScroll, { passive: true });
-    window.addEventListener('resize', this._onRevealScroll);
-  }
+  /* ================================================================
+     [SECTION]  PORTFOLIO
+     [BEHAVIOR] City filter, Hyderabad photo cards (WebGL tint reveal), per-city tiles, captions, red C logo alignment
+     ================================================================ */
 
   _setupPortfolioInteraction() {
     const scaler = document.getElementById('cap-scaler');
@@ -4207,6 +3288,326 @@ class Component extends DCLogic {
     setTimeout(hideRedOverlays, 800);
   }
 
+  /* ================================================================
+     [SECTION]  OPERATORS
+     [BEHAVIOR] Logo grid stitching (Lighthouse row) and the hover wedge animation (mirror forms, ease-out fade, hover pads)
+     ================================================================ */
+
+  _setupOperatorsGridStitch() {
+    // Client feedback: the Lighthouse logo floats free of the operators
+    // hairline grid (the baked design gives every other logo a crossing
+    // line) and sits slightly off the grid axes. Stitch it in:
+    //  - a design-matching hairline across its row, spanning the section's
+    //    two verticals (x 448 → 1019), rendered behind the logos exactly
+    //    like Saint Mary's own dash
+    //  - align the logo to ISP's column axis and Saint Mary's row axis
+    // The hairline is injected with PRE-SHIFT coordinates and no
+    // data-cap-own, so the band shift (+260) and journey delta adopt it
+    // like any baked frame element — correct on every viewport and resize.
+    const scaler = document.getElementById('cap-scaler');
+    // The segments must live INSIDE the imported frame subtree: both
+    // shiftBelowBand and shiftJourney only walk frameRoot, so a scaler-
+    // level child would never be shifted into place.
+    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
+    const lh = scaler && scaler.querySelector('.fig-asset-55a8dd7666421f70-d65f9521');
+    const sm = scaler && scaler.querySelector('.fig-asset-1ec5ca333db94fc0');
+    const isp = scaler && scaler.querySelector('.fig-asset-620dc3d6704178dd');
+    if (!lh || !sm || !isp || !frameRoot) {
+      if ((this._osTries = (this._osTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorsGridStitch(), 250);
+      return;
+    }
+    if (this._opStitchDone) return;
+    this._opStitchDone = true;
+
+    // JGI's logo is a transparent circular PNG, so the x1026 grid vertical
+    // showed through it (the rectangular logos mask crossing lines with
+    // their own white boxes). A white backing makes it mask the line the
+    // same way — invisible against the section's white page.
+    const jgi = scaler.querySelector('.fig-asset-79356d431474ada0');
+    if (jgi) jgi.style.backgroundColor = '#fff';
+
+    // Row axis = Saint Mary's vertical centre, in the post-band-shift
+    // domain the journey bookkeeping stores (jorig = baked + 260).
+    const jorigOf = (el) => parseFloat(el.getAttribute('data-jorig-top') || el.style.top) || 0;
+    const smCenter = jorigOf(sm) + (parseFloat(sm.style.height) || 0) / 2;
+
+    // Align Lighthouse: row axis via jorig (the journey shift re-derives
+    // style.top from it on every pass), column axis via left (untouched by
+    // the shift machinery).
+    const lhH = parseFloat(lh.style.height) || 0;
+    lh.setAttribute('data-jorig-top', String(smCenter - lhH / 2));
+    const ispCenter = (parseFloat(isp.style.left) || 0) + (parseFloat(isp.style.width) || 0) / 2;
+    lh.style.left = (ispCenter - (parseFloat(lh.style.width) || 0) / 2) + 'px';
+
+    // (The crossing hairline previously injected at this row was removed
+    // 2026-07-17: the Figma design has no horizontal line at the Lighthouse
+    // row — the grid verticals simply end/gap around it.)
+
+    // Center-column vertical (Figma): runs down the x726 column, gapping
+    // around the LIGHTHOUSE wordmark, then continuing to the footer band.
+    // The baked element for it (the hidden 1581-long svg) got stranded at
+    // the wrong span by the band/journey shifts — rebuild it as two clones
+    // positioned from live geometry, adopted by the shift machinery via
+    // data-jorig-ty (+ data-cap-shifted so shiftBelowBand won't re-shift).
+    const donor = scaler.querySelector('svg[width="1581"]');
+    if (donor && !scaler.querySelector('[data-cap-centerline]')) {
+      const srect = scaler.getBoundingClientRect();
+      const mSc = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+      const sc2 = mSc ? parseFloat(mSc[1]) : 1;
+      const cvTop = (el) => (el.getBoundingClientRect().top - srect.top) / sc2;
+      const cvBottom = (el) => (el.getBoundingClientRect().bottom - srect.top) / sc2;
+      const band = scaler.querySelector('[data-original-top="7352"]');
+      const jd = this._jDelta || 0;
+      const mkSeg = (topY, bottomY) => {
+        const len = bottomY - topY;
+        if (len <= 10) return;
+        const el = donor.cloneNode(true);
+        el.setAttribute('data-cap-centerline', '1');
+        el.setAttribute('data-cap-shifted', '1');
+        el.setAttribute('data-jorig-ty', String(bottomY - jd));
+        el.style.display = '';
+        el.style.transform = 'matrix(0, -1, 1, 0, 726, ' + bottomY.toFixed(1) + ') scaleX(' + (len / 1581).toFixed(5) + ')';
+        donor.parentElement.appendChild(el);
+      };
+      if (band) {
+        mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
+        mkSeg(cvBottom(lh) + 18, cvTop(band));
+      }
+    }
+    if (this._runAdjust) this._runAdjust();
+  }
+
+  _setupOperatorTriangles() {
+    // Client 2026-07-21: the red wedges in the operators grid were replicated
+    // from Figma as static decoration, but in the design they are an
+    // ANIMATION — a wedge should arrive on the cell whose logo you point at.
+    // So: hide the three baked static wedges, and wipe one in on hover.
+    //
+    // Decorative and cursor-driven, so it hard-bails on touch and under
+    // reduced motion (same guards as _setupDotGrid / _setupMagneticBtn).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    const scaler = document.getElementById('cap-scaler');
+    const frameRoot = scaler && scaler.querySelector('[class*="sc-host"]');
+
+    // One entry per logo. dx/dy place the wedge's solid red TIP relative to
+    // that logo's own top-left, because the anchor is appended as a CHILD of
+    // the logo: it then rides along with every shift (+260 band, journey
+    // delta) for free, with no data-jorig bookkeeping to keep in sync. That
+    // matters more than it sounds — this section's rendered y moves between
+    // loads (the journey delta is derived from viewport height), so absolute
+    // coordinates measured in one session are wrong in the next.
+    //
+    // `fan` picks the matrix form — which way the wedge opens out from its
+    // tip — and the trailing comment says where that puts it relative to its
+    // logo. Those are two different things: Saint Mary's wedge sits BELOW its
+    // logo while still fanning up-right, so naming the field after the side
+    // would be a lie.
+    //
+    // Client 2026-07-21: mirrored by column so the wedges point inward — the
+    // two left columns (x178, x451) sit to the right of their logo, the two
+    // right columns (x726, x1026) to the left.
+    //
+    // Tips sit on a column axis where a horizontal rule crosses it, so the
+    // wedge's flat edge rests on that rule. CRIMSON/ISP share the (451, 9446)
+    // intersection and MERAKI/TSUS share (726, 9818), fanning opposite ways —
+    // safe, because each wedge is bound to its own logo's hover and they can
+    // never be on screen together.
+    const CELLS = [
+      { asset: 'fig-asset-91ee4f07ef1ea5a8', fan: 'upLeft',  dx: 358, dy: 56 },   // CRIMSON — right of logo, tip (451, 9446)
+      { asset: 'fig-asset-1e639ffbc0aca215', fan: 'upLeft',  dx: 381, dy: 44 },   // MERAKI  — right of logo, tip (726, 9818)
+
+      // Client 2026-07-23: ISP's wedge should read as CRIMSON's mirror image
+      // (they share the same rail intersection). upRight is a 90-degree
+      // ROTATION — its fade runs at a visibly different angle — so ISP gets
+      // the dedicated mirrored form instead.
+      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRightMirror', dx: -140, dy: 73 },  // ISP — left of logo, tip (451, 9446)
+      // Client 2026-07-23: TSUS mirrors MERAKI across their shared rail, same
+      // treatment as the ISP/CRIMSON pair below.
+      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRightMirror', dx: -157, dy: 47 },  // TSUS — left of logo, tip (726, 9818)
+
+      // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
+      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule —
+      // exactly where baked wedge A sat. Client 2026-07-23: switched from
+      // wedge A's rotated up-right form to the mirror form, so its fade angle
+      // matches the upLeft wedges like the rest of the mirrored set.
+      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRightMirror', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
+
+      // No rule crosses beside these two, so their wedges sit further out than
+      // the rest, and Lighthouse's has no rule under its flat edge at all —
+      // the Figma design deliberately has no horizontal on that row, see the
+      // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
+      //
+      // Client 2026-07-23: JGI joins the mirror set with the others — same
+      // footprint left of its logo, fade angle symmetric with the upLeft
+      // wedges. (It was briefly flipped upLeft across the rail to match
+      // Figma's "Rectangle 126", then reverted the same day — the complaint
+      // was fade quality, not which side of the rail it sits on.)
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upRightMirror', dx: -226, dy: 70 },  // JGI — left of logo, tip (726, 9169)
+      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRightMirror', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
+    ];
+
+    const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
+    if (!frameRoot || found.some(f => !f.el)) {
+      if ((this._otTries = (this._otTries || 0) + 1) < 40) setTimeout(() => this._setupOperatorTriangles(), 250);
+      return;
+    }
+    if (this._opTriDone) return;
+    this._opTriDone = true;
+
+    // The three baked wedges are the static version being replaced. They are
+    // the only elements in the frame carrying this gradient, so the signature
+    // is a safe selector.
+    const GRAD_SIG = 'linear-gradient(153.033deg';
+    [...frameRoot.querySelectorAll('div')].forEach(el => {
+      const bg = el.style.background || el.style.backgroundImage || '';
+      if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
+    });
+
+    // Client 2026-07-23: the baked two-stop gradient read as a solid
+    // hard-edged triangle next to the Figma render ("the fade is
+    // incomplete"). Same stops, different interpolation: CSS ramps the two
+    // stops LINEARLY, while Figma renders them as an ease-out decay — half
+    // gone by 14% of the gradient line, a long feathered tail after. These
+    // intermediate stops are the Figma render's measured redness profile
+    // (sampled along the reference PNG's diagonal at 5% steps), so the CSS
+    // piecewise-linear ramp traces Figma's curve. Alpha-only stops on the
+    // constant brand red: over the white page redness is proportional to
+    // alpha, so measured redness maps 1:1 onto these values.
+    const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
+                 'rgba(209,32,47,0.82) 5%, rgba(209,32,47,0.62) 10%, ' +
+                 'rgba(209,32,47,0.44) 15%, rgba(209,32,47,0.29) 20%, ' +
+                 'rgba(209,32,47,0.17) 25%, rgba(209,32,47,0.085) 30%, ' +
+                 'rgba(209,32,47,0.03) 36%, rgba(209,32,47,0) 42.23%, ' +
+                 'rgba(255,255,255,0) 78.20%)';
+    const SHOWN = 'inset(0 0 0 0)';
+
+    // Both matrices are lifted from the baked wedges: -1,0,0,-1 is the form
+    // wedges B and C use (fans up-and-left), 0,-1,1,0 is the form wedge A
+    // uses (fans up-and-right). In both the translate IS the red tip.
+    //
+    // The clip has to flip with the matrix or the wedge wipes in from its far
+    // edge instead of growing out of the tip. Under -1,0,0,-1 local +x maps to
+    // screen -x, so clipping from local right reveals the tip first. Under
+    // 0,-1,1,0 local +y maps to screen +x, so the equivalent is clipping from
+    // local bottom.
+    const FORM = {
+      upLeft:  { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
+      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' },
+      // 1,0,0,-1 is a vertical flip: the exact horizontal mirror of the
+      // upLeft wedge, opening right of its tip. Unlike upRight (a rotation,
+      // whose fade runs at a rotated angle), this keeps the fade angle
+      // symmetric with upLeft across the shared rail. Local +x stays screen
+      // +x, so hiding from local right reveals out of the tip, like upLeft.
+      upRightMirror: { matrix: 'matrix(1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' }
+    };
+
+    found.forEach(({ c, el }) => {
+      const form = FORM[c.fan] || FORM.upLeft;
+
+      const anchor = document.createElement('div');
+      anchor.setAttribute('data-cap-own', '1');
+      anchor.style.cssText =
+        'position:absolute; left:0; top:0; transform-origin:0 0;' +
+        'z-index:5; pointer-events:none;';
+      anchor.style.transform = form.matrix + c.dx + ', ' + c.dy + ')';
+
+      // Inner element carries the paint and the reveal, so the animation
+      // never fights the positioning matrix. Clipping from the tip outward is
+      // what makes it read as being drawn along the rule it sits on.
+      // Client 2026-07-23: "small missing fade" — the gradient's zero-line
+      // exits the 118.5px box geometrically (it would reach zero at ~149px),
+      // so ~5% red was still present at the box's far edge and cut off as a
+      // hard vertical line. The Figma render completes its fade exactly at
+      // the box corner. Feather the far edge (local x=W — the cut edge for
+      // both live forms: screen-left for upLeft, screen-right for the
+      // mirror) with a mask so the tail fades out inside the box instead of
+      // clipping. The tip edge (local x=0, resting on the rail) stays crisp.
+      const EDGE_FEATHER = 'linear-gradient(90deg, #000 80%, rgba(0,0,0,0) 100%)';
+      const ink = document.createElement('div');
+      ink.style.cssText =
+        'width:118.514px; height:119.995px; transform-origin:0 0;' +
+        'clip-path:' + form.hidden + ';' +
+        'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
+        '-webkit-mask-image:' + EDGE_FEATHER + ';' +
+        'mask-image:' + EDGE_FEATHER + ';' +
+        'background:' + GRAD + ';';
+      anchor.appendChild(ink);
+      el.appendChild(anchor);
+
+      // Client 2026-07-23: "the animation is not complete." Two causes, both
+      // from the hitbox being only the logo's own small box while the wedge
+      // paints OUTSIDE it (dx up to ±358): (a) drifting the cursor toward the
+      // appearing wedge fired mouseleave and reversed the wipe mid-flight;
+      // (b) sweeping across a shallow logo never left the wipe time to run.
+      //
+      // Fix 1 — hover pad: an invisible hitbox spanning logo ∪ wedge box, so
+      // pointing anywhere in the cell keeps the wedge alive. Child of the
+      // logo like the anchor, for the same shift-riding reason. Pads never
+      // overlap a neighbouring logo: adjacent cells only touch at the shared
+      // column axes (CRIMSON|ISP at x451, MERAKI|TSUS at x726).
+      const W = 118.514, H = 119.995;
+      const wedgeBox = c.fan === 'upRight'
+        ? { x0: c.dx,     x1: c.dx + H, y0: c.dy - W, y1: c.dy }   // matrix(0,-1,1,0): local h lies along screen x
+        : c.fan === 'upRightMirror'
+        ? { x0: c.dx,     x1: c.dx + W, y0: c.dy - H, y1: c.dy }   // matrix(1,0,0,-1): box up-right of tip
+        : { x0: c.dx - W, x1: c.dx,     y0: c.dy - H, y1: c.dy };  // matrix(-1,0,0,-1): box up-left of tip
+      const padX = Math.min(0, wedgeBox.x0);
+      const padY = Math.min(0, wedgeBox.y0);
+      const pad = document.createElement('div');
+      pad.setAttribute('data-cap-own', '1');
+      pad.style.cssText =
+        'position:absolute;' +
+        'left:' + padX + 'px; top:' + padY + 'px;' +
+        'width:' + (Math.max(parseFloat(el.style.width) || 0, wedgeBox.x1) - padX) + 'px;' +
+        'height:' + (Math.max(parseFloat(el.style.height) || 0, wedgeBox.y1) - padY) + 'px;' +
+        'z-index:4; pointer-events:auto; background:transparent;';
+      el.appendChild(pad);
+
+      // Fix 2 — linger: retract only after the 0.42s wipe has had time to
+      // finish, so even a fast sweep shows the complete wedge. Re-entering
+      // during the linger cancels the retract.
+      let hideT = null;
+      pad.addEventListener('mouseenter', () => {
+        clearTimeout(hideT);
+        ink.style.clipPath = SHOWN;
+      });
+      pad.addEventListener('mouseleave', () => {
+        clearTimeout(hideT);
+        hideT = setTimeout(() => { ink.style.clipPath = form.hidden; }, 450);
+      });
+    });
+  }
+
+  /* ================================================================
+     [SECTION]  EDGE
+     [BEHAVIOR] Cappella Edge image trim and the accordion
+     ================================================================ */
+
+  _setupEdgeImageCut() {
+    // Client: 45px gap below The Cappella Edge image, to match the white space
+    // above it. The image ran flush into
+    // the next section — its bottom sat at frame-y 3125 and the journey pin
+    // starts at 3124.7, a 0.3px overlap. Trim the image instead of moving
+    // anything, so every neighbour keeps its baked coordinates.
+    const scaler = document.getElementById('cap-scaler');
+    const img = scaler && scaler.querySelector('.fig-asset-63186349250e044c-069f3173');
+    if (!img) {
+      if ((this._eicTries = (this._eicTries || 0) + 1) < 40) setTimeout(() => this._setupEdgeImageCut(), 250);
+      return;
+    }
+    const BAKED_H = 668, CUT = 45;
+    // background-size's height is '100%' in fig-assets.css, i.e. the photo
+    // stretches to whatever the box height is — shrinking the box alone would
+    // squash it ~1.5% rather than cut it. Pin the photo to its baked height so
+    // the shorter box CLIPS it, and anchor to the top (was 50%) so the whole
+    // 10px comes off the bottom instead of 5px at each end.
+    img.style.height = (BAKED_H - CUT) + 'px';
+    img.style.backgroundSize = '147.178% ' + BAKED_H + 'px';
+    img.style.backgroundPosition = '0.016% 0%';
+  }
+
   _setupAccordion() {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
@@ -4559,6 +3960,673 @@ class Component extends DCLogic {
     }
   }
 
+  /* ================================================================
+     [SECTION]  FOOTER
+     [BEHAVIOR] Footer band positioning support animations (rail joins live in adjustFooter above)
+     ================================================================ */
+
+  _setupFooterAnimations() {
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler || this._footerAnimated) return;
+    this._footerAnimated = true;
+
+    // The global "white-space: normal !important" rule collapses the footer
+    // address's authored newlines; restore pre-line on just that span so it
+    // wraps to the Figma line layout (inline !important beats the stylesheet).
+    const addrSpan = [...scaler.querySelectorAll('span')].find(
+      el => el.childElementCount === 0 && /niharika/i.test(el.textContent || '')
+    );
+    if (addrSpan) addrSpan.style.setProperty('white-space', 'pre-line', 'important');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const m = (scaler.style.transform || '').match(/scale\(([^)]+)\)/);
+    const scale = m ? parseFloat(m[1]) : 1;
+    const scalerRect = scaler.getBoundingClientRect();
+    const frameBox = (el) => {
+      const r = el.getBoundingClientRect();
+      return { top: (r.top - scalerRect.top) / scale, left: (r.left - scalerRect.left) / scale,
+               w: r.width / scale, h: r.height / scale };
+    };
+    const hasMatrix = (el) => ((el.getAttribute('style') || '').includes('matrix'));
+
+    // ===== FOOTER REVEAL =====
+    const footer = [...scaler.querySelectorAll('div')].find(d => d.getAttribute('data-original-top') === '7352');
+    if (!footer) return;
+    const footerTopFrame = parseFloat(footer.style.top) || 7352;
+
+    // Underline-wipe hover on footer links
+    const linkTexts = ['ABOUT US', 'PORTFOLIO', 'TEAM', 'CONTACT US', 'LINKEDIN', 'PARTNER@CAPPELLA.IN'];
+    [...footer.querySelectorAll('span')].forEach(sp => {
+      const t = (sp.textContent || '').trim().toUpperCase();
+      if (linkTexts.includes(t)) {
+        sp.classList.add('cap-ft-link');
+        sp.style.cursor = 'pointer';
+        // The 4 nav labels get page navigation from the navItems loop above.
+        // The email label opens mail here; LINKEDIN stays label-only (no URL
+        // exists in the source material — none invented).
+        if (t === 'PARTNER@CAPPELLA.IN') {
+          sp.setAttribute('role', 'link');
+          sp.setAttribute('tabindex', '0');
+          const mail = () => { window.location.href = 'mailto:partner@cappella.in'; };
+          sp.addEventListener('click', mail);
+          sp.addEventListener('keydown', (e) => { if (e.key === 'Enter') mail(); });
+        }
+      }
+    });
+
+    // Email input focus states + arrow nudge
+    const emailInput = footer.querySelector('input[type="email"]');
+    if (emailInput) {
+      emailInput.style.transition = 'border-color 0.4s ease';
+      emailInput.addEventListener('focus', () => { emailInput.style.borderBottom = '1px solid rgba(255,255,255,0.95)'; });
+      emailInput.addEventListener('blur', () => { emailInput.style.borderBottom = '1px solid rgba(255,255,255,0.4)'; });
+    }
+    const arrow = [...footer.querySelectorAll('svg')].find(sv => {
+      const l = parseFloat(sv.style.left);
+      return l >= 1300 && l <= 1345;
+    });
+    if (arrow) {
+      arrow.style.transition = 'transform 0.35s var(--cap-ease-power)';
+      arrow.addEventListener('mouseenter', () => { arrow.style.transform = 'translateX(5px)'; });
+      arrow.addEventListener('mouseleave', () => { arrow.style.transform = 'translateX(0)'; });
+    }
+
+    if (reduced) return;
+
+    // Stage every footer element: big C logo wipes in, the rest rise
+    // column-by-column (delay keyed to their position in the footer)
+    const bigLogo = footer.querySelector('.fig-asset-c9d8f12cf6e90c99');
+    const kids = [...footer.children].filter(el => {
+      if (parseFloat(el.style.width) > 1400) return false; // red background slab
+      return true;
+    });
+    const staged = [];
+    kids.forEach(el => {
+      const b = frameBox(el);
+      const relTop = b.top - footerTopFrame;
+      const delay = 0.15 + (b.left / 1440) * 0.4 + Math.max(0, relTop / 530) * 0.15;
+      // Each element gets a show/hide PAIR so the choreography is two-way:
+      // it retracts once the footer leaves the viewport and replays on the
+      // next visit (hide() is also the initial state).
+      if (el === bigLogo) {
+        // Big C: clip wipe + a soft scale settle
+        el.style.transition =
+          'clip-path 1.1s var(--cap-ease-expo) 0.1s, transform 1.1s var(--cap-ease-expo) 0.1s';
+        staged.push({
+          show() { el.style.clipPath = 'inset(0 0% 0 0)'; el.style.transform = 'scale(1)'; },
+          hide() { el.style.clipPath = 'inset(0 100% 0 0)'; el.style.transform = 'scale(1.04)'; }
+        });
+      } else if (el.tagName.toLowerCase() === 'svg' || hasMatrix(el)) {
+        // Divider hairlines carry Figma matrix transforms — never touch
+        // transform; draw them downward via clip only. transform stays in
+        // the transition list so the arrow's hover nudge keeps easing.
+        el.style.transition =
+          'clip-path 1.2s var(--cap-ease-expo) 0.2s, transform 0.35s var(--cap-ease-power)';
+        staged.push({
+          show() { el.style.clipPath = 'inset(0 0 -2% 0)'; },
+          hide() { el.style.clipPath = 'inset(0 0 100% 0)'; }
+        });
+      } else {
+        // Text/content children: fade + rise (the transform channel is free
+        // — the old curtain scrub is long gone)
+        el.style.transition =
+          'opacity 0.85s var(--cap-ease-expo) ' + delay + 's, ' +
+          'transform 0.85s var(--cap-ease-expo) ' + delay + 's';
+        staged.push({
+          show() { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; },
+          hide() { el.style.opacity = '0'; el.style.transform = 'translateY(16px)'; }
+        });
+      }
+    });
+    staged.forEach(p => p.hide()); // arm the entrance
+
+    // Two-way gate with hysteresis: the choreography plays on the first
+    // visible sliver of the footer and RETRACTS once the footer has fully
+    // left the viewport — so the entrance replays on every visit (reverse
+    // is armed off-screen, never mid-view, so it can't flicker). Show fires
+    // on ~2% of the footer's visible height (a few px — at wide viewports
+    // the scaled footer is far taller than the screen, so percentage-of-
+    // element thresholds can never be large).
+    let footerShown = false;
+    const setShown = (on) => {
+      if (on === footerShown) return;
+      footerShown = on;
+      if (on) {
+        staged.forEach(p => p.show());
+        // Releases the CSS-held hidden state of the footer's out-of-container
+        // siblings (staggered rise, see the stylesheet)
+        scaler.classList.add('cap-footer-in');
+      } else {
+        staged.forEach(p => p.hide());
+        scaler.classList.remove('cap-footer-in');
+      }
+    };
+    const gate = () => {
+      const r = footer.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const overlap = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      const frac = overlap / Math.min(r.height || 1, vh);
+      if (!footerShown && frac > 0.02) setShown(true);
+      else if (footerShown && frac <= 0) setShown(false);
+    };
+    this._footerGate = gate;
+    window.addEventListener('scroll', gate, { passive: true });
+    // IO backs up the scroll listener (e.g. programmatic jumps that land
+    // without further scroll events)
+    const io = new IntersectionObserver(gate, { threshold: [0, 0.01, 0.05] });
+    io.observe(footer);
+    gate();
+
+    // ===== FOOTER SIBLINGS: CSS-CLASS REVEAL (re-hydration-proof) =====
+    // History: a scroll-scrubbed "curtain" ghosted these siblings above the
+    // footer, and per-element inline hide-then-show reveals raced the DC
+    // frame's RE-HYDRATION (which replaces the footer DOM after setup) and
+    // could strand the footer invisible.
+    //
+    // The current mechanism cannot strand: the hidden state lives in CSS,
+    // keyed off the data-original-top tags that adjustFooter re-applies on
+    // every re-hydration, gated by #cap-scaler:not(.cap-footer-in). The
+    // .cap-footer-in gate (see setShown above) is global and two-way with
+    // hysteresis — shown while any sliver of the footer is on screen,
+    // retracted only once it has fully left, so it replays per visit and a
+    // re-created element automatically re-acquires whichever state is
+    // current. Transforms are translateY only and never cross the footer's
+    // top edge, so the old ghost is impossible too.
+  }
+
+  /* ================================================================
+     [SECTION]  PAGE CHROME
+     [BEHAVIOR] Menu overlay, nav scramble, scroll progress, magnetic button, film grain, meta labels, scroll reveals
+     ================================================================ */
+
+  _setupMenuOverlay() {
+    if (document.getElementById('cap-menu-btn')) return;
+
+    const btn = document.createElement('div');
+    btn.id = 'cap-menu-btn';
+    btn.innerHTML = `
+      <svg viewBox="0 0 20 14" fill="none" stroke="rgb(209, 32, 47)" stroke-width="2.5" stroke-linecap="round">
+        <line x1="0" y1="1.25" x2="20" y2="1.25"></line>
+        <line x1="0" y1="7" x2="20" y2="7"></line>
+        <line x1="0" y1="12.75" x2="20" y2="12.75"></line>
+      </svg>
+    `;
+    document.body.appendChild(btn);
+
+    // Replace the baked Figma menu square (solid red box, hero top-right)
+    // with the white Cappella C mark (user request 2026-07-17) — retried
+    // until the frame hydrates. top:25 sits below every band-shift
+    // threshold, so no exemption bookkeeping is needed, but the attributes
+    // keep it out of the passes regardless.
+    const replaceBakedMenuBox = () => {
+      const scaler = document.getElementById('cap-scaler');
+      if (!scaler) return false;
+      const box = [...scaler.querySelectorAll('div')].find((e) => {
+        const st = e.getAttribute('style') || '';
+        return parseFloat(e.style.left) === 1360 && parseFloat(e.style.top) === 25 &&
+               st.includes('209, 32, 47') && Math.abs(parseFloat(e.style.width) - 56) < 2;
+      });
+      if (!box) return false;
+      box.style.display = 'none';
+      if (!scaler.querySelector('.cap-hero-mark')) {
+        const img = document.createElement('img');
+        img.src = './components/assets/c9d8f12cf6e90c99.png';
+        img.alt = 'Cappella';
+        img.className = 'cap-hero-mark';
+        img.setAttribute('data-cap-own', '1');
+        img.setAttribute('data-jexempt', '1');
+        img.style.cssText =
+          'position:absolute; left:1362px; top:29px; width:52px; height:48px;' +
+          'object-fit:contain; z-index:5; pointer-events:none;';
+        scaler.appendChild(img);
+      }
+      return true;
+    };
+    if (!replaceBakedMenuBox()) {
+      let boxTries = 0;
+      const boxTimer = setInterval(() => {
+        if (replaceBakedMenuBox() || ++boxTries > 40) clearInterval(boxTimer);
+      }, 250);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cap-menu-overlay';
+    overlay.innerHTML =
+      '<div id="cap-menu-backdrop"></div>' +
+      '<aside id="cap-menu-panel">' +
+        '<div class="cap-menu-top">' +
+          '<span class="cap-menu-tag">MENU</span>' +
+          '<button id="cap-menu-close">CLOSE</button>' +
+        '</div>' +
+        // Main links are real page navigations; the EXPLORE row below keeps
+        // data-target in-page scrolling (its handler selects a[data-target]).
+        '<nav class="cap-menu-links">' +
+          '<div class="cap-menu-mask"><a href="about-us.html">About Us</a></div>' +
+          '<div class="cap-menu-mask"><a href="projects.html">Portfolio</a></div>' +
+          '<div class="cap-menu-mask"><a href="team.html">Team</a></div>' +
+          '<div class="cap-menu-mask"><a href="contact-us.html">Contact Us</a></div>' +
+        '</nav>' +
+        '<div class="cap-menu-row">' +
+          '<span class="cap-menu-label">EXPLORE</span>' +
+          '<div class="cap-menu-info">' +
+            '<a data-target="2400">The Cappella Edge</a><br>' +
+            '<a data-target="3200">Our Journey</a><br>' +
+            '<a data-target="5460">Operators</a>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cap-menu-row">' +
+          '<span class="cap-menu-label">STAY IN TOUCH</span>' +
+          '<div class="cap-menu-info">' +
+            '<a href="mailto:partner@cappella.in">partner@cappella.in</a><br>' +
+            'Suite 303, Niharika Jubilee One, Jubilee Hills,<br>Road No. 1, Hyderabad, Telangana 500033' +
+          '</div>' +
+        '</div>' +
+        '<div class="cap-menu-email">' +
+          '<input type="email" placeholder="Email address">' +
+          '<button aria-label="Subscribe">&#8594;</button>' +
+          '</div>' +
+      '</aside>';
+    document.body.appendChild(overlay);
+
+    // Staggered rise for the big links (transition-delay set per index)
+    const links = [...overlay.querySelectorAll('.cap-menu-links a')];
+    links.forEach((a, i) => { a.style.transitionDelay = (0.12 + i * 0.07) + 's, 0s'; });
+
+    // Dynamic scroll-based visibility check
+    const updateMenuBtnVisibility = () => {
+      if (overlay.classList.contains('cap-menu-open')) return;
+      const vp = document.getElementById('cap-viewport');
+      const s = vp ? vp.clientWidth / 1440 : 1;
+      const threshold = 180 * s;
+      if (window.scrollY > threshold) {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      } else {
+        btn.style.opacity = '0';
+        btn.style.pointerEvents = 'none';
+      }
+    };
+
+    const open = () => {
+      overlay.classList.add('cap-menu-open');
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+      if (this._lenis) this._lenis.stop();
+      document.documentElement.classList.add('cap-scroll-locked');
+    };
+    const close = () => {
+      overlay.classList.remove('cap-menu-open');
+      updateMenuBtnVisibility();
+      if (this._lenis) this._lenis.start();
+      document.documentElement.classList.remove('cap-scroll-locked');
+    };
+    btn.addEventListener('click', open);
+    overlay.querySelector('#cap-menu-close').addEventListener('click', close);
+    overlay.querySelector('#cap-menu-backdrop').addEventListener('click', close);
+    this._onMenuKey = (e) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('keydown', this._onMenuKey);
+
+    // Listen to scroll to update button visibility
+    window.addEventListener('scroll', updateMenuBtnVisibility, { passive: true });
+    this._updateMenuBtnVisibility = updateMenuBtnVisibility; // Store reference for clean-up
+    updateMenuBtnVisibility(); // Run initially
+
+    // Section links: close, then glide to the target (frame px -> page px)
+    [...overlay.querySelectorAll('a[data-target]')].forEach(a => {
+      a.addEventListener('click', () => {
+        let frameTop = parseFloat(a.dataset.target);
+        // Targets below the journey band gap shift with it
+        if (frameTop > 3889) frameTop += (this._jDelta || 0);
+        const vp = document.getElementById('cap-viewport');
+        const target = frameTop * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
+        close();
+        setTimeout(() => {
+          if (this._lenis) this._lenis.scrollTo(target);
+          else window.scrollTo({ top: target, behavior: 'smooth' });
+        }, 250);
+      });
+    });
+
+    // Email subscribe — same behaviour as the footer input
+    const email = overlay.querySelector('.cap-menu-email input');
+    overlay.querySelector('.cap-menu-email button').addEventListener('click', () => {
+      if (email.value && email.value.includes('@')) {
+        alert('Thank you for subscribing, ' + email.value + '!');
+        email.value = '';
+      } else {
+        alert('Please enter a valid email address.');
+      }
+    });
+  }
+
+  _setupNavScramble() {
+    const labels = ['ABOUT US', 'PROJECTS', 'TEAM', 'CONTACT US'];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*<>/';
+    const spans = [...document.querySelectorAll('#cap-scaler span')].filter((s) => {
+      const t = (s.textContent || '').trim();
+      const r = s.getBoundingClientRect();
+      return labels.includes(t) && r.top < 300;
+    });
+    if (spans.length < 4 && (this._navTries = (this._navTries || 0) + 1) < 40) {
+      setTimeout(() => this._setupNavScramble(), 200);
+      return;
+    }
+    const reducedNav = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    spans.forEach((el) => {
+      const target = (el.textContent || '').trim();
+      el.classList.add('cap-nav'); // nowrap exception — keeps CONTACT US on one line
+      el.style.cursor = 'pointer';
+      if (reducedNav) return; // keep the affordance, skip the scramble motion
+      let iv = null;
+      el.addEventListener('mouseenter', () => {
+        let frame = 0;
+        clearInterval(iv);
+        iv = setInterval(() => {
+          el.textContent = target.split('').map((c, i) => {
+            if (c === ' ') return ' ';
+            if (i < frame / 2.4) return target[i];
+            return chars[Math.floor(Math.random() * chars.length)];
+          }).join('');
+          frame++;
+          if (frame / 2.4 >= target.length) { clearInterval(iv); el.textContent = target; }
+        }, 32);
+      });
+    });
+  }
+
+  _setupScrollProgress() {
+    // Thin brand-red hairline along the top tracking scroll position.
+    if (document.getElementById('cap-progress')) return;
+    const bar = document.createElement('div');
+    bar.id = 'cap-progress';
+    document.body.appendChild(bar);
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+    };
+    this._onProgressScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+    window.addEventListener('scroll', this._onProgressScroll, { passive: true });
+    window.addEventListener('resize', this._onProgressScroll);
+    update();
+  }
+
+  _setupMagneticBtn() {
+    // Magnetic pull on the circular menu button: within 110px the button
+    // leans toward the cursor (max 8px), easing back on exit. Composes with
+    // the CSS hover scale via the --capMx/--capMy/--capMs custom properties.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const btn = document.getElementById('cap-menu-btn');
+    if (!btn) {
+      if ((this._magTries = (this._magTries || 0) + 1) < 20) {
+        setTimeout(() => this._setupMagneticBtn(), 250);
+      }
+      return;
+    }
+    const RADIUS = 110;
+    const PULL = 8;
+    this._onMagneticMove = (e) => {
+      if (btn.style.opacity === '0' || btn.style.pointerEvents === 'none') return;
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < RADIUS) {
+        const f = (1 - dist / RADIUS) * PULL;
+        btn.style.setProperty('--capMx', ((dx / dist) * f || 0).toFixed(1) + 'px');
+        btn.style.setProperty('--capMy', ((dy / dist) * f || 0).toFixed(1) + 'px');
+      } else {
+        btn.style.setProperty('--capMx', '0px');
+        btn.style.setProperty('--capMy', '0px');
+      }
+    };
+    window.addEventListener('mousemove', this._onMagneticMove, { passive: true });
+  }
+
+  _setupGrain() {
+    if (document.getElementById('cap-grain')) return;
+    const g = document.createElement('div');
+    g.id = 'cap-grain';
+    document.body.appendChild(g);
+  }
+
+  _setupMetaLabels() {
+    // Editorial [ NN — SECTION ] reference labels removed per client request.
+    return;
+  }
+
+  _setupScrollReveals() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const scaler = document.getElementById('cap-scaler');
+    if (!scaler) return;
+
+    // Helper: get element's true top in page (px), accounting for scaler scale
+    const getScaledTop = (el) => {
+      const s = parseFloat((scaler.style.transform || 'scale(1)').match(/scale\(([^)]+)\)/)?.[1] || '1');
+      const r = el.getBoundingClientRect();
+      return r.top + window.scrollY;
+    };
+
+    // --- Classify elements by which section they're likely in ---
+    // Strategy: find key heading/block elements by text content and position,
+    // then add reveal classes + observe with IntersectionObserver.
+
+    const addReveal = (el, cls = 'cap-scroll-reveal', delay = '') => {
+      el.classList.add(cls);
+      if (delay) el.classList.add(delay);
+    };
+
+    // Observe and fire
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('cap-revealed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    // SECTION HEADINGS — find large text nodes that are section titles
+    const sectionHeadings = [...scaler.querySelectorAll('span, div')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      return fontSize >= 40 && txt.length > 3 && txt.length < 60;
+    });
+    // The named 55px section titles get the editorial clip-wipe. IMPORTANT:
+    // clip-path zeroes the element's IntersectionObserver area (a fully
+    // clipped target never intersects), so wiped elements are revealed by a
+    // scroll-position check instead — getBoundingClientRect ignores clip.
+    const WIPE_TITLES = ['OUR JOURNEY', 'OUR PORTFOLIO', 'OPERATORS', 'THE CAPPELLA EDGE'];
+    const wipeEls = [];
+    const normTxt = (el) =>
+      (el.textContent || '').replace(/[\u2028\s]+/g, ' ').trim().toUpperCase();
+    // Look across ALL large-text candidates for the named titles (they are
+    // not reliably inside the first-20 slice used for the generic pass).
+    sectionHeadings.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return; // hero area: skip
+      if (WIPE_TITLES.includes(normTxt(el)) && !el.classList.contains('cap-wipe-reveal')) {
+        addReveal(el, 'cap-wipe-reveal');
+        wipeEls.push(el);
+      }
+    });
+    sectionHeadings.slice(0, 20).forEach((el, i) => {
+      // Skip elements in the hero (visible on page load)
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      if (el.classList.contains('cap-wipe-reveal')) return; // wipe pass owns it
+      addReveal(el, 'cap-scroll-reveal');
+      io.observe(el);
+    });
+    if (wipeEls.length) {
+      let wipeTick = false;
+      const checkWipes = () => {
+        wipeTick = false;
+        for (let i = wipeEls.length - 1; i >= 0; i--) {
+          const r = wipeEls[i].getBoundingClientRect();
+          if (r.top < window.innerHeight * 0.88 && r.bottom > 0) {
+            wipeEls[i].classList.add('cap-revealed');
+            wipeEls.splice(i, 1);
+          }
+        }
+        if (!wipeEls.length) window.removeEventListener('scroll', onWipeScroll);
+      };
+      const onWipeScroll = () => {
+        if (!wipeTick) { wipeTick = true; requestAnimationFrame(checkWipes); }
+      };
+      window.addEventListener('scroll', onWipeScroll, { passive: true });
+      checkWipes();
+    }
+
+    // STAT NUMBERS — large metric text ($500 Mn+, 135 Acres, 16 Assets, 75 Years+)
+    const statNums = [...scaler.querySelectorAll('span, div')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      return /^(\$?\d+\s*\w*[+]?)$/.test(txt) || txt.match(/^\d.*[+]$/);
+    });
+    statNums.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      addReveal(el, 'cap-scale-reveal', 'cap-delay-' + Math.min(i + 1, 5));
+      io.observe(el);
+    });
+
+    // BODY PARAGRAPHS — description text blocks
+    const bodyParas = [...scaler.querySelectorAll('p, span')].filter(el => {
+      const txt = (el.textContent || '').trim();
+      const style = window.getComputedStyle(el);
+      const fontSize = parseFloat(style.fontSize) || 0;
+      // Exclude the footer address (the only text with a 6-digit postal
+      // code): the line-split froze it at a too-narrow wrap; left alone it
+      // renders at its baked 291px width, matching the Figma line breaks.
+      // Guard the big stats ("$500 Mn+", "16 Assets"...): under late
+      // hydration the computed size can read wrong and let them through;
+      // wrapping them in line masks breaks the odometer baseline (an
+      // inline-block with overflow:hidden baselines at its bottom edge).
+      const inlineFs = parseFloat(el.style.fontSize) || 0;
+      if (inlineFs >= 55 || el.dataset.capOdo || el.querySelector('[data-cap-odo]')) return false;
+      return fontSize >= 16 && fontSize < 36 && txt.length > 40 && !/\d{6}/.test(txt);
+    });
+    bodyParas.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return;
+      addReveal(el, 'cap-scroll-reveal', 'cap-delay-' + (i % 3 + 1));
+      io.observe(el);
+    });
+
+    this._scrollRevealIO = io;
+
+    // Initialize Lenis Smooth Scroll & Sync GSAP Ticker
+    if (window.Lenis && window.gsap && window.ScrollTrigger) {
+      this._lenis = new window.Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // OCI style easing
+      });
+      this._lenis.on('scroll', window.ScrollTrigger.update);
+      window.gsap.ticker.add((time) => {
+        this._lenis.raf(time * 1000);
+      });
+      window.gsap.ticker.lagSmoothing(0);
+    }
+
+    this._setupHeroZoom();
+    this._setupSplitText();
+
+    // ===== NAV → PAGE NAVIGATION =====
+    // The nav/footer labels are Figma-materialized <span>s, not anchors.
+    // They now navigate to the real standalone pages (About / Projects /
+    // Team / Contact) instead of scrolling within the frame. role="link" +
+    // tabindex + Enter make the converted spans keyboard-operable. The
+    // scramble hover (_setupNavScramble) binds separately and is unaffected.
+    const navItems = [
+      { text: 'ABOUT US', href: 'about-us.html' },
+      { text: 'PROJECTS', href: 'projects.html' },
+      { text: 'PORTFOLIO', href: 'projects.html' },
+      { text: 'TEAM', href: 'team.html' },
+      { text: 'CONTACT US', href: 'contact-us.html' }
+    ];
+
+    // The frame hydrates asynchronously — retry until the nav spans exist
+    // (a one-shot timer left the nav dead on slow loads).
+    const bindNav = (tries) => {
+      let bound = 0;
+      navItems.forEach(item => {
+        const els = [...scaler.querySelectorAll('span')].filter(el =>
+          (el.textContent || '').replace(/\s+/g, '').toUpperCase() === item.text.replace(/\s+/g, '')
+        );
+        els.forEach(el => {
+          if (el._capNavBound) { bound++; return; }
+          el._capNavBound = true;
+          bound++;
+          el.style.cursor = 'pointer';
+          el.setAttribute('role', 'link');
+          el.setAttribute('tabindex', '0');
+          const go = () => { window.location.href = item.href; };
+          el.addEventListener('click', go);
+          el.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+        });
+      });
+      if (bound < 4 && tries > 0) setTimeout(() => bindNav(tries - 1), 200);
+    };
+    setTimeout(() => bindNav(40), 500);
+
+    // ===== FOOTER EMAIL INPUT =====
+    setTimeout(() => {
+      const emailSpan = [...scaler.querySelectorAll('span')].find(el => 
+        (el.textContent || '').trim() === 'Your Email Id'
+      );
+      if (emailSpan) {
+        const input = document.createElement('input');
+        input.type = 'email';
+        input.placeholder = 'Your Email Id';
+        input.style.position = 'absolute';
+        input.style.left = emailSpan.style.left || '1138px';
+        input.style.top = emailSpan.style.top || '345px';
+        input.style.width = emailSpan.style.width || '180px';
+        input.style.height = '35px';
+        input.style.background = 'transparent';
+        input.style.border = 'none';
+        input.style.outline = 'none';
+        input.style.fontFamily = emailSpan.style.fontFamily || 'Montserrat, sans-serif';
+        input.style.fontSize = emailSpan.style.fontSize || '14px';
+        input.style.fontWeight = emailSpan.style.fontWeight || '500';
+        input.style.color = 'rgb(255,255,255)';
+        input.style.borderBottom = '1px solid rgba(255,255,255,0.4)';
+        
+        emailSpan.parentNode.replaceChild(input, emailSpan);
+
+        const arrowSvg = [...input.parentNode.querySelectorAll('svg')].find(s => 
+          s.style.left === '1307px' || (parseFloat(s.style.left) >= 1300 && parseFloat(s.style.left) <= 1320)
+        );
+        if (arrowSvg) {
+          arrowSvg.style.cursor = 'pointer';
+          arrowSvg.addEventListener('click', () => {
+            if (input.value) {
+              alert(`Thank you for subscribing, ${input.value}!`);
+              input.value = '';
+            } else {
+              alert('Please enter a valid email address.');
+            }
+          });
+        }
+      }
+    }, 500);
+  }
+
+  /* ================================================================
+     [SECTION]  LIFECYCLE
+     [BEHAVIOR] Teardown of every listener/raf/observer the setups install; DC render contract
+     ================================================================ */
+
   componentWillUnmount() {
     window.removeEventListener('resize', this._fit);
     clearTimeout(this._t1); clearTimeout(this._t2);
@@ -4582,7 +4650,9 @@ class Component extends DCLogic {
     if (this._scrollRevealIO) this._scrollRevealIO.disconnect();
     if (this._dgCleanup) this._dgCleanup();
   }
+
   renderVals() { return {}; }
+
 }
 </script>
 </body>
