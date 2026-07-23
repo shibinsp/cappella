@@ -1238,21 +1238,35 @@ class Component extends DCLogic {
     const CELLS = [
       { asset: 'fig-asset-91ee4f07ef1ea5a8', fan: 'upLeft',  dx: 358, dy: 56 },   // CRIMSON — right of logo, tip (451, 9446)
       { asset: 'fig-asset-1e639ffbc0aca215', fan: 'upLeft',  dx: 381, dy: 44 },   // MERAKI  — right of logo, tip (726, 9818)
-      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRight', dx: -140, dy: 73 },  // ISP     — left of logo,  tip (451, 9446)
-      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRight', dx: -157, dy: 47 },  // TSUS    — left of logo,  tip (726, 9818)
+
+      // Client 2026-07-23: ISP's wedge should read as CRIMSON's mirror image
+      // (they share the same rail intersection). upRight is a 90-degree
+      // ROTATION — its fade runs at a visibly different angle — so ISP gets
+      // the dedicated mirrored form instead.
+      { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRightMirror', dx: -140, dy: 73 },  // ISP — left of logo, tip (451, 9446)
+      // Client 2026-07-23: TSUS mirrors MERAKI across their shared rail, same
+      // treatment as the ISP/CRIMSON pair below.
+      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRightMirror', dx: -157, dy: 47 },  // TSUS — left of logo, tip (726, 9818)
 
       // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
-      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule, and
-      // is exactly where baked wedge A sat with this same up-right form — so
-      // this restores the original Figma placement rather than inventing one.
-      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRight', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
+      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule —
+      // exactly where baked wedge A sat. Client 2026-07-23: switched from
+      // wedge A's rotated up-right form to the mirror form, so its fade angle
+      // matches the upLeft wedges like the rest of the mirrored set.
+      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRightMirror', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
 
       // No rule crosses beside these two, so their wedges sit further out than
       // the rest, and Lighthouse's has no rule under its flat edge at all —
       // the Figma design deliberately has no horizontal on that row, see the
       // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
-      { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
-      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRight', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
+      //
+      // Client 2026-07-23: JGI joins the mirror set with the others — same
+      // footprint left of its logo, fade angle symmetric with the upLeft
+      // wedges. (It was briefly flipped upLeft across the rail to match
+      // Figma's "Rectangle 126", then reverted the same day — the complaint
+      // was fade quality, not which side of the rail it sits on.)
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upRightMirror', dx: -226, dy: 70 },  // JGI — left of logo, tip (726, 9169)
+      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRightMirror', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
     const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
@@ -1272,9 +1286,22 @@ class Component extends DCLogic {
       if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
     });
 
-    // Verbatim from the baked wedges so the hover ones are visually identical.
+    // Client 2026-07-23: the baked two-stop gradient read as a solid
+    // hard-edged triangle next to the Figma render ("the fade is
+    // incomplete"). Same stops, different interpolation: CSS ramps the two
+    // stops LINEARLY, while Figma renders them as an ease-out decay — half
+    // gone by 14% of the gradient line, a long feathered tail after. These
+    // intermediate stops are the Figma render's measured redness profile
+    // (sampled along the reference PNG's diagonal at 5% steps), so the CSS
+    // piecewise-linear ramp traces Figma's curve. Alpha-only stops on the
+    // constant brand red: over the white page redness is proportional to
+    // alpha, so measured redness maps 1:1 onto these values.
     const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
-                 'rgba(255,255,255,0) 42.23%, rgba(255,255,255,0) 78.20%)';
+                 'rgba(209,32,47,0.82) 5%, rgba(209,32,47,0.62) 10%, ' +
+                 'rgba(209,32,47,0.44) 15%, rgba(209,32,47,0.29) 20%, ' +
+                 'rgba(209,32,47,0.17) 25%, rgba(209,32,47,0.085) 30%, ' +
+                 'rgba(209,32,47,0.03) 36%, rgba(209,32,47,0) 42.23%, ' +
+                 'rgba(255,255,255,0) 78.20%)';
     const SHOWN = 'inset(0 0 0 0)';
 
     // Both matrices are lifted from the baked wedges: -1,0,0,-1 is the form
@@ -1288,7 +1315,13 @@ class Component extends DCLogic {
     // local bottom.
     const FORM = {
       upLeft:  { matrix: 'matrix(-1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' },
-      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' }
+      upRight: { matrix: 'matrix(0, -1, 1, 0, ',  hidden: 'inset(0 0 100% 0)' },
+      // 1,0,0,-1 is a vertical flip: the exact horizontal mirror of the
+      // upLeft wedge, opening right of its tip. Unlike upRight (a rotation,
+      // whose fade runs at a rotated angle), this keeps the fade angle
+      // symmetric with upLeft across the shared rail. Local +x stays screen
+      // +x, so hiding from local right reveals out of the tip, like upLeft.
+      upRightMirror: { matrix: 'matrix(1, 0, 0, -1, ', hidden: 'inset(0 100% 0 0)' }
     };
 
     found.forEach(({ c, el }) => {
@@ -1304,17 +1337,67 @@ class Component extends DCLogic {
       // Inner element carries the paint and the reveal, so the animation
       // never fights the positioning matrix. Clipping from the tip outward is
       // what makes it read as being drawn along the rule it sits on.
+      // Client 2026-07-23: "small missing fade" — the gradient's zero-line
+      // exits the 118.5px box geometrically (it would reach zero at ~149px),
+      // so ~5% red was still present at the box's far edge and cut off as a
+      // hard vertical line. The Figma render completes its fade exactly at
+      // the box corner. Feather the far edge (local x=W — the cut edge for
+      // both live forms: screen-left for upLeft, screen-right for the
+      // mirror) with a mask so the tail fades out inside the box instead of
+      // clipping. The tip edge (local x=0, resting on the rail) stays crisp.
+      const EDGE_FEATHER = 'linear-gradient(90deg, #000 80%, rgba(0,0,0,0) 100%)';
       const ink = document.createElement('div');
       ink.style.cssText =
         'width:118.514px; height:119.995px; transform-origin:0 0;' +
         'clip-path:' + form.hidden + ';' +
         'transition: clip-path 0.42s cubic-bezier(0.16, 1, 0.3, 1);' +
+        '-webkit-mask-image:' + EDGE_FEATHER + ';' +
+        'mask-image:' + EDGE_FEATHER + ';' +
         'background:' + GRAD + ';';
       anchor.appendChild(ink);
       el.appendChild(anchor);
 
-      el.addEventListener('mouseenter', () => { ink.style.clipPath = SHOWN; });
-      el.addEventListener('mouseleave', () => { ink.style.clipPath = form.hidden; });
+      // Client 2026-07-23: "the animation is not complete." Two causes, both
+      // from the hitbox being only the logo's own small box while the wedge
+      // paints OUTSIDE it (dx up to ±358): (a) drifting the cursor toward the
+      // appearing wedge fired mouseleave and reversed the wipe mid-flight;
+      // (b) sweeping across a shallow logo never left the wipe time to run.
+      //
+      // Fix 1 — hover pad: an invisible hitbox spanning logo ∪ wedge box, so
+      // pointing anywhere in the cell keeps the wedge alive. Child of the
+      // logo like the anchor, for the same shift-riding reason. Pads never
+      // overlap a neighbouring logo: adjacent cells only touch at the shared
+      // column axes (CRIMSON|ISP at x451, MERAKI|TSUS at x726).
+      const W = 118.514, H = 119.995;
+      const wedgeBox = c.fan === 'upRight'
+        ? { x0: c.dx,     x1: c.dx + H, y0: c.dy - W, y1: c.dy }   // matrix(0,-1,1,0): local h lies along screen x
+        : c.fan === 'upRightMirror'
+        ? { x0: c.dx,     x1: c.dx + W, y0: c.dy - H, y1: c.dy }   // matrix(1,0,0,-1): box up-right of tip
+        : { x0: c.dx - W, x1: c.dx,     y0: c.dy - H, y1: c.dy };  // matrix(-1,0,0,-1): box up-left of tip
+      const padX = Math.min(0, wedgeBox.x0);
+      const padY = Math.min(0, wedgeBox.y0);
+      const pad = document.createElement('div');
+      pad.setAttribute('data-cap-own', '1');
+      pad.style.cssText =
+        'position:absolute;' +
+        'left:' + padX + 'px; top:' + padY + 'px;' +
+        'width:' + (Math.max(parseFloat(el.style.width) || 0, wedgeBox.x1) - padX) + 'px;' +
+        'height:' + (Math.max(parseFloat(el.style.height) || 0, wedgeBox.y1) - padY) + 'px;' +
+        'z-index:4; pointer-events:auto; background:transparent;';
+      el.appendChild(pad);
+
+      // Fix 2 — linger: retract only after the 0.42s wipe has had time to
+      // finish, so even a fast sweep shows the complete wedge. Re-entering
+      // during the linger cancels the retract.
+      let hideT = null;
+      pad.addEventListener('mouseenter', () => {
+        clearTimeout(hideT);
+        ink.style.clipPath = SHOWN;
+      });
+      pad.addEventListener('mouseleave', () => {
+        clearTimeout(hideT);
+        hideT = setTimeout(() => { ink.style.clipPath = form.hidden; }, 450);
+      });
     });
   }
 
