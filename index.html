@@ -1876,32 +1876,46 @@ class Component extends DCLogic {
     // an empty viewport. The mode is fixed per build; crossing the
     // breakpoint on resize tears the section down and rebuilds it.
     const PORTRAIT = window.innerWidth < Math.min(720, capVH() * 0.85);
+    // Client 2026-07-24: the portrait canvas HEIGHT adapts to the device
+    // aspect so the pinned scene fills the phone with no letterbox (the fixed
+    // 800x1500 canvas is squatter than a phone, so it used to letterbox ~113px
+    // and read small). Authored portrait Y-coords live in a 1500-tall
+    // reference and are mapped up by PF; X and font-px are unchanged.
+    const _vpw = ((document.getElementById('cap-viewport') || {}).clientWidth) || window.innerWidth;
+    const PCH = PORTRAIT ? Math.max(1500, Math.min(1950, Math.round(800 * capVH() / _vpw))) : 1500;
+    const PF = PORTRAIT ? PCH / 1500 : 1;
+    this._jPCH = PCH; // remembered so a portrait resize can rebuild if it drifts
+    const _sy = (n) => +(n * PF).toFixed(1);
+    // Scale only the Y numbers of an SVG path body (x,y interleaved after each C)
+    const _scaleBodyY = (body) => { let i = 0; return body.split(' ').map((t) => (t === 'C' ? t : (i++ % 2 === 1 ? _sy(parseFloat(t)).toString() : t))).join(' '); };
+
     const CW = PORTRAIT ? 800 : 1600;   // canvas design width
-    const CH = PORTRAIT ? 1500 : 820;   // canvas design height
-    const HY = PORTRAIT ? 1150 : 715;   // sky-horizon y in canvas coords
+    const CH = PORTRAIT ? PCH : 820;    // canvas design height (portrait: device-aspect)
+    const HY = PORTRAIT ? _sy(1150) : 715;   // sky-horizon y in canvas coords
     // Path head x + body (the M start is composed dynamically in setTail so
     // the curve always reaches the pin's top edge — on viewports taller than
     // the canvas aspect the stage letterboxes and a static start would hang
     // visibly mid-sky)
     const HEAD_X = PORTRAIT ? 640 : 812;
     const BASE_BODY = PORTRAIT
-      ? 'C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230'
+      ? _scaleBodyY('C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230')
       : 'C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
     const BASE_PATH = 'M ' + HEAD_X + ' -10 ' + BASE_BODY;
     const TAIL = PORTRAIT
-      ? { c1x: 158, c1y: 1310, minMid: 1350 }
+      ? { c1x: 158, c1y: _sy(1310), minMid: _sy(1350) }
       : { c1x: 207, c1y: 732, minMid: 760 };
     // Dot positions; reveal fractions are recomputed per layout (the dynamic
     // head/tail change the path length), preserving the hand-tuned offsets
     const DOTS = PORTRAIT
-      ? [['0.25', 540, 300], ['0.50', 360, 700], ['0.70', 170, 1230]]
+      ? [['0.25', 540, _sy(300)], ['0.50', 360, _sy(700)], ['0.70', 170, _sy(1230)]]
       : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
     const TH_ADJ = PORTRAIT ? [0.06, 0.06, -0.067] : [0.06, 0.055, -0.019];
     const TH_LIVE = DOTS.map((d) => parseFloat(d[0]));
     const MPOS = PORTRAIT
-      ? [[90, 240, 420], [410, 640, 370], [230, 1170, 440]]
+      ? [[90, _sy(240), 420], [410, _sy(640), 370], [230, _sy(1170), 440]]
       : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
-    const MF = PORTRAIT ? { y: 40, a: 26, n: 18 } : { y: 42, a: 30, n: 17 };
+    // Client 2026-07-24: larger portrait type (the mobile scene read small).
+    const MF = PORTRAIT ? { y: 52, a: 33, n: 22 } : { y: 42, a: 30, n: 17 };
     // Natural PNG geometry: [width, height, visual-base row, visual-top row]
     const NAT = {
       'foundation.png': [806, 353, 338, 11],
@@ -1934,7 +1948,7 @@ class Component extends DCLogic {
       const basePct = nat[2] / nat[1];
       const bottom = (CH - HY) - (nat[1] - nat[2]) * bs;
       const wordStyle = PORTRAIT
-        ? 'right:24px;bottom:32px;font-size:64px;'
+        ? 'right:24px;bottom:44px;font-size:82px;'
         : 'right:40px;bottom:26px;font-size:112px;';
       return '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
         '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct.toFixed(4) + '" style="position:absolute;right:' + bright + 'px;bottom:' + bottom.toFixed(1) + 'px;width:' + bw + 'px;height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
@@ -1978,7 +1992,7 @@ class Component extends DCLogic {
           '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
         '</div>' +
         '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:' + CW + 'px;height:' + CH + 'px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          '<div style="position:absolute;' + (PORTRAIT ? 'left:44px;top:64px;font-size:52px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
+          '<div style="position:absolute;' + (PORTRAIT ? 'left:40px;top:76px;font-size:66px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
           phaseHtml(0, 'foundation.png',
             marker(0, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
             marker(1, '2017', '1 Asset', '', 0) +
@@ -2429,9 +2443,12 @@ class Component extends DCLogic {
     }
 
     const onResize = () => {
-      // Crossing the portrait breakpoint (e.g. phone rotation) rebuilds the
-      // whole section with the other composition
-      if ((window.innerWidth < Math.min(720, capVH() * 0.85)) !== PORTRAIT) {
+      const nowPortrait = window.innerWidth < Math.min(720, capVH() * 0.85);
+      // Crossing the portrait breakpoint (rotation) rebuilds with the other
+      // composition; a portrait resize that would drift the device-aspect
+      // canvas height > 4% also rebuilds (path/markers are baked with PCH).
+      const pchNow = nowPortrait ? Math.max(1500, Math.min(1950, Math.round(800 * capVH() / (vp.clientWidth || window.innerWidth)))) : 1500;
+      if (nowPortrait !== PORTRAIT || (nowPortrait && Math.abs(pchNow - (this._jPCH || pchNow)) / pchNow > 0.04)) {
         this._jCleanup();
         host.remove();
         const oldCss = document.getElementById('cap-journey-css');
