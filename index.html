@@ -1129,22 +1129,14 @@ class Component extends DCLogic {
       /^matrix\(0,\s*1,\s*-1,\s*0,\s*723,\s*2150\)/.test(el.style.transform || '')
     );
     if (edgeDivider) {
-      // Client 2026-07-23: "patch it with thick red line" — the divider is
-      // now a 4px brand-red bar instead of the baked 1px hairline. The
-      // baked svg is hidden (marked shifted so shiftBelowBand ignores it)
-      // and a scaler-level div takes its place: same axis (centered on
-      // x723), same span (band bottom edge → section end). Scaler-level +
-      // data-cap-own keeps it out of every shift/adjust pass; coordinates
-      // are absolute post-shift values.
-      edgeDivider.style.display = 'none';
+      edgeDivider.style.transformOrigin = '0 0';
+      edgeDivider.style.transform = 'matrix(0, 1, -1, 0, 723, ' + BAND_BOTTOM + ')';
+      edgeDivider.style.width = (3130 - BAND_BOTTOM) + 'px';
+      edgeDivider.setAttribute('width', String(3130 - BAND_BOTTOM));
+      // BAND_BOTTOM is already the post-shift coordinate — mark it so the
+      // next shiftBelowBand pass doesn't add the +260 extension on top
+      // (it re-shifted this to +260 before this marker was set).
       edgeDivider.setAttribute('data-cap-shifted', '1');
-      const bar = document.createElement('div');
-      bar.setAttribute('data-cap-own', '1');
-      bar.style.cssText =
-        'position:absolute; left:721px; top:' + BAND_BOTTOM + 'px;' +
-        'width:4px; height:' + (3130 - BAND_BOTTOM) + 'px;' +
-        'background:#D1202F; z-index:5;';
-      scaler.appendChild(bar);
     }
   }
 
