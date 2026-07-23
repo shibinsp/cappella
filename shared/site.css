@@ -1232,21 +1232,8 @@ a {
    transition above then eases the release on pointerleave. */
 .leader-card.is-tilting { transition: transform .12s linear, background-color .5s var(--leader-ease); }
 
-/* Pointer-following sheen. ::before is already the border, so this is ::after. */
-.leader-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  z-index: 4;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .45s var(--leader-ease);
-  background: radial-gradient(
-    420px circle at var(--mx, 50%) var(--my, 50%),
-    var(--sheen, rgba(255, 255, 255, .55)), transparent 60%);
-}
-.leader-card:hover::after { opacity: 1; }
+/* (Pointer-following white sheen removed 2026-07-23 — client: "my cursor
+   has a white shadow, remove it." The tilt/parallax below stay.) */
 
 /* Parallax layers — magnitudes increase with apparent depth. */
 .leader-card > h2,
@@ -1255,12 +1242,11 @@ a {
 .leader-card > .leader-more,
 .leader-card > .leader-social { transform: translate3d(calc(var(--tx) * 3px), calc(var(--ty) * 2px), 0); }
 
-/* Touch and reduced-motion: no tilt, no sheen, no parallax. */
+/* Touch and reduced-motion: no tilt, no parallax. */
 @media (hover: none), (prefers-reduced-motion: reduce) {
   .leader-card,
   .leader-card > h2, .leader-card > .leader-role, .leader-card > .leader-bio,
   .leader-card > .leader-more, .leader-card > .leader-social { transform: none !important; }
-  .leader-card::after { display: none; }
 }
 
 /* Border on the pseudo-element, per the supplied spec, so it can animate
