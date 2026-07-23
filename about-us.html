@@ -165,41 +165,35 @@
       </div>
     </div>
     <div class="container skolen-cardwrap">
-      <div class="table-scroll" role="region" aria-labelledby="skolen-table-caption" tabindex="0" data-reveal="table">
-          <table>
-            <caption id="skolen-table-caption">SKOLEN Modules</caption>
-            <thead>
-              <tr>
-                <th scope="col">Module</th>
-                <th scope="col">Land</th>
-                <th scope="col">Built-up Area</th>
-                <th scope="col">Capacity</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">SKOLEN 1-Acre</th>
-                <td>1 acre</td>
-                <td>70,000&ndash;75,000 sq ft</td>
-                <td>900&ndash;1,100</td>
-              </tr>
-              <tr>
-                <th scope="row">SKOLEN 2-Acre</th>
-                <td>2 acres</td>
-                <td>1,40,000&ndash;1,50,000 sq ft</td>
-                <td>2,000&ndash;2,200</td>
-              </tr>
-              <tr>
-                <th scope="row">SKOLEN 3-Acre</th>
-                <td>3 acres</td>
-                <td>2,80,000&ndash;3,00,000 sq ft</td>
-                <td>3,000&ndash;3,300</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="table-hint">Scroll horizontally to view all columns</p>
+      <!-- Client 2026-07-23: each module is its own card (was a single table) -->
+      <h3 class="skolen-modules-title" data-reveal>SKOLEN Modules</h3>
+      <div class="skolen-modules" data-reveal="scale">
+        <article class="skolen-module" data-reveal data-reveal-delay="1">
+          <h4 class="skolen-module__name">SKOLEN 1-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>1 acre</dd></div>
+            <div><dt>Built-up Area</dt><dd>70,000&ndash;75,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>900&ndash;1,100</dd></div>
+          </dl>
+        </article>
+        <article class="skolen-module" data-reveal data-reveal-delay="2">
+          <h4 class="skolen-module__name">SKOLEN 2-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>2 acres</dd></div>
+            <div><dt>Built-up Area</dt><dd>1,40,000&ndash;1,50,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>2,000&ndash;2,200</dd></div>
+          </dl>
+        </article>
+        <article class="skolen-module" data-reveal data-reveal-delay="3">
+          <h4 class="skolen-module__name">SKOLEN 3-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>3 acres</dd></div>
+            <div><dt>Built-up Area</dt><dd>2,80,000&ndash;3,00,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>3,000&ndash;3,300</dd></div>
+          </dl>
+        </article>
       </div>
+    </div>
   </section>
 
 </main>

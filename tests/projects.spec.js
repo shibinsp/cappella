@@ -12,23 +12,23 @@ const {
 
 // [name, location, acres, BUA (formatted), students]
 const GCC = [
-  ['Hartland International School', 'Dubai, UAE', '9.03', '278K', '1,947 / 2,400'],
-  ['North London Collegiate School', 'Dubai, UAE', '9.44', '420K', '1,820 / 2,100']
+  ['Hartland International School', 'Dubai, UAE', '9.03', '278K', '2,400'],
+  ['North London Collegiate School', 'Dubai, UAE', '9.44', '420K', '2,100']
 ];
 const INDIA = [
-  ['St. Andrews, Suchitra', 'Hyderabad, India', '9.0', '208K', '5,255 / 5,300'],
-  ['St. Andrews, Keesara', 'Hyderabad, India', '7.6', '88K', '1,732 / 2,300'],
-  ['St. Michael’s', 'Hyderabad, India', '2.7', '132K', '2,908 / 3,600'],
-  ['Sancta Maria International School', 'Hyderabad, India', '5.0', '193K', '1,500 / 1,500'],
-  ['The Shri Ram Universal School', 'Chennai, India', '2.0', '183K', '1,450 / 2,600'],
-  ['Billabong High International School', 'Pune, India', '2.1', '69K', '773 / 1,350'],
-  ['Jain International Residential School', 'Bangalore, India', '58.4', '1.2M', '690 / 1,000'],
-  ['Jain Public School', 'Bengaluru, India', '6.3', '66K', '1,226 / 1,575'],
-  ['Jain Public School', 'Bengaluru, India', '3.5', '70K', '928 / 1,240'],
-  ['Jain Public School', 'Korba, India', '2.8', '55K', '438 / 1,050'],
-  ['Jain Public School', 'Kadiri, India', '3.5', '64K', '795 / 1,050'],
-  ['IFIM — Student Housing', 'Bangalore, India', '2.5', '73K', '400 / 440'],
-  ['JU-SET Hostel', 'Bangalore, India', '10.8', '271K', '1,100 / 1,100']
+  ['St. Andrews, Suchitra', 'Hyderabad, India', '9.0', '208K', '5,300'],
+  ['St. Andrews, Keesara', 'Hyderabad, India', '7.6', '88K', '2,300'],
+  ['St. Michael’s', 'Hyderabad, India', '2.7', '132K', '3,600'],
+  ['Sancta Maria International School', 'Hyderabad, India', '5.0', '193K', '1,500'],
+  ['The Shri Ram Universal School', 'Chennai, India', '2.0', '183K', '2,600'],
+  ['Billabong High International School', 'Pune, India', '2.1', '69K', '1,350'],
+  ['Jain International Residential School', 'Bangalore, India', '58.4', '1.2M', '1,000'],
+  ['Jain Public School', 'Bengaluru, India', '6.3', '66K', '1,575'],
+  ['Jain Public School', 'Bengaluru, India', '3.5', '70K', '1,240'],
+  ['Jain Public School', 'Korba, India', '2.8', '55K', '1,050'],
+  ['Jain Public School', 'Kadiri, India', '3.5', '64K', '1,050'],
+  ['IFIM — Student Housing', 'Bangalore, India', '2.5', '73K', '440'],
+  ['JU-SET Hostel', 'Bangalore, India', '10.8', '271K', '1,100']
 ];
 const ALL = [...GCC, ...INDIA];
 const STAT_LABELS = ['Acres', 'BUA (sf)', 'Students', 'Established'];

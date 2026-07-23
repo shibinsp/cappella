@@ -26,14 +26,14 @@ const MEMBERS = [
   },
   {
     name: 'Anuraag Jhunjhunwala',
-    role: 'Chief Business Officer',
+    role: 'Chief Executive Officer',
     bio: 'Has 10+ years of experience in private equity investments, driving capital partnerships, deal origination and portfolio growth.',
     linkedin: 'https://www.linkedin.com/in/anuraag-jhunjhunwala-4727145/',
     lead: false
   },
   {
     name: 'Sai Krishna Narla',
-    role: 'Chief Executive Officer',
+    role: 'Chief Business Officer',
     bio: 'Carries 15+ years of expertise in real estate investments and development, leading the platform’s acquisition, development and asset management mandate across India and the GCC.',
     linkedin: 'https://www.linkedin.com/in/sai-krishna-narla-39b81881/',
     lead: false
