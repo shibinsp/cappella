@@ -23,8 +23,8 @@ const INDIA = [
   ['The Shri Ram Universal School', 'Chennai, India', '2.0', '183K', '2,600'],
   ['Billabong High International School', 'Pune, India', '2.1', '69K', '1,350'],
   ['Jain International Residential School', 'Bangalore, India', '58.4', '1.2M', '1,000'],
-  ['Jain Public School', 'Bengaluru, India', '6.3', '66K', '1,575'],
-  ['Jain Public School', 'Bengaluru, India', '3.5', '70K', '1,240'],
+  ['Jain Public School', 'Chintamani, India', '6.3', '66K', '1,575'],
+  ['Jain Public School', 'Tumkur, India', '3.5', '70K', '1,240'],
   ['Jain Public School', 'Korba, India', '2.8', '55K', '1,050'],
   ['Jain Public School', 'Kadiri, India', '3.5', '64K', '1,050'],
   ['IFIM — Student Housing', 'Bangalore, India', '2.5', '73K', '440'],
@@ -86,15 +86,16 @@ test.describe('projects.html', () => {
   });
 
   test('representative images are disclosed with a tag', async ({ page }) => {
-    // 4 real campus photos, 11 representative stand-ins — each stand-in must
-    // carry the REPRESENTATIVE tag so it can't read as the actual campus.
+    // 14 real campus photos (client batch 2026-07-23); only The Shri Ram
+    // Universal School still uses a stand-in, which must carry the
+    // REPRESENTATIVE tag so it can't read as the actual campus.
     await page.goto('/projects.html');
-    await expect(page.locator('.proj-card__reptag')).toHaveCount(11);
+    await expect(page.locator('.proj-card__reptag')).toHaveCount(1);
     for (const tag of await page.locator('.proj-card__reptag').all()) {
       await expect(tag).toHaveText('REPRESENTATIVE');
     }
     const untagged = page.locator('.proj-card:not(:has(.proj-card__reptag))');
-    await expect(untagged).toHaveCount(4);
+    await expect(untagged).toHaveCount(14);
   });
 
   test('region filters show the right subset', async ({ page }) => {
