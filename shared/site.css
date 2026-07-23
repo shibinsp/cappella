@@ -1022,7 +1022,9 @@ a {
 
 :root {
   --brand-red:    #D1202F;
-  --section-bg:   var(--cap-warm, #fff0f0);   /* site.css:16 */
+  /* Client 2026-07-23 ("why did we change the background to pink?"):
+     the warm blush ground is reverted to white. */
+  --section-bg:   var(--cap-white, #fff);
   --modal-accent: rgb(150, 22, 34);
 
   --ink:        #111;
