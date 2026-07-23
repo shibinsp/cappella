@@ -184,25 +184,21 @@ a {
 .site-logo {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
-}
-
-.site-logo img {
-  width: 34px;
-  height: auto;
 }
 
 /* The wordmark is a drawn logotype, not type — rules.md says reference the real
    bitmap verbatim, never redraw it. The PNG is white-on-transparent (it suits
    the red footer), so on this white header we use it as a mask and paint it with
-   the ink token. Crop values are copied from components/fig-assets.css so the
-   lockup matches the homepage exactly; they assume the 214/37 box below.
+   the brand red — client 2026-07-23: the interlocking-C mark is NOT part of the
+   logo (removed from the header lockup) and the original logo is RED. Crop
+   values are copied from components/fig-assets.css so the wordmark matches the
+   homepage exactly; they assume the 214/37 box below.
    The mask stays on this leaf — see the .site-header note above. */
 .site-logo .site-logo-word {
   display: block;
   width: clamp(118px, 13vw, 152px);
   aspect-ratio: 214 / 37;
-  background-color: var(--cap-black);
+  background-color: var(--cap-red);
   -webkit-mask: url('../components/assets/7cb777f5a65019d1.png') 50% 16.729% / 100% 164.981% no-repeat;
           mask: url('../components/assets/7cb777f5a65019d1.png') 50% 16.729% / 100% 164.981% no-repeat;
   /* text stays in the DOM for assistive tech, hidden visually */
