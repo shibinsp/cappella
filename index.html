@@ -1262,9 +1262,22 @@ class Component extends DCLogic {
       if (bg.indexOf(GRAD_SIG) !== -1) el.style.display = 'none';
     });
 
-    // Verbatim from the baked wedges so the hover ones are visually identical.
+    // Client 2026-07-23: the baked two-stop gradient read as a solid
+    // hard-edged triangle next to the Figma render ("the fade is
+    // incomplete"). Same stops, different interpolation: CSS ramps the two
+    // stops LINEARLY, while Figma renders them as an ease-out decay — half
+    // gone by 14% of the gradient line, a long feathered tail after. These
+    // intermediate stops are the Figma render's measured redness profile
+    // (sampled along the reference PNG's diagonal at 5% steps), so the CSS
+    // piecewise-linear ramp traces Figma's curve. Alpha-only stops on the
+    // constant brand red: over the white page redness is proportional to
+    // alpha, so measured redness maps 1:1 onto these values.
     const GRAD = 'linear-gradient(153.033deg, rgb(209,32,47) 1.96%, ' +
-                 'rgba(255,255,255,0) 42.23%, rgba(255,255,255,0) 78.20%)';
+                 'rgba(209,32,47,0.82) 5%, rgba(209,32,47,0.62) 10%, ' +
+                 'rgba(209,32,47,0.44) 15%, rgba(209,32,47,0.29) 20%, ' +
+                 'rgba(209,32,47,0.17) 25%, rgba(209,32,47,0.085) 30%, ' +
+                 'rgba(209,32,47,0.03) 36%, rgba(209,32,47,0) 42.23%, ' +
+                 'rgba(255,255,255,0) 78.20%)';
     const SHOWN = 'inset(0 0 0 0)';
 
     // Both matrices are lifted from the baked wedges: -1,0,0,-1 is the form
