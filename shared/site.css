@@ -1610,10 +1610,12 @@ address {
 }
 
 .address-block {
-  font-size: clamp(26px, 3.5vw, 52px);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  /* Client 2026-07-23: "text should be smaller" — the address was on the
+     same display scale as the mailto CTA beside it; it now uses the
+     body-copy ramp as secondary information. */
+  font-size: clamp(17px, 1.67vw, 24px);
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 .map-embed {
