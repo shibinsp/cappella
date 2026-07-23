@@ -1118,6 +1118,29 @@ class Component extends DCLogic {
     d2.style.transform = 'matrix(-1, 0, 0, -1, 558, 2078)';
     d2.style.zIndex = '5';
     dash.parentElement.appendChild(d2);
+
+    // Client 2026-07-23 ("fix it", crop of the band/Edge boundary): the
+    // Cappella Edge photo/accordion divider is baked at ty 2150 — 8px under
+    // shiftBelowBand's 2158 threshold, so it missed the +260 band extension
+    // while the section content moved. Its stranded top started inside the
+    // red band, poked through the band's white staircase notch and crossed
+    // the empty gap above the section. Re-anchor it to the section content
+    // top (heading/photo top, frame 2455) and shorten so its bottom stays
+    // put at the section end (2150 + 980 = 3130). Absolute values — this
+    // block can re-run on hydration retries and must not compound.
+    const edgeDivider = [...scaler.querySelectorAll('svg')].find(el =>
+      /^matrix\(0,\s*1,\s*-1,\s*0,\s*723,\s*2150\)/.test(el.style.transform || '')
+    );
+    if (edgeDivider) {
+      edgeDivider.style.transformOrigin = '0 0';
+      edgeDivider.style.transform = 'matrix(0, 1, -1, 0, 723, 2455)';
+      edgeDivider.style.width = '675px';
+      edgeDivider.setAttribute('width', '675');
+      // 2455 is already the post-shift coordinate — mark it so the next
+      // shiftBelowBand pass doesn't add the +260 band extension on top
+      // (it re-shifted this to 2715 before this marker was set).
+      edgeDivider.setAttribute('data-cap-shifted', '1');
+    }
   }
 
   _setupOperatorsGridStitch() {
