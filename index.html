@@ -787,9 +787,13 @@ class Component extends DCLogic {
                     // reposition (matrix ty) and resize each one. style.width is the
                     // rendered line length here — the horizontal path scales with the
                     // viewBox, so shrinking the width shortens the (rotated) line.
-                    // Lower content blocks (footer-local y): CONNECT WITH US / LINKEDIN
-                    // ≈ 368–420 (left column); STAY IN TOUCH + email box ≈ 300–393
-                    // (right column). Bottom segments end at 530 = footer bottom.
+                    // Lower content blocks (footer-local y, all carrying the
+                    // +FOOTER_CONTENT_NUDGE): CONNECT WITH US / LINKEDIN
+                    // ≈ 396–448 (left column); STAY IN TOUCH + email box
+                    // ≈ 328–421 (right column). Bottom segments end at 530 =
+                    // footer bottom. Every clamp below is expressed as
+                    // base + FOOTER_CONTENT_NUDGE so the rails track a future
+                    // nudge change instead of crossing the moved text again.
                     // newTx sets each rail right at the left edge of its column's
                     // text, so the content hugs the divider per Figma (nav text
                     // starts ≈720, right-column text ≈1113 in canvas x). The mid rail
@@ -803,7 +807,8 @@ class Component extends DCLogic {
                       // Pulling this rail 5px left to hug the nav text broke
                       // that join — the line visibly jogged at the boundary.
                       newTx = tx;
-                      if (ty > 400) { newTy = 430; newW = 100; }  // bottom seg: below CONNECT/LINKEDIN → footer bottom
+                      // Bottom seg: below LINKEDIN (row bottom ≈ 448) → footer bottom (530)
+                      if (ty > 400) { newTy = 430 + FOOTER_CONTENT_NUDGE; newW = 530 - (430 + FOOTER_CONTENT_NUDGE); }
                       // Top stub: baked at ty 10, which left an 8.7px break
                       // where the section rail above meets the footer. ty 0 is
                       // the exact join — footer-content y=0 IS where that rail
@@ -812,12 +817,23 @@ class Component extends DCLogic {
                       // block re-reads the live matrix on every adjustFooter
                       // run, so an earlier `ty - 10` compounded once per
                       // MutationObserver fire and drifted the stub 79px high.
-                      // Same reason the bottom segment clamps to 430 above.
+                      // Same reason the other segments clamp to absolutes, and
+                      // why each branch must re-match its own clamped value.
                       else if (ty < 150) { newTy = 0; newW = 64; }
+                      // Middle seg: baked at ty 166 len 197, tuned pre-nudge —
+                      // it cut through PORTFOLIO/TEAM/CONTACT US once the nav
+                      // moved down 28. Start below CONTACT US (row bottom
+                      // ≈ 200), end above CONNECT WITH US (measured top ≈ 366
+                      // — its shift path lands lower than the nudged nav).
+                      else { newTy = 180 + FOOTER_CONTENT_NUDGE; newW = 150; }
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
                       newTx = 1125;
-                      if (ty > 400) { newTy = 400; newW = 130; }      // bottom seg: below the email box → footer bottom
-                      else if (ty > 150 && ty < 300) { newW = 83; }   // middle seg: stop above STAY IN TOUCH
+                      // Bottom seg: below the email box (bottom ≈ 421) → footer bottom (530)
+                      if (ty > 400) { newTy = 400 + FOOTER_CONTENT_NUDGE; newW = 530 - (400 + FOOTER_CONTENT_NUDGE); }
+                      // Middle seg: baked at ty 207, which crossed the nudged
+                      // address block (bottom ≈ 234). Start below it, stop
+                      // above STAY IN TOUCH (top ≈ 328).
+                      else if (ty > 150 && ty < 300) { newTy = 218 + FOOTER_CONTENT_NUDGE; newW = 74; }
                     }
                     if (newTx !== tx || newTy !== ty) {
                       svg.style.transform = `matrix(${match[1]},${match[2]},${match[3]},${match[4]},${newTx},${newTy})`;
@@ -2913,7 +2929,11 @@ class Component extends DCLogic {
         let orig = el.getAttribute('data-jorig-top');
         orig = orig !== null ? parseFloat(orig) : parseFloat(el.style.top);
         if (!isNaN(orig)) {
-          if (orig >= JBAND_TOP + 10 && orig < JBAND_BOTTOM) {
+          // <= includes the exact bottom edge: the old band's giant white
+          // "Phase"/"Foundation" spans (baked top 3630) land exactly on
+          // 3890 after the +260 band shift — a strict < let them escape
+          // the hide and ghost over the footer as stray white text.
+          if (orig >= JBAND_TOP + 10 && orig <= JBAND_BOTTOM) {
             if (!el.getAttribute('data-jhidden')) {
               el.setAttribute('data-jhidden', '1');
               el.style.display = 'none';
@@ -2922,7 +2942,7 @@ class Component extends DCLogic {
           }
           // Footer family (>= 7300) stays: adjustFooter positions it with
           // the delta itself.
-          if (orig >= JBAND_BOTTOM && orig < 7300) {
+          if (orig > JBAND_BOTTOM && orig < 7300) {
             if (el.getAttribute('data-jorig-top') === null) {
               el.setAttribute('data-jorig-top', String(orig));
             }
@@ -2938,6 +2958,9 @@ class Component extends DCLogic {
         if (m) {
           let ty = el.getAttribute('data-jorig-ty');
           ty = ty !== null ? parseFloat(ty) : parseFloat(m[6]);
+          // Strict < here, unlike the top-positioned branch: the red section
+          // hairline (an svg the pinned journey's white curve joins onto)
+          // legitimately sits at ty exactly 3890 and must stay visible.
           if (ty >= JBAND_TOP + 10 && ty < JBAND_BOTTOM) {
             if (!el.getAttribute('data-jhidden')) {
               el.setAttribute('data-jhidden', '1');
