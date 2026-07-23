@@ -1235,7 +1235,13 @@ class Component extends DCLogic {
       // the rest, and Lighthouse's has no rule under its flat edge at all —
       // the Figma design deliberately has no horizontal on that row, see the
       // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
-      { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
+      //
+      // Client 2026-07-23: JGI fans upLeft, not upRight — the Figma design's
+      // "Rectangle 126" (baked wedge B) occupies x607-725.5 LEFT of the x726
+      // rail with this same tip; the mirrored form read as a broken/half
+      // animation next to the reference. This restores the exact baked
+      // footprint rather than inventing one.
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upLeft', dx: -226, dy: 70 },   // JGI        — left of logo, tip (726, 9169)
       { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRight', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
@@ -1297,8 +1303,45 @@ class Component extends DCLogic {
       anchor.appendChild(ink);
       el.appendChild(anchor);
 
-      el.addEventListener('mouseenter', () => { ink.style.clipPath = SHOWN; });
-      el.addEventListener('mouseleave', () => { ink.style.clipPath = form.hidden; });
+      // Client 2026-07-23: "the animation is not complete." Two causes, both
+      // from the hitbox being only the logo's own small box while the wedge
+      // paints OUTSIDE it (dx up to ±358): (a) drifting the cursor toward the
+      // appearing wedge fired mouseleave and reversed the wipe mid-flight;
+      // (b) sweeping across a shallow logo never left the wipe time to run.
+      //
+      // Fix 1 — hover pad: an invisible hitbox spanning logo ∪ wedge box, so
+      // pointing anywhere in the cell keeps the wedge alive. Child of the
+      // logo like the anchor, for the same shift-riding reason. Pads never
+      // overlap a neighbouring logo: adjacent cells only touch at the shared
+      // column axes (CRIMSON|ISP at x451, MERAKI|TSUS at x726).
+      const W = 118.514, H = 119.995;
+      const wedgeBox = c.fan === 'upRight'
+        ? { x0: c.dx,     x1: c.dx + H, y0: c.dy - W, y1: c.dy }   // matrix(0,-1,1,0): local h lies along screen x
+        : { x0: c.dx - W, x1: c.dx,     y0: c.dy - H, y1: c.dy };  // matrix(-1,0,0,-1): box up-left of tip
+      const padX = Math.min(0, wedgeBox.x0);
+      const padY = Math.min(0, wedgeBox.y0);
+      const pad = document.createElement('div');
+      pad.setAttribute('data-cap-own', '1');
+      pad.style.cssText =
+        'position:absolute;' +
+        'left:' + padX + 'px; top:' + padY + 'px;' +
+        'width:' + (Math.max(parseFloat(el.style.width) || 0, wedgeBox.x1) - padX) + 'px;' +
+        'height:' + (Math.max(parseFloat(el.style.height) || 0, wedgeBox.y1) - padY) + 'px;' +
+        'z-index:4; pointer-events:auto; background:transparent;';
+      el.appendChild(pad);
+
+      // Fix 2 — linger: retract only after the 0.42s wipe has had time to
+      // finish, so even a fast sweep shows the complete wedge. Re-entering
+      // during the linger cancels the retract.
+      let hideT = null;
+      pad.addEventListener('mouseenter', () => {
+        clearTimeout(hideT);
+        ink.style.clipPath = SHOWN;
+      });
+      pad.addEventListener('mouseleave', () => {
+        clearTimeout(hideT);
+        hideT = setTimeout(() => { ink.style.clipPath = form.hidden; }, 450);
+      });
     });
   }
 
