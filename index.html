@@ -1236,12 +1236,11 @@ class Component extends DCLogic {
       // the Figma design deliberately has no horizontal on that row, see the
       // note in _setupOperatorsGridStitch. Flagged to the client, not fudged.
       //
-      // Client 2026-07-23: JGI fans upLeft, not upRight — the Figma design's
-      // "Rectangle 126" (baked wedge B) occupies x607-725.5 LEFT of the x726
-      // rail with this same tip; the mirrored form read as a broken/half
-      // animation next to the reference. This restores the exact baked
-      // footprint rather than inventing one.
-      { asset: 'fig-asset-79356d431474ada0', fan: 'upLeft', dx: -226, dy: 70 },   // JGI        — left of logo, tip (726, 9169)
+      // Client 2026-07-23: keep the original per-column fan directions (JGI
+      // was briefly flipped upLeft to mirror Figma's "Rectangle 126", then
+      // reverted the same day — the complaint was the fade quality, not the
+      // orientation; see the GRAD ease-out stops below).
+      { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
       { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRight', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
