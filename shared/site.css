@@ -681,21 +681,20 @@ a {
   }
 }
 
-/* ---------- What We Do · Crimson tilt cards (About Us) ----------
-   Same 3D tilt-card language as The Cappella Edge so this section no longer
-   reads as the odd plain block between the crimson sections. Three strategies
-   in a 3-up grid; the card visuals mirror .section--edge. */
-.section--strategies {
-  background: #D1202F;
-}
-.section--strategies .section-title {
-  color: var(--cap-white);
+/* ---------- What We Do · Tilt cards (About Us) ----------
+   Same 3D tilt-card language as The Cappella Edge. Three strategies in a
+   3-up grid; the card visuals mirror .section--edge. Client 2026-07-23:
+   "this section is white" — the crimson band (and its white-text overrides)
+   is gone; the section sits on the same white ground as the Edge section. */
+/* The crimson Edge band above is its own separator — same rationale as the
+   SKOLEN override below — so no hairline right under the red edge. */
+.section + .section--strategies {
+  border-top: none;
 }
 .section--strategies .section-head {
   margin-bottom: clamp(36px, 5vw, 60px);
 }
 .section--strategies .strat-intro {
-  color: rgba(255, 255, 255, 0.92);
   max-width: 62ch;
   margin-top: 16px;
 }
@@ -798,9 +797,9 @@ a {
   padding-block: 0;
   background: #faf1f0;
 }
-/* No divider above SKOLEN — it follows the crimson What We Do section, so the
-   global .section + .section hairline read as an unwanted line across the red.
-   (Higher specificity than `.section + .section` so it wins.) */
+/* No divider above SKOLEN — its full-bleed crimson band is its own separator,
+   so the global .section + .section hairline would just be a stray line at
+   the band's top edge. (Higher specificity than `.section + .section`.) */
 .section + .section--skolen {
   border-top: none;
 }
