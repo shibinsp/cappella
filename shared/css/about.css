@@ -1,0 +1,628 @@
+/* ==========================================================================
+   Cappella — About Us page
+   [BEHAVIOR] Canvas hero, stats band + flip cards, Who We Are, Cappella Edge, What We Do, SKOLEN band + module cards
+   [PURPOSE]  About-only sections
+   Split from shared/site.css 2026-07-23 — block order preserved; every
+   page loads shared/css/shell.css first, then its own file.
+   ========================================================================== */
+
+/* ---------- Hero · Canvas variant (About Us) ----------
+   Centred hero on a warm ground with a soft white glow + crimson haze.
+   Scoped to .page-hero--canvas so the rest of the page (not yet redesigned)
+   is untouched. The warm ground is confined to the hero via its own
+   background rather than the page, so the white sections below still read
+   correctly until they are redesigned in turn. */
+.page-hero--canvas {
+  position: relative;
+  overflow: hidden;
+  background: #f4f1ec;
+  text-align: center;
+  padding-block: clamp(96px, 13vw, 168px) clamp(72px, 10vw, 128px);
+}
+
+.page-hero--canvas .hero-canvas-in {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+}
+
+.page-hero--canvas .hero-glow,
+.page-hero--canvas .hero-haze {
+  position: absolute;
+  left: 50%;
+  border-radius: 9999px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.page-hero--canvas .hero-glow {
+  top: 48%;
+  width: 1150px;
+  height: 1150px;
+  max-width: 150%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.82) 0%, rgba(245, 243, 239, 0) 62%);
+  filter: blur(12px);
+}
+.page-hero--canvas .hero-haze {
+  top: 50%;
+  width: 1000px;
+  height: 1000px;
+  max-width: 132%;
+  background: radial-gradient(circle,
+    rgba(209, 32, 47, 0.30) 0%,
+    rgba(209, 32, 47, 0.14) 34%,
+    rgba(209, 32, 47, 0) 66%);
+  filter: blur(30px);
+}
+
+.page-hero--canvas .hero-pill {
+  display: inline-block;
+  margin: 0 auto;
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+  background: var(--cap-white);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+.page-hero--canvas .hero-title {
+  margin: 26px auto 0;
+  max-width: 15ch;
+  text-wrap: balance;
+}
+
+.page-hero--canvas .hero-intro {
+  margin: 26px auto 0;
+  max-width: 48ch;
+}
+
+/* ---------- Stats strip (red band) ---------- */
+.stats-band {
+  background: var(--cap-red);
+  color: var(--cap-white);
+  padding-block: clamp(44px, 6vw, 80px);
+}
+
+.stats-band dl {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+}
+
+.stats-band .stat {
+  border-left: 1px solid var(--cap-hairline-inverse);
+  padding-left: clamp(16px, 2vw, 28px);
+}
+
+.stats-band dt {
+  order: 2;
+}
+
+.stats-band dd {
+  order: 1;
+}
+
+.stats-band .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-band .stat-caption {
+  color: var(--cap-footer-ink);
+}
+
+@media (max-width: 899px) {
+  .stats-band dl {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 36px;
+  }
+}
+
+@media (max-width: 479px) {
+  .stats-band dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Who We Are · Editorial split (About Us) ----------
+   Sticky section heading on the left, prose on the right, on the warm ground
+   so it flows out of the flip-card stats above. Builds on the existing
+   .split / .stack / .section-head primitives; only the ground, the sticky
+   heading and the mono eyebrow are new. */
+.section--who {
+  background: #D1202F;
+}
+/* Header + prose sit on the crimson ground, so they flip to light. */
+.section--who .section-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section--who .section-title {
+  color: var(--cap-white);
+}
+.section-eyebrow {
+  display: block;
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+  margin: 0 0 12px;
+}
+@media (min-width: 900px) {
+  .section--who .who-head {
+    position: sticky;
+    top: 104px;          /* clears the sticky header */
+    align-self: start;
+  }
+}
+.section--who .who-body p {
+  font-size: clamp(18px, 1.9vw, 23px);
+  line-height: 1.5;
+  max-width: 60ch;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ---------- The Cappella Edge · 3D tilt cards (About Us) ----------
+   Four approach points as a 2×2 grid of cards on the warm ground. Each card
+   tilts in 3D toward the pointer (JS writes --tx/--ty/--mx/--my; motion is
+   all CSS), with a gradient number badge and heading lifted on the Z axis so
+   the card reads as a physical surface. Reuses the Team page's tilt engine
+   via [data-tilt] / .tilt-card in site.js. */
+.section--edge {
+  background: #D1202F;
+}
+/* Header sits directly on the crimson ground, so it flips to light. */
+.section--edge .section-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section--edge .section-title {
+  color: var(--cap-white);
+}
+.section--edge .section-head {
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+.section--edge .edge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(18px, 2vw, 28px);
+  perspective: 1200px;
+}
+/* Card — overrides the base .item row layout entirely. */
+.section--edge .item {
+  position: relative;
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  padding: clamp(30px, 3vw, 46px);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 22px;
+  background: var(--cap-white);
+  transform-style: preserve-3d;
+  --tx: 0;
+  --ty: 0;
+  transform:
+    rotateY(calc(var(--tx) * 5deg))
+    rotateX(calc(var(--ty) * -5deg));
+  transition: transform 0.5s var(--cap-ease-expo), box-shadow 0.4s var(--cap-ease-expo);
+  will-change: transform;
+}
+.section--edge .item:last-child {
+  border-bottom: 1px solid var(--cap-hairline);   /* neutralise base .item:last-child */
+}
+.section--edge .item.is-tilting {
+  transition: transform 0.12s linear, box-shadow 0.4s var(--cap-ease-expo);
+}
+.section--edge .item:hover {
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.35);
+}
+/* Number badge — gradient tile floating above the card surface. */
+.section--edge .item-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  color: var(--cap-white);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0;
+  box-shadow: 0 12px 24px -10px rgba(209, 32, 47, 0.6);
+  transform: translateZ(40px);
+}
+.section--edge .item h3 {
+  font-size: clamp(19px, 1.8vw, 24px);
+  margin-bottom: 12px;
+  transform: translateZ(24px);
+}
+/* Beat the base `.item:hover h3` slide, which would flatten the Z-depth. */
+.section--edge .item:hover h3 {
+  transform: translateZ(24px);
+}
+.section--edge .item .body-copy {
+  max-width: none;
+  transform: translateZ(14px);
+}
+/* Pointer-following sheen. */
+.section--edge .tilt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    600px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.6), transparent 40%);
+  transition: opacity 0.3s ease;
+}
+.section--edge .item:hover .tilt-shine {
+  opacity: 1;
+}
+@media (max-width: 720px) {
+  .section--edge .edge-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Touch / reduced-motion: flat cards, no tilt, no depth, no sheen. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .section--edge .item,
+  .section--edge .item-index,
+  .section--edge .item h3,
+  .section--edge .item .body-copy {
+    transform: none !important;
+  }
+  .section--edge .tilt-shine {
+    display: none;
+  }
+}
+
+/* ---------- What We Do · Tilt cards (About Us) ----------
+   Same 3D tilt-card language as The Cappella Edge. Three strategies in a
+   3-up grid; the card visuals mirror .section--edge. Client 2026-07-23:
+   "this section is white" — the crimson band (and its white-text overrides)
+   is gone; the section sits on the same white ground as the Edge section. */
+/* The crimson Edge band above is its own separator — same rationale as the
+   SKOLEN override below — so no hairline right under the red edge. */
+.section + .section--strategies {
+  border-top: none;
+}
+.section--strategies .section-head {
+  margin-bottom: clamp(36px, 5vw, 60px);
+}
+.section--strategies .strat-intro {
+  max-width: 62ch;
+  margin-top: 16px;
+}
+.section--strategies .strat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(18px, 2vw, 28px);
+  perspective: 1200px;
+}
+.section--strategies .item {
+  position: relative;
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  padding: clamp(28px, 2.6vw, 40px);
+  border: 1px solid var(--cap-hairline);
+  border-radius: 22px;
+  background: var(--cap-white);
+  transform-style: preserve-3d;
+  --tx: 0;
+  --ty: 0;
+  transform: rotateY(calc(var(--tx) * 5deg)) rotateX(calc(var(--ty) * -5deg));
+  transition: transform 0.5s var(--cap-ease-expo), box-shadow 0.4s var(--cap-ease-expo);
+  will-change: transform;
+}
+.section--strategies .item:last-child {
+  border-bottom: 1px solid var(--cap-hairline);
+}
+.section--strategies .item.is-tilting {
+  transition: transform 0.12s linear, box-shadow 0.4s var(--cap-ease-expo);
+}
+.section--strategies .item:hover {
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.35);
+}
+.section--strategies .item-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  color: var(--cap-white);
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0;
+  box-shadow: 0 12px 24px -10px rgba(209, 32, 47, 0.6);
+  transform: translateZ(40px);
+}
+.section--strategies .item h3 {
+  font-size: clamp(19px, 1.8vw, 24px);
+  margin-bottom: 12px;
+  transform: translateZ(24px);
+}
+.section--strategies .item:hover h3 {
+  transform: translateZ(24px);
+}
+.section--strategies .item .body-copy {
+  max-width: none;
+  transform: translateZ(14px);
+}
+.section--strategies .tilt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.6), transparent 40%);
+  transition: opacity 0.3s ease;
+}
+.section--strategies .item:hover .tilt-shine {
+  opacity: 1;
+}
+@media (max-width: 860px) {
+  .section--strategies .strat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .section--strategies .item,
+  .section--strategies .item-index,
+  .section--strategies .item h3,
+  .section--strategies .item .body-copy {
+    transform: none !important;
+  }
+  .section--strategies .tilt-shine {
+    display: none;
+  }
+}
+
+/* ---------- SKOLEN · Crimson band + overlapping module cards (About Us) ----------
+   Closes the page: the intro sits on a crimson band and the white module
+   cards lift up into it, rounded and shadowed (client 2026-07-23: one card
+   per module — this replaced the earlier single modules table). */
+.section--skolen {
+  padding-block: 0;
+  background: #faf1f0;
+}
+/* No divider above SKOLEN — its full-bleed crimson band is its own separator,
+   so the global .section + .section hairline would just be a stray line at
+   the band's top edge. (Higher specificity than `.section + .section`.) */
+.section + .section--skolen {
+  border-top: none;
+}
+.section--skolen .skolen-band {
+  background: #D1202F;
+  color: var(--cap-white);
+  padding-block: clamp(72px, 10vw, 128px) clamp(96px, 13vw, 168px);
+}
+.section--skolen .skolen-band .section-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+.section--skolen .skolen-band .section-title {
+  color: var(--cap-white);
+}
+.section--skolen .skolen-tagline {
+  /* Client 2026-07-23: "Greenfield font is different" — the tagline was the
+     only subtitle set in Space Mono; it now inherits Montserrat like every
+     other section subtitle. */
+  color: rgba(255, 255, 255, 0.85);
+  font-size: clamp(14px, 1.2vw, 17px);
+  letter-spacing: 0.02em;
+  margin-top: 14px;
+}
+.section--skolen .skolen-intro {
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 70ch;
+  margin-top: clamp(22px, 3vw, 32px);
+}
+/* Client image batch 2026-07-23: the SKOLEN cutaway render sits beside the
+   band copy at desktop, below it on mobile. */
+.section--skolen .skolen-band-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 48px);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .section--skolen .skolen-band-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+.skolen-cutaway {
+  width: 100%;
+  border-radius: 18px;
+}
+/* Card lifts up over the band's lower padding. */
+.section--skolen .skolen-cardwrap {
+  margin-top: clamp(-104px, -9vw, -72px);
+  padding-bottom: clamp(72px, 10vw, 128px);
+  position: relative;
+}
+/* Client 2026-07-23: the modules table became three separate cards. The
+   heading sits on the band's lower padding (which the cardwrap lifts into),
+   so it stays white; each card keeps the old table-card radius + shadow. */
+.section--skolen .skolen-modules-title {
+  color: var(--cap-white);
+  font-weight: 600;
+  font-size: clamp(18px, 1.8vw, 26px);
+  margin-bottom: clamp(14px, 1.8vw, 22px);
+}
+.section--skolen .skolen-modules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.skolen-module {
+  background: var(--cap-white);
+  border-radius: 18px;
+  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.45);
+  padding: clamp(22px, 2.6vw, 34px);
+}
+.skolen-module__img {
+  width: 100%;
+  aspect-ratio: 1408 / 768;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: clamp(16px, 1.8vw, 22px);
+}
+.skolen-module__name {
+  font-size: clamp(17px, 1.5vw, 22px);
+  font-weight: 700;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--cap-hairline);
+}
+.skolen-module__specs div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-block: 13px;
+}
+.skolen-module__specs div + div {
+  border-top: 1px solid var(--cap-hairline);
+}
+.skolen-module__specs dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+  flex: 0 0 auto;
+}
+.skolen-module__specs dd {
+  font-size: clamp(15px, 1.15vw, 17px);
+  font-weight: 600;
+  text-align: right;
+}
+@media (max-width: 899px) {
+  .section--skolen .skolen-modules {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Stats · Flip-card variant (About Us) ----------
+   Continues the canvas hero: the red band becomes flip cards on the warm
+   ground. Front shows the figure; hovering / focusing a card flips it in 3D
+   to reveal the caption on a crimson back.
+
+   The dl/dd/dt semantics are preserved exactly — dd is the figure (with the
+   count-up + zero child elements the tests assert), dt is the caption — so
+   screen readers still read each as a definition pair regardless of the
+   visual flip, and the exact-text assertions still hold. */
+.stats-band--flip {
+  background: #f4f1ec;
+  color: var(--cap-black);
+  padding-block: clamp(8px, 3vw, 40px) clamp(56px, 8vw, 104px);
+}
+.stats-band--flip .stat-flips {
+  perspective: 1400px;
+}
+.stats-band--flip .flip-card {
+  position: relative;
+  height: 210px;
+  border-left: 0;          /* drop the inherited inverse hairline */
+  padding-left: 0;
+  display: block;
+  border-radius: 20px;
+  outline-offset: 4px;
+}
+.stats-band--flip .flip-card:focus-visible {
+  outline: 2px solid var(--cap-red);
+}
+.stats-band--flip .flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.stats-band--flip .flip-card:hover .flip-inner,
+.stats-band--flip .flip-card:focus-within .flip-inner {
+  transform: rotateY(180deg);
+}
+.stats-band--flip .flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: 30px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+.stats-band--flip .flip-front {
+  background: var(--cap-white);
+  border: 1px solid var(--cap-hairline);
+  box-shadow: 0 16px 40px rgba(209, 32, 47, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.stats-band--flip .flip-back {
+  transform: rotateY(180deg);
+  color: var(--cap-white);
+  background: linear-gradient(155deg, #ea3a4a, #b4121e);
+  box-shadow: 0 22px 50px rgba(209, 32, 47, 0.28);
+}
+.stats-band--flip .flip-tag {
+  font-family: "Space Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cap-red);
+}
+.stats-band--flip .flip-front .stat-number {
+  order: 0;
+  margin: 0;
+  color: var(--cap-black);
+  line-height: 0.95;
+}
+.stats-band--flip .flip-back .stat-caption {
+  order: 0;
+  margin: 0;
+  color: var(--cap-white);
+  font-weight: 500;
+}
+
+/* Reduced motion / no 3D support fallback: no flip. Both faces sit in normal
+   flow, stacked, so the figure AND its caption are visible without any hover.
+   Mirrors how the reveal engine shows counters statically under reduce. */
+@media (prefers-reduced-motion: reduce) {
+  .stats-band--flip .flip-card {
+    height: auto;
+  }
+  .stats-band--flip .flip-inner {
+    transform: none !important;
+    transition: none;
+  }
+  .stats-band--flip .flip-face {
+    position: static;
+    inset: auto;
+    backface-visibility: visible;
+    transform: none;
+    box-shadow: none;
+  }
+  .stats-band--flip .flip-front {
+    border-radius: 20px 20px 0 0;
+    border-bottom: 0;
+  }
+  .stats-band--flip .flip-back {
+    border-radius: 0 0 20px 20px;
+  }
+}
+
