@@ -15,13 +15,12 @@
 <script src="components/vendor/split-type.min.js" defer></script>
 <script src="shared/site.js" defer></script>
 </head>
-<body style="background: #faf1f0;"><!-- warm ground fills the footer's top-margin gap below SKOLEN -->
+<body><!-- client 2026-07-23: warm ground reverted to white -->
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="site-logo">
-      <img src="components/assets/eae7f9bdb03982f5.png" alt="Cappella — home" width="34" height="31">
       <span class="site-logo-word">Cappella</span>
     </a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
@@ -157,50 +156,50 @@
 
   <section class="section section--skolen" aria-labelledby="skolen">
     <div class="skolen-band">
-      <div class="container">
-        <div class="section-head" data-reveal>
-          <h2 class="section-title" id="skolen">SKOLEN</h2>
-          <p class="caption skolen-tagline">Greenfield, modular school infrastructure</p>
+      <div class="container skolen-band-grid">
+        <div class="skolen-band-copy">
+          <div class="section-head" data-reveal>
+            <h2 class="section-title" id="skolen">SKOLEN</h2>
+            <p class="caption skolen-tagline">Greenfield, modular school infrastructure</p>
+          </div>
+          <p class="body-copy skolen-intro" data-reveal="lines">Across India, schools are too often developed as one-off, custom projects: years spent acquiring land, designing and constructing before a single classroom opens. SKOLEN rethinks this approach with standardised, pre-designed campuses that meet the needs of the vast majority of K-12 operators and can be operational without the extended timelines of traditional builds.</p>
         </div>
-        <p class="body-copy skolen-intro" data-reveal="lines">Across India, schools are too often developed as one-off, custom projects: years spent acquiring land, designing and constructing before a single classroom opens. SKOLEN rethinks this approach with standardised, pre-designed campuses that meet the needs of the vast majority of K-12 operators and can be operational without the extended timelines of traditional builds.</p>
+        <img class="skolen-cutaway" src="components/assets/skolen/skolen-cutaway.jpg" alt="Cutaway render of a SKOLEN modular school building" loading="lazy" data-reveal>
       </div>
     </div>
     <div class="container skolen-cardwrap">
-      <div class="table-scroll" role="region" aria-labelledby="skolen-table-caption" tabindex="0" data-reveal="table">
-          <table>
-            <caption id="skolen-table-caption">SKOLEN Modules</caption>
-            <thead>
-              <tr>
-                <th scope="col">Module</th>
-                <th scope="col">Land</th>
-                <th scope="col">Built-up Area</th>
-                <th scope="col">Capacity</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">SKOLEN 1-Acre</th>
-                <td>1 acre</td>
-                <td>70,000&ndash;75,000 sq ft</td>
-                <td>900&ndash;1,100</td>
-              </tr>
-              <tr>
-                <th scope="row">SKOLEN 2-Acre</th>
-                <td>2 acres</td>
-                <td>1,40,000&ndash;1,50,000 sq ft</td>
-                <td>2,000&ndash;2,200</td>
-              </tr>
-              <tr>
-                <th scope="row">SKOLEN 3-Acre</th>
-                <td>3 acres</td>
-                <td>2,80,000&ndash;3,00,000 sq ft</td>
-                <td>3,000&ndash;3,300</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="table-hint">Scroll horizontally to view all columns</p>
+      <!-- Client 2026-07-23: each module is its own card (was a single table) -->
+      <h3 class="skolen-modules-title" data-reveal>SKOLEN Modules</h3>
+      <div class="skolen-modules" data-reveal="scale">
+        <article class="skolen-module" data-reveal data-reveal-delay="1">
+          <img class="skolen-module__img" src="components/assets/skolen/skolen-1-acre.jpg" alt="Aerial render of the SKOLEN 1-Acre campus" loading="lazy">
+          <h4 class="skolen-module__name">SKOLEN 1-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>1 acre</dd></div>
+            <div><dt>Built-up Area</dt><dd>70,000&ndash;75,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>900&ndash;1,100</dd></div>
+          </dl>
+        </article>
+        <article class="skolen-module" data-reveal data-reveal-delay="2">
+          <img class="skolen-module__img" src="components/assets/skolen/skolen-2-acre.jpg" alt="Aerial render of the SKOLEN 2-Acre campus" loading="lazy">
+          <h4 class="skolen-module__name">SKOLEN 2-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>2 acres</dd></div>
+            <div><dt>Built-up Area</dt><dd>1,40,000&ndash;1,50,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>2,000&ndash;2,200</dd></div>
+          </dl>
+        </article>
+        <article class="skolen-module" data-reveal data-reveal-delay="3">
+          <img class="skolen-module__img" src="components/assets/skolen/skolen-3-acre.jpg" alt="Aerial render of the SKOLEN 3-Acre campus" loading="lazy">
+          <h4 class="skolen-module__name">SKOLEN 3-Acre</h4>
+          <dl class="skolen-module__specs">
+            <div><dt>Land</dt><dd>3 acres</dd></div>
+            <div><dt>Built-up Area</dt><dd>2,80,000&ndash;3,00,000 sq ft</dd></div>
+            <div><dt>Capacity</dt><dd>3,000&ndash;3,300</dd></div>
+          </dl>
+        </article>
       </div>
+    </div>
   </section>
 
 </main>

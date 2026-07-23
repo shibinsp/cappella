@@ -54,6 +54,12 @@
     }
     /* nav-overlay links must stay on one line (beats the global rule) */
     #cap-scaler span.cap-nav { white-space: nowrap !important; }
+    /* two-line portfolio captions keep their authored \n line break — the
+       inner selector also covers the scramble's per-char spans, which the
+       global rule would otherwise force back to normal and collapse the
+       break to a space */
+    #cap-scaler span.cap-2line,
+    #cap-scaler span.cap-2line span { white-space: pre-wrap !important; }
 
     /* ===== SCROLL ANIMATION BASE STYLES ===== */
     @media (prefers-reduced-motion: no-preference) {
@@ -1112,6 +1118,32 @@ class Component extends DCLogic {
     d2.style.transform = 'matrix(-1, 0, 0, -1, 558, 2078)';
     d2.style.zIndex = '5';
     dash.parentElement.appendChild(d2);
+
+    // Client 2026-07-23 ("fix it", crop of the band/Edge boundary): the
+    // Cappella Edge photo/accordion divider is baked at ty 2150 — 8px under
+    // shiftBelowBand's 2158 threshold, so it missed the +260 band extension
+    // while the section content moved. Its stranded top started inside the
+    // red band and poked through the band's white staircase notch. In the
+    // baked design the divider MEETS the band's bottom edge (2150 ≈ old
+    // band bottom 2155) and runs down into the section as one continuous
+    // line — client confirmed that join must stay. Re-anchor the top to
+    // the extended band's bottom (2415, same constant as the rails above)
+    // and keep the bottom at the section end (2150 + 980 = 3130).
+    // Absolute values — this block can re-run on hydration retries and
+    // must not compound.
+    const edgeDivider = [...scaler.querySelectorAll('svg')].find(el =>
+      /^matrix\(0,\s*1,\s*-1,\s*0,\s*723,\s*2150\)/.test(el.style.transform || '')
+    );
+    if (edgeDivider) {
+      edgeDivider.style.transformOrigin = '0 0';
+      edgeDivider.style.transform = 'matrix(0, 1, -1, 0, 723, ' + BAND_BOTTOM + ')';
+      edgeDivider.style.width = (3130 - BAND_BOTTOM) + 'px';
+      edgeDivider.setAttribute('width', String(3130 - BAND_BOTTOM));
+      // BAND_BOTTOM is already the post-shift coordinate — mark it so the
+      // next shiftBelowBand pass doesn't add the +260 extension on top
+      // (it re-shifted this to +260 before this marker was set).
+      edgeDivider.setAttribute('data-cap-shifted', '1');
+    }
   }
 
   _setupOperatorsGridStitch() {
@@ -3977,34 +4009,44 @@ class Component extends DCLogic {
     
     // All four photo cards are Hyderabad schools (per the docx portfolio).
     // assetName links each card to its PORTFOLIO_DATA record for the detail strip.
+    // line1/line2: client 2026-07-23 caption nomenclature — line 1 school
+    // name, line 2 location — rendered left-aligned to the card's edge.
     const cardData = [
       {
         id: 1,
         imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725',
         labelKeywords: ['Sancta', 'Maria'],
         cities: ['Hyderabad'],
-        assetName: 'Sancta Maria International School'
+        assetName: 'Sancta Maria International School',
+        line1: 'Sancta Maria International School',
+        line2: 'Serilingampally'
       },
       {
         id: 2,
         imgCls: 'fig-asset-016a31a2601bd9e3',
         labelKeywords: ['Michael'],
         cities: ['Hyderabad'],
-        assetName: 'St. Michael’s'
+        assetName: 'St. Michael’s',
+        line1: 'St. Michael’s',
+        line2: 'Alwal'
       },
       {
         id: 3,
         imgCls: 'fig-asset-0f9374cd498a11f1-a670101d',
         labelKeywords: ['Keesara'],
         cities: ['Hyderabad'],
-        assetName: 'St. Andrews, Keesara'
+        assetName: 'St. Andrews, Keesara',
+        line1: 'St. Andrews',
+        line2: 'Keesara'
       },
       {
         id: 4,
         imgCls: 'fig-asset-76ba2d1ec2162f53',
         labelKeywords: ['Suchitra'],
         cities: ['Hyderabad'],
-        assetName: 'St. Andrews, Suchitra'
+        assetName: 'St. Andrews, Suchitra',
+        line1: 'St. Andrews',
+        line2: 'Suchitra'
       }
     ];
 
@@ -4191,6 +4233,25 @@ class Component extends DCLogic {
         img.style.top = intendedTop + 'px';
         img.style.zIndex = '5';
         img.style.overflow = 'hidden';
+
+        // Client 2026-07-23 ("Text Alignment / Nomenclature"): every caption
+        // is two lines — school name, then location — flush with its card's
+        // left edge. The baked labels were one run of text at assorted
+        // offsets, so rewrite the copy and reparent the label next to its
+        // (already reparented) card: same coordinate space, exact alignment,
+        // uniform gap. pre-wrap makes the \n a real line break, and
+        // scrambleText already skips \n characters.
+        label.textContent = data.line1 + '\n' + data.line2;
+        label.classList.add('cap-2line'); // beats the global white-space rule
+        scaler.appendChild(label);
+        label.style.position = 'absolute';
+        label.style.left = intendedLeft + 'px';
+        label.style.top = (intendedTop + (parseFloat(img.style.height) || 0) + 22) + 'px';
+        label.style.width = img.style.width;
+        label.style.height = 'auto';
+        label.style.textAlign = 'left';
+        label.style.lineHeight = '118%';
+        label.style.zIndex = '5';
 
         // WebGL canvas — fills the card image div
         const ditherCanvas = document.createElement('canvas');

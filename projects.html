@@ -22,10 +22,10 @@
    Styles are .proj-* and scoped here (not in shared/site.css)
    so they can't collide with the shared shell.
 
-   IMAGERY: 4 cards use real campus photos; the remaining 11 use
-   representative stand-in images, each tagged REPRESENTATIVE.
-   None of the stand-ins is the actual campus — replace with real
-   licensed photography of each asset.
+   IMAGERY: 14 cards use real campus photos (client-supplied batch,
+   2026-07-23). Only The Shri Ram Universal School (Chennai) still uses
+   a representative stand-in, tagged REPRESENTATIVE — replace when its
+   photo arrives.
    ============================================================ */
 
 :root { --proj-ease: cubic-bezier(0.16, 1, 0.3, 1); }
@@ -93,16 +93,6 @@
   position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 42%, rgba(0,0,0,.82) 100%);
 }
-.proj-card__est {
-  position: absolute; top: 16px; left: 16px; background: var(--cap-red);
-  font: 700 11px 'Montserrat', sans-serif; letter-spacing: 1px; padding: 6px 11px; border-radius: 4px;
-}
-.proj-card__arrow {
-  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
-  display: grid; place-items: center; background: rgba(255,255,255,.92); color: var(--cap-black);
-  transition: background .3s var(--proj-ease), transform .3s var(--proj-ease);
-}
-.proj-card:hover .proj-card__arrow { background: #fff; transform: translateX(3px); }
 
 .proj-card__head { position: absolute; left: 20px; right: 20px; bottom: 92px; }
 .proj-card__name { font-size: clamp(19px, 1.8vw, 25px); font-weight: 700; line-height: 1.14; margin: 0; }
@@ -134,8 +124,6 @@
 .proj-grid.is-list .proj-stat + .proj-stat { border-left-color: var(--cap-hairline); }
 .proj-grid.is-list .proj-stat svg { opacity: .55; }
 .proj-grid.is-list .proj-stat span { color: rgba(0,0,0,.5); }
-.proj-grid.is-list .proj-card__est { top: 12px; left: 12px; }
-.proj-grid.is-list .proj-card__arrow { top: 12px; right: 12px; width: 34px; height: 34px; background: rgba(0,0,0,.06); color: var(--cap-black); }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
@@ -159,7 +147,6 @@
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="site-logo">
-      <img src="components/assets/eae7f9bdb03982f5.png" alt="Cappella — home" width="34" height="31">
       <span class="site-logo-word">Cappella</span>
     </a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
@@ -180,7 +167,7 @@
   <section class="page-hero">
     <div class="container">
       <h1 class="hero-title" data-reveal="chars">Our Portfolio</h1>
-      <p class="hero-intro body-copy" data-reveal="lines">Fifteen operating education assets across India and the GCC — schools, residential campuses and student housing.</p>
+      <p class="hero-intro body-copy" data-reveal="lines">Fifteen education assets across India and the GCC — schools, residential campuses and student housing.</p>
     </div>
   </section>
 
@@ -206,16 +193,13 @@
         </div>
       </div>
 
-      <p class="proj-count" data-reveal>Showing 15 projects  ·  4 actual campus photos, 11 representative</p>
+      <p class="proj-count" data-reveal>Showing 15 projects</p>
       <div class="proj-grid" id="proj-grid">
         <article class="proj-card" data-region="gcc" aria-label="Hartland International School — Dubai, UAE">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-3.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/hartland-dubai.jpg" alt="Hartland International School campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2015</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Hartland International School</h3>
             <p class="proj-card__loc">Dubai, UAE</p>
@@ -223,18 +207,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>9.03</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>278K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,947 / 2,400</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>2,400</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2015</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="gcc" aria-label="North London Collegiate School — Dubai, UAE">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-1.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/nlcs-dubai.jpg" alt="North London Collegiate School campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2017</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">North London Collegiate School</h3>
             <p class="proj-card__loc">Dubai, UAE</p>
@@ -242,18 +223,16 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>9.44</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>420K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,820 / 2,100</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>2,100</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2017</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="St. Andrews, Suchitra — Hyderabad, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/76ba2d1ec2162f53-min.jpg" alt="St. Andrews, Suchitra campus" loading="lazy">
+            <img class="proj-card__img" src="components/assets/campus/st-andrews-suchitra.jpg" alt="St. Andrews, Suchitra campus" loading="lazy">
             
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 1987</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">St. Andrews, Suchitra</h3>
             <p class="proj-card__loc">Hyderabad, India</p>
@@ -261,18 +240,16 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>9.0</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>208K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>5,255 / 5,300</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>5,300</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>1987</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="St. Andrews, Keesara — Hyderabad, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/0f9374cd498a11f1-min.jpg" alt="St. Andrews, Keesara campus" loading="lazy">
+            <img class="proj-card__img" src="components/assets/campus/st-andrews-keesara.jpg" alt="St. Andrews, Keesara campus" loading="lazy">
             
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2012</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">St. Andrews, Keesara</h3>
             <p class="proj-card__loc">Hyderabad, India</p>
@@ -280,18 +257,16 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>7.6</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>88K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,732 / 2,300</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>2,300</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2012</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="St. Michael’s — Hyderabad, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/016a31a2601bd9e3-min.jpg" alt="St. Michael’s campus" loading="lazy">
+            <img class="proj-card__img" src="components/assets/campus/st-michaels.jpg" alt="St. Michael’s campus" loading="lazy">
             
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2004</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">St. Michael’s</h3>
             <p class="proj-card__loc">Hyderabad, India</p>
@@ -299,7 +274,7 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>2.7</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>132K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>2,908 / 3,600</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>3,600</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2004</b><span>Established</span></div></div>
           </div>
         </article>
@@ -309,8 +284,6 @@
             
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2010</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Sancta Maria International School</h3>
             <p class="proj-card__loc">Hyderabad, India</p>
@@ -318,7 +291,7 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>5.0</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>193K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,500 / 1,500</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,500</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2010</b><span>Established</span></div></div>
           </div>
         </article>
@@ -328,8 +301,6 @@
             <span class="proj-card__reptag">REPRESENTATIVE</span>
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2020</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">The Shri Ram Universal School</h3>
             <p class="proj-card__loc">Chennai, India</p>
@@ -337,18 +308,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>2.0</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>183K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,450 / 2,600</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>2,600</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2020</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="Billabong High International School — Pune, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-4.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/billabong-pune.jpg" alt="Billabong High International School campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2019</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Billabong High International School</h3>
             <p class="proj-card__loc">Pune, India</p>
@@ -356,18 +324,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>2.1</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>69K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>773 / 1,350</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,350</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2019</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="Jain International Residential School — Bangalore, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-3.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/jain-residential-bangalore.jpg" alt="Jain International Residential School campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 1999</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Jain International Residential School</h3>
             <p class="proj-card__loc">Bangalore, India</p>
@@ -375,56 +340,47 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>58.4</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>1.2M</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>690 / 1,000</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,000</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>1999</b><span>Established</span></div></div>
           </div>
         </article>
-        <article class="proj-card" data-region="india" aria-label="Jain Public School — Bengaluru, India">
+        <article class="proj-card" data-region="india" aria-label="Jain Public School — Chintamani, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-1.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/jps-chintamani.jpg" alt="Jain Public School, Chintamani campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2013</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Jain Public School</h3>
-            <p class="proj-card__loc">Bengaluru, India</p>
+            <p class="proj-card__loc">Chintamani, India</p>
           </div>
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>6.3</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>66K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,226 / 1,575</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,575</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2013</b><span>Established</span></div></div>
           </div>
         </article>
-        <article class="proj-card" data-region="india" aria-label="Jain Public School — Bengaluru, India">
+        <article class="proj-card" data-region="india" aria-label="Jain Public School — Tumkur, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-2.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/jps-tumkur.jpg" alt="Jain Public School, Tumkur campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2012</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Jain Public School</h3>
-            <p class="proj-card__loc">Bengaluru, India</p>
+            <p class="proj-card__loc">Tumkur, India</p>
           </div>
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>3.5</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>70K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>928 / 1,240</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,240</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2012</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="Jain Public School — Korba, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-4.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/jps-korba.jpg" alt="Jain Public School, Korba campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2012</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Jain Public School</h3>
             <p class="proj-card__loc">Korba, India</p>
@@ -432,18 +388,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>2.8</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>55K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>438 / 1,050</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,050</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2012</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="Jain Public School — Kadiri, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-3.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/jps-kadiri.jpg" alt="Jain Public School, Kadiri campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 2012</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">Jain Public School</h3>
             <p class="proj-card__loc">Kadiri, India</p>
@@ -451,18 +404,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>3.5</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>64K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>795 / 1,050</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,050</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>2012</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="IFIM — Student Housing — Bangalore, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-1.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/ifim-hostel-bangalore.jpg" alt="IFIM — Student Housing campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 1995</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">IFIM — Student Housing</h3>
             <p class="proj-card__loc">Bangalore, India</p>
@@ -470,18 +420,15 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>2.5</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>73K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>400 / 440</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>440</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>1995</b><span>Established</span></div></div>
           </div>
         </article>
         <article class="proj-card" data-region="india" aria-label="JU-SET Hostel — Bangalore, India">
           <div class="proj-card__media">
-            <img class="proj-card__img" src="components/assets/rep-campus-2.jpg" alt="Representative campus image" loading="lazy">
-            <span class="proj-card__reptag">REPRESENTATIVE</span>
+            <img class="proj-card__img" src="components/assets/campus/juset-hostel-bangalore.jpg" alt="JU-SET Hostel campus" loading="lazy">
           </div>
           <div class="proj-card__scrim"></div>
-          <span class="proj-card__est">EST. 1990</span>
-          <span class="proj-card__arrow" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           <div class="proj-card__head">
             <h3 class="proj-card__name">JU-SET Hostel</h3>
             <p class="proj-card__loc">Bangalore, India</p>
@@ -489,7 +436,7 @@
           <div class="proj-card__stats">
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/></svg><div><b>10.8</b><span>Acres</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l7-4 7 4v14M4 21h14M9 21v-5h4v5M8 9h0M12 9h0M8 12h0M12 12h0"/></svg><div><b>271K</b><span>BUA (sf)</span></div></div>
-            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,100 / 1,100</b><span>Students</span></div></div>
+            <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M16 6a3 3 0 0 1 0 5M17 15c2 .4 4 2 4 5"/></svg><div><b>1,100</b><span>Students</span></div></div>
             <div class="proj-stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><div><b>1990</b><span>Established</span></div></div>
           </div>
         </article>
@@ -538,16 +485,17 @@
   var filter = 'all', view = 'grid';
 
   function update() {
-    var shown = 0, actual = 0, rep = 0;
+    // Client 2026-07-23: the "N actual campus photos, M representative"
+    // breakdown is dropped from this line (the per-card REPRESENTATIVE
+    // tags remain the disclosure).
+    var shown = 0;
     cards.forEach(function (c) {
       var match = filter === 'all' || c.dataset.region === filter;
       c.hidden = !match;
-      if (match) { shown++; c.querySelector('.proj-card__reptag') ? rep++ : actual++; }
+      if (match) shown++;
     });
     grid.classList.toggle('is-list', view === 'list');
-    var parts = [actual + ' actual campus ' + (actual === 1 ? 'photo' : 'photos')];
-    if (rep) parts.push(rep + ' representative');
-    countEl.textContent = 'Showing ' + shown + ' ' + (shown === 1 ? 'project' : 'projects') + '  ·  ' + parts.join(', ');
+    countEl.textContent = 'Showing ' + shown + ' ' + (shown === 1 ? 'project' : 'projects');
   }
 
   document.querySelectorAll('.proj-filter').forEach(function (btn) {
