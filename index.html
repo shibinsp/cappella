@@ -1901,7 +1901,9 @@ class Component extends DCLogic {
     const MPOS = PORTRAIT
       ? [[90, 240, 420], [410, 640, 370], [230, 1170, 440]]
       : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
-    const MF = PORTRAIT ? { y: 40, a: 26, n: 18 } : { y: 42, a: 30, n: 17 };
+    // Client 2026-07-23: mobile journey read too small — bump portrait marker
+    // type for legibility (year / assets / note).
+    const MF = PORTRAIT ? { y: 52, a: 33, n: 22 } : { y: 42, a: 30, n: 17 };
     // Natural PNG geometry: [width, height, visual-base row, visual-top row]
     const NAT = {
       'foundation.png': [806, 353, 338, 11],
@@ -1934,7 +1936,7 @@ class Component extends DCLogic {
       const basePct = nat[2] / nat[1];
       const bottom = (CH - HY) - (nat[1] - nat[2]) * bs;
       const wordStyle = PORTRAIT
-        ? 'right:24px;bottom:32px;font-size:64px;'
+        ? 'right:24px;bottom:44px;font-size:82px;'
         : 'right:40px;bottom:26px;font-size:112px;';
       return '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
         '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct.toFixed(4) + '" style="position:absolute;right:' + bright + 'px;bottom:' + bottom.toFixed(1) + 'px;width:' + bw + 'px;height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
@@ -1978,7 +1980,7 @@ class Component extends DCLogic {
           '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
         '</div>' +
         '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:' + CW + 'px;height:' + CH + 'px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          '<div style="position:absolute;' + (PORTRAIT ? 'left:44px;top:64px;font-size:52px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
+          '<div style="position:absolute;' + (PORTRAIT ? 'left:40px;top:76px;font-size:66px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
           phaseHtml(0, 'foundation.png',
             marker(0, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
             marker(1, '2017', '1 Asset', '', 0) +
