@@ -178,7 +178,9 @@
         <div class="proj-filters" role="group" aria-label="Filter by region">
           <button class="proj-filter" data-filter="all" aria-pressed="true">All Projects</button>
           <span class="proj-filter-sep" aria-hidden="true"></span>
-          <button class="proj-filter" data-filter="gcc" aria-pressed="false">GCC <span class="count">(2)</span></button>
+          <!-- Client 2026-07-23: label reads Dubai (both assets are Dubai, UAE);
+               data-filter/data-region keep the internal "gcc" key -->
+          <button class="proj-filter" data-filter="gcc" aria-pressed="false">Dubai <span class="count">(2)</span></button>
           <span class="proj-filter-sep" aria-hidden="true"></span>
           <button class="proj-filter" data-filter="india" aria-pressed="false">India <span class="count">(13)</span></button>
         </div>
