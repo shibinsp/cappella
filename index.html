@@ -1228,13 +1228,16 @@ class Component extends DCLogic {
       // ROTATION — its fade runs at a visibly different angle — so ISP gets
       // the dedicated mirrored form instead.
       { asset: 'fig-asset-620dc3d6704178dd', fan: 'upRightMirror', dx: -140, dy: 73 },  // ISP — left of logo, tip (451, 9446)
-      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRight', dx: -157, dy: 47 },  // TSUS    — left of logo,  tip (726, 9818)
+      // Client 2026-07-23: TSUS mirrors MERAKI across their shared rail, same
+      // treatment as the ISP/CRIMSON pair below.
+      { asset: 'fig-asset-1462c629c4c2879d', fan: 'upRightMirror', dx: -157, dy: 47 },  // TSUS — left of logo, tip (726, 9818)
 
       // Client 2026-07-22: Saint Mary's wedge belongs in the cell BELOW the
-      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule, and
-      // is exactly where baked wedge A sat with this same up-right form — so
-      // this restores the original Figma placement rather than inventing one.
-      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRight', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
+      // logo. (1026, 9261) is the x1026 vertical crossing the y9261 rule —
+      // exactly where baked wedge A sat. Client 2026-07-23: switched from
+      // wedge A's rotated up-right form to the mirror form, so its fade angle
+      // matches the upLeft wedges like the rest of the mirrored set.
+      { asset: 'fig-asset-1ec5ca333db94fc0', fan: 'upRightMirror', dx: 84, dy: 255 },   // SAINT MARY'S — below logo, tip (1026, 9261)
 
       // No rule crosses beside these two, so their wedges sit further out than
       // the rest, and Lighthouse's has no rule under its flat edge at all —
@@ -1246,7 +1249,7 @@ class Component extends DCLogic {
       // reverted the same day — the complaint was the fade quality, not the
       // orientation; see the GRAD ease-out stops below).
       { asset: 'fig-asset-79356d431474ada0', fan: 'upRight', dx: -226, dy: 70 },  // JGI        — left of logo, tip (726, 9169)
-      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRight', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
+      { asset: 'fig-asset-55a8dd7666421f70-d65f9521', fan: 'upRightMirror', dx: -170, dy: 18 } // LIGHTHOUSE — left of logo, tip (451, 10062)
     ];
 
     const found = CELLS.map(c => ({ c, el: frameRoot && frameRoot.querySelector('.' + c.asset) }));
