@@ -347,46 +347,49 @@ test.describe('pinned journey', () => {
     expectNoPageErrors(errors);
   });
 
-  test('portrait phones get the recomposed vertical scene', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'portrait composition asserted at phone scale');
+  test('mobile journey is a natural-scroll vertical timeline (no full-screen pin)', async ({ page }, testInfo) => {
+    // Client 2026-07-24: phones drop the pinned full-screen scrub for a
+    // vertical timeline — the three phases stack and reveal on scroll.
+    test.skip(testInfo.project.name !== 'mobile', 'mobile timeline asserted at phone scale');
     testInfo.setTimeout(90000);
     await page.goto(HOME, { waitUntil: 'networkidle' });
     await page.waitForSelector('#cap-journey', { timeout: 20000 });
 
-    const geom = await page.evaluate(() => {
+    const shape = await page.evaluate(() => {
       const host = document.getElementById('cap-journey');
-      return { top: window.scrollY + host.getBoundingClientRect().top, total: host.offsetHeight - window.innerHeight };
-    });
-    await page.evaluate((y) => window.scrollTo(0, y), geom.top + (0.5 / 3) * geom.total);
-    await expect
-      .poll(
-        () => page.evaluate(() => +document.querySelectorAll('.cap-j-phase')[0].style.opacity),
-        { timeout: 8000 }
-      )
-      .toBeGreaterThan(0.9);
-
-    const m = await page.evaluate(() => {
-      const stage = document.querySelector('.cap-j-stage');
-      const sr = stage.getBoundingClientRect();
-      const ph = document.querySelectorAll('.cap-j-phase')[0];
-      const b = ph.querySelector('.cap-j-building');
-      const br = b.getBoundingClientRect();
-      const m3 = ph.querySelectorAll('.cap-j-marker')[2].getBoundingClientRect();
       return {
-        ratio: sr.width / sr.height,
-        visualBase: br.top + br.height * parseFloat(b.dataset.base),
-        horizon: sr.top + sr.height * (1150 / 1500),
-        scale: sr.height / 1500,
-        buildingBottom: br.top + br.height * parseFloat(b.dataset.base),
-        m3Top: m3.top
+        hasPin: !!host.querySelector('.cap-j-pin'),
+        hasStage: !!host.querySelector('.cap-j-stage'),
+        labels: [...host.querySelectorAll('.jm-label')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
+        buildings: host.querySelectorAll('.jm-building').length,
+        markers: host.querySelectorAll('.jm-marker').length,
+        heightVH: host.offsetHeight / window.innerHeight
       };
     });
-    // portrait canvas is 800x1500
-    expect(Math.abs(m.ratio - 800 / 1500)).toBeLessThan(0.02);
-    // building base sits on the portrait horizon
-    expect(Math.abs(m.visualBase - m.horizon)).toBeLessThan(12 * m.scale);
-    // the last marker clears the building (sits in the sea below its base)
-    expect(m.m3Top).toBeGreaterThan(m.buildingBottom - 2);
+    // No pinned scrub scene on mobile
+    expect(shape.hasPin).toBe(false);
+    expect(shape.hasStage).toBe(false);
+    // All three phases, their buildings, and every year marker are present
+    expect(shape.labels).toEqual(['Foundation Phase', 'Growth Phase', 'Expansion Phase']);
+    expect(shape.buildings).toBe(3);
+    expect(shape.markers).toBe(8);
+    // A natural section a couple of screens tall — not the 4.3vh pin
+    expect(shape.heightVH).toBeGreaterThan(1.4);
+    expect(shape.heightVH).toBeLessThan(3.2);
+
+    // Phases reveal as they scroll into view (not all shown up-front)
+    await page.evaluate(() => {
+      const h = document.getElementById('cap-journey');
+      window.scrollTo(0, window.scrollY + h.getBoundingClientRect().top - 10);
+    });
+    await expect
+      .poll(() => page.evaluate(() => document.querySelector('#cap-journey .jm-reveal.in') !== null), { timeout: 8000 })
+      .toBe(true);
+
+    // The Expansion label (last phase) is reachable by scrolling further
+    const last = page.locator('#cap-journey .jm-label').last();
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toBeInViewport();
   });
 
   test('content below the pin is shifted and reachable', async ({ page }, testInfo) => {

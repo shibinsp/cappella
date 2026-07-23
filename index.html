@@ -1742,7 +1742,10 @@ class Component extends DCLogic {
     const JBAND_TOP = 3140;    // frame-y where the old journey band starts
     const JBAND_BOTTOM = 3890; // first content below the old band
     this._jBandTop = JBAND_TOP;
-    this._jVH = 4.3;           // host height in viewport-heights
+    // Desktop pins for 4.3 viewport-heights of scrub; mobile is a natural-
+    // scroll timeline (no pin) whose gap is refined to its content height by
+    // _setupJourneyMobile — this is just the initial guess.
+    this._jVH = (window.innerWidth < Math.min(720, capVH() * 0.85)) ? 2.2 : 4.3;
 
     const computeDelta = () => {
       const s = vp.clientWidth / 1440;
@@ -1866,6 +1869,10 @@ class Component extends DCLogic {
     // document offset).
     const vp = document.getElementById('cap-viewport');
     if (!vp || document.getElementById('cap-journey') || !this._journeyBandDone) return;
+
+    // Client 2026-07-24: on mobile the pinned full-screen scrub is replaced
+    // by a natural-scroll vertical timeline. Desktop/tablet keep the pin.
+    if (window.innerWidth < Math.min(720, capVH() * 0.85)) { this._setupJourneyMobile(); return; }
 
     const RED = 'rgb(209,32,47)';
     const A = './components/assets/journey/';
@@ -2469,6 +2476,140 @@ class Component extends DCLogic {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
       if (this._jRaf) cancelAnimationFrame(this._jRaf);
+    };
+  }
+
+  _setupJourneyMobile() {
+    // Client 2026-07-24: the mobile journey drops the full-screen pinned
+    // scrub for a natural-scroll vertical timeline. The three phases stack
+    // down the page (heading, building, year markers on a rail) and reveal
+    // as they scroll into view. Like the desktop pin it lives at BODY level
+    // over the band gap _setupJourneyBand opened, at real device px (not the
+    // scaled 1440 frame); its measured content height sets _jVH so the frame
+    // content below flows correctly beneath it.
+    const vp = document.getElementById('cap-viewport');
+    if (!vp || document.getElementById('cap-journey')) return;
+    const A = './components/assets/journey/';
+    const RED = 'rgb(209,32,47)';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Phase/marker copy is the same content the desktop scene carries.
+    // ar = the building PNG's aspect ratio — set on the <img> so its box
+    // height is reserved before the image decodes, keeping the timeline's
+    // measured height (and everything shifted below it) stable.
+    const PHASES = [
+      { a: 'Foundation', b: 'Phase', img: 'foundation.png', ar: '806/353', markers: [
+        { y: '2016', s: '6 Assets', n: 'Pioneered Sale and Leaseback Model' },
+        { y: '2017', s: '1 Asset', n: '' },
+        { y: '2018', s: '1 Asset', n: '' } ] },
+      { a: 'Growth', b: 'Phase', img: 'growth.png', ar: '979/472', markers: [
+        { y: '2019', s: '3 Assets Acquired, 1 Asset Exited', n: 'Onboarded Institutional Investors' },
+        { y: '2021', s: '2 Assets', n: '' } ] },
+      { a: 'Expansion', b: 'Phase', img: 'expansion.png', ar: '899/599', markers: [
+        { y: '2023', s: '1 Asset', n: 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured' },
+        { y: '2024', s: '1 Asset', n: '' },
+        { y: '2025', s: '3 Assets', n: 'Expansion to Dubai' } ] }
+    ];
+
+    const css = document.createElement('style');
+    css.id = 'cap-journey-css';
+    css.textContent =
+      '#cap-journey{font-family:Montserrat,sans-serif;}' +
+      '#cap-journey .jm-inner{position:relative;max-width:620px;margin:0 auto;padding:60px 22px 84px 56px;}' +
+      '#cap-journey .jm-rail{position:absolute;left:27px;top:40px;bottom:64px;width:2px;background:rgba(255,255,255,.65);}' +
+      '#cap-journey .jm-h1{font-size:42px;font-weight:700;color:#fff;letter-spacing:-.01em;margin:0 0 30px;text-shadow:0 2px 18px rgba(70,90,110,.25);}' +
+      '#cap-journey .jm-phase{margin:0 0 26px;}' +
+      '#cap-journey .jm-label{font-size:36px;line-height:1.04;letter-spacing:-.01em;color:#fff;margin:8px 0 14px;text-shadow:0 3px 20px rgba(50,65,80,.30);}' +
+      '#cap-journey .jm-label b{font-weight:800;}#cap-journey .jm-label span{font-weight:300;}' +
+      '#cap-journey .jm-building{display:block;width:calc(100% + 34px);height:auto;margin:0 0 16px -34px;filter:drop-shadow(0 18px 34px rgba(40,55,70,.30));}' +
+      '#cap-journey .jm-marker{position:relative;padding:0 0 20px 2px;}' +
+      '#cap-journey .jm-marker:last-child{padding-bottom:4px;}' +
+      '#cap-journey .jm-dot{position:absolute;left:-35px;top:7px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid #c9d3dc;box-shadow:0 2px 8px rgba(60,80,100,.28);}' +
+      '#cap-journey .jm-yr{font-size:32px;font-weight:700;color:' + RED + ';line-height:1;}' +
+      '#cap-journey .jm-as{font-size:20px;color:#2b2b2b;margin-top:5px;line-height:1.25;}' +
+      '#cap-journey .jm-nt{font-size:15px;font-weight:600;color:#1a1a1a;margin-top:7px;line-height:1.4;}' +
+      (reduce ? '' :
+        '#cap-journey .jm-reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1);}' +
+        '#cap-journey .jm-reveal.in{opacity:1;transform:none;}');
+    document.head.appendChild(css);
+
+    const marker = (m) =>
+      '<div class="jm-marker jm-reveal"><span class="jm-dot"></span>' +
+        '<div class="jm-yr">' + m.y + '</div>' +
+        '<div class="jm-as">' + m.s + '</div>' +
+        (m.n ? '<div class="jm-nt">' + m.n + '</div>' : '') +
+      '</div>';
+    const phase = (p) =>
+      '<div class="jm-phase">' +
+        '<div class="jm-label jm-reveal"><b>' + p.a + '</b> <span>' + p.b + '</span></div>' +
+        '<img class="jm-building jm-reveal" src="' + A + p.img + '" alt="" style="aspect-ratio:' + p.ar + ';">' +
+        p.markers.map(marker).join('') +
+      '</div>';
+
+    const host = document.createElement('div');
+    host.id = 'cap-journey';
+    host.style.cssText = 'position:absolute;left:0;width:100%;z-index:40;overflow:hidden;' +
+      'background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 30%,#e7e2dc 62%,#d8d5d1 100%);';
+    host.innerHTML = '<div class="jm-inner"><div class="jm-rail"></div>' +
+      '<div class="jm-h1 jm-reveal">Our Journey</div>' +
+      PHASES.map(phase).join('') + '</div>';
+    document.body.appendChild(host);
+
+    const s = () => vp.clientWidth / 1440;
+    const place = () => {
+      const inner = host.querySelector('.jm-inner');
+      const H = inner.offsetHeight;
+      host.style.height = H + 'px';
+      // Size the frame gap to the timeline's real height (via _jVH), then
+      // re-run the shift pipeline so the content below flows beneath it.
+      const targetVH = H / capVH();
+      if (Math.abs((this._jVH || 0) - targetVH) > 0.02 && this._jComputeDelta) {
+        this._jVH = targetVH;
+        this._jDelta = this._jComputeDelta();
+        if (this._shiftJourney) this._shiftJourney();
+        if (this._runAdjust) this._runAdjust();
+        if (this._fit) this._fit();
+      }
+      const vpPageTop = vp.getBoundingClientRect().top + window.scrollY;
+      host.style.top = Math.round(vpPageTop + (this._jBandTop - 15) * s()) + 'px';
+    };
+
+    let io = null;
+    if (!reduce && 'IntersectionObserver' in window) {
+      io = new IntersectionObserver((ents) => {
+        ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
+      host.querySelectorAll('.jm-reveal').forEach((el) => io.observe(el));
+    } else {
+      host.querySelectorAll('.jm-reveal').forEach((el) => el.classList.add('in'));
+    }
+
+    const onResize = () => {
+      // Crossed to desktop (e.g. rotation) — tear down and rebuild the pin.
+      if (!(window.innerWidth < Math.min(720, capVH() * 0.85))) {
+        if (this._jCleanup) this._jCleanup();
+        host.remove();
+        const oldCss = document.getElementById('cap-journey-css');
+        if (oldCss) oldCss.remove();
+        this._setupJourneyPinned();
+        return;
+      }
+      place();
+    };
+
+    place();
+    // Building images change height once decoded — re-place when they land.
+    host.querySelectorAll('.jm-building').forEach((img) => {
+      if (!img.complete) img.addEventListener('load', place, { once: true });
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+    this._jT1 = setTimeout(place, 300);
+    this._jT2 = setTimeout(place, 1000);
+    window.addEventListener('resize', onResize);
+    this._jCleanup = () => {
+      window.removeEventListener('resize', onResize);
+      if (io) io.disconnect();
+      clearTimeout(this._jT1); clearTimeout(this._jT2);
     };
   }
 
