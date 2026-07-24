@@ -56,6 +56,9 @@ test.describe('homepage regression', () => {
   });
 
   test('top-nav spans navigate to the four pages', async ({ page }, testInfo) => {
+    // The baked hero nav (.cap-nav) is hidden below 900px, where the hamburger
+    // overlay is the nav instead (see "hamburger overlay navigates" below).
+    test.skip(testInfo.project.name !== 'desktop', 'hero nav spans are desktop-only; mobile/tablet navigate via the hamburger overlay');
     await gotoHome(page);
 
     await page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first().click();
@@ -75,6 +78,9 @@ test.describe('homepage regression', () => {
   });
 
   test('keyboard: converted nav spans are focusable and Enter navigates', async ({ page }, testInfo) => {
+    // Hero nav spans are hidden below 900px (mobile/tablet use the hamburger),
+    // so keyboard focus on them is a desktop-only concern.
+    test.skip(testInfo.project.name !== 'desktop', 'hero nav spans are desktop-only');
     await gotoHome(page);
 
     const about = page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first();
@@ -82,6 +88,30 @@ test.describe('homepage regression', () => {
     await about.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/about-us\.html$/);
+  });
+
+  test('hamburger overlay navigates to the four pages (mobile/tablet)', async ({ page }, testInfo) => {
+    // Below 900px the baked hero nav is hidden and the cap-menu-btn hamburger
+    // is the nav: it shows from the top (no scroll needed) and opens a panel
+    // whose links are real page navigations.
+    test.skip(testInfo.project.name === 'desktop', 'hero spans cover nav at desktop scale; this is the small-screen path');
+    const targets = [
+      ['about-us.html', /about-us\.html$/],
+      ['projects.html', /projects\.html$/],
+      ['team.html', /team\.html$/],
+      ['contact-us.html', /contact-us\.html$/]
+    ];
+    for (const [href, url] of targets) {
+      await gotoHome(page);
+      // Hero spans must be out of the way on small screens.
+      await expect(page.locator('#cap-scaler span.cap-nav').first()).toBeHidden();
+      const btn = page.locator('#cap-menu-btn');
+      await expect(btn).toBeVisible();
+      await btn.click();
+      await expect(page.locator('#cap-menu-panel')).toBeVisible();
+      await page.locator(`.cap-menu-links a[href="${href}"]`).click();
+      await expect(page).toHaveURL(url);
+    }
   });
 
   test('menu overlay: page links navigate, EXPLORE still scrolls in-page, Escape closes', async ({ page }, testInfo) => {
