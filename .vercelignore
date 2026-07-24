@@ -9,6 +9,12 @@ screenshots/
 node_modules/
 uploads/
 
+# AI-tooling working dirs — never repo content, must not reach production.
+# The working-tree deploy would otherwise publish local editor config and
+# QA session logs (settings.local.json, browse-*.log).
+.claude/
+.gstack/
+
 # Design drafts. Deploys here upload the WORKING TREE, not git, so an
 # untracked scratch folder still ships — without this, /mockups/*.html is
 # publicly reachable on the client-facing site. Caught on the 2026-07-22
