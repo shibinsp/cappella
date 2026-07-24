@@ -58,6 +58,15 @@
          there is no longer any code that raises it back. -->
     <canvas id="cap-dotgrid" data-cap-own="1" width="1440" height="1585" style="position: absolute; left: 0; top: 830px; width: 1440px; height: 1585px; z-index: 4; pointer-events: none;"></canvas>
 
+    <!-- Interactive DotGrid canvas over the HERO (frame y 0-830). Restored to
+         its original layer (z-2, over the hero) after the field was split in
+         two: this one wakes everywhere across the hero, the #cap-dotgrid one
+         above wakes only near the stat figures. A #cap-scaler-level sibling and
+         above every shift threshold, so _shiftBelowBand/journey never move it.
+         Invisible until the cursor moves over it (glow lives in each dot's
+         alpha; nothing painted at rest). -->
+    <canvas id="cap-dotgrid-hero" data-cap-own="1" width="1440" height="830" style="position: absolute; left: 0; top: 0; width: 1440px; height: 830px; z-index: 2; pointer-events: none;"></canvas>
+
     <!-- 135 Acres, static (no animation, no odometer via data-cap-odo).
          Zig-zag rhythm: $500 (left) -> 16 Assets (right) -> 135 Acres (left),
          staircase fully below. The baked copy is hidden in _setupStatCounters
@@ -474,8 +483,53 @@ class Component extends DCLogic {
       tryHideLogo();
     })();
 
-    // ===== Dot grid (stats band cursor field) + nav text scramble =====
-    this._setupDotGrid();
+    // ===== Dot grid cursor fields (hero + stats band) + nav text scramble =====
+    // Two independent water-flow fields share one implementation (_setupDotGrid).
+    // Each gets its own canvas and a wake gate (hotFactor, canvas-local px):
+    // the band wakes only near its four stat figures; the hero wakes everywhere
+    // across it. Both are invisible at rest and appear around the moving cursor.
+    {
+      // Band gate — distance to the nearest stat-rect EDGE (canvas top:830, so
+      // canvas-local y = frame y - 830). The $500 Mn+ block is 493px wide, so a
+      // centre-distance falloff would leave its ends dead. Hardcoded because the
+      // band is static and immune to the odometer innerHTML rewrite.
+      const BT = 830;
+      const HOT = [
+        { x0: 222, y0: 1163 - BT, x1: 715,  y1: 1285 - BT }, // $500 Mn+ / AUM
+        { x0: 695, y0: 1603 - BT, x1: 1067, y1: 1703 - BT }, // 16 Assets + label
+        { x0: 214, y0: 1835 - BT, x1: 520,  y1: 1935 - BT }, // #cap-135
+        { x0: 695, y0: 2138 - BT, x1: 1000, y1: 2238 - BT }, // #cap-75
+      ];
+      const HOT_IN = 40, HOT_OUT = 230; // full glow within 40px of a rect, zero past 230
+      const bandHot = (x, y) => {
+        let best = Infinity;
+        for (const h of HOT) {
+          const dx = x < h.x0 ? h.x0 - x : (x > h.x1 ? x - h.x1 : 0);
+          const dy = y < h.y0 ? h.y0 - y : (y > h.y1 ? y - h.y1 : 0);
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < best) { best = d; if (best === 0) break; }
+        }
+        if (best >= HOT_OUT) return 0;
+        if (best <= HOT_IN) return 1;
+        const t = 1 - (best - HOT_IN) / (HOT_OUT - HOT_IN);
+        return t * t * (3 - 2 * t);
+      };
+      // Hero gate — the whole hero wakes. Region-bounded so it reads 0 whenever
+      // the pointer leaves the hero canvas (e.g. down over the band); a small
+      // edge falloff avoids a hard pop at the boundary.
+      const HW = 1440, HH = 830, EDGE = 60;
+      const heroHot = (x, y) => {
+        const dx = x < 0 ? -x : (x > HW ? x - HW : 0);
+        const dy = y < 0 ? -y : (y > HH ? y - HH : 0);
+        const d = Math.max(dx, dy);
+        if (d >= EDGE) return 0;
+        if (d <= 0) return 1;
+        const t = 1 - d / EDGE;
+        return t * t * (3 - 2 * t);
+      };
+      this._setupDotGrid({ canvasId: 'cap-dotgrid', height: 1585, liftStats: true, hot: bandHot });
+      this._setupDotGrid({ canvasId: 'cap-dotgrid-hero', height: 830, liftStats: false, hot: heroHot });
+    }
     this._setupNavScramble();
 
     // ===== PREMIUM PASS: film grain (viewport-level, no frame needed) =====
@@ -1359,16 +1413,23 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onRevealScroll);
   }
 
-  _setupDotGrid() {
+  // Interactive water-flow cursor field. Runs as two independent instances
+  // (hero + stats band) — see the two calls in the setup sequence. cfg:
+  //   { canvasId, height, hot(x,y)->0..1 wake gate, liftStats }
+  _setupDotGrid(cfg) {
     // Same guards as _setupMagneticBtn: this is a cursor affordance, so it is
     // pointless on touch and unwanted under reduced motion. Bailing here also
-    // skips allocating the 250k-dot buffers on phones. The canvas carries
-    // opacity:0 inline, so bailing leaves nothing visible.
+    // skips allocating the dot buffers on phones. The canvas carries no opacity
+    // override, so bailing leaves nothing visible.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const canvas = document.getElementById('cap-dotgrid');
-    if (!canvas) { if ((this._dgTries = (this._dgTries || 0) + 1) < 40) setTimeout(() => this._setupDotGrid(), 200); return; }
+    const canvas = document.getElementById(cfg.canvasId);
+    if (!canvas) { const tk = '_dgTries_' + cfg.canvasId; if ((this[tk] = (this[tk] || 0) + 1) < 40) setTimeout(() => this._setupDotGrid(cfg), 200); return; }
     const ctx = canvas.getContext('2d');
+    // Per-instance frame-persistent state. This used to live on this._dg*,
+    // which the two instances would clobber; one object per canvas keeps the
+    // hero and band fields fully independent.
+    const st = { raf: 0, vx: 0, vy: 0, t: 0, wasActive: false, dx: null, dy: null, dw: null, dh: null };
 
     // The baked band stats are z-auto, and the frame root creates no stacking
     // context (verified: #cap-scaler's transform is the only one), so they
@@ -1395,11 +1456,12 @@ class Component extends DCLogic {
       if (liftStats()) return;
       if ((this._dgLiftTries = (this._dgLiftTries || 0) + 1) < 40) setTimeout(tryLift, 250);
     };
-    tryLift();
+    if (cfg.liftStats) tryLift();
 
-    // H spans the full red band (frame y 830-2415). This one constant also
-    // drives the ny/cy bounds checks in onMove/onClick below.
-    const W = 1440, H = 1585, dotSize = 1.4, gap = 1.6, cell = dotSize + gap;
+    // H is the canvas height (band 1585 = frame 830-2415, hero 830 = frame
+    // 0-830). This one constant also drives the ny/cy bounds checks in
+    // onMove/onClick below.
+    const W = 1440, H = cfg.height, dotSize = 1.4, gap = 1.6, cell = dotSize + gap;
     const baseA = 0.16, activeA = 0.95;
     const cols = Math.floor((W + gap) / cell), rows = Math.floor((H + gap) / cell);
     const gridW = cell * cols - gap, gridH = cell * rows - gap;
@@ -1438,38 +1500,11 @@ class Component extends DCLogic {
     let cursorGlow = 0;
     let dgIdleTimeout = null;
 
-    // ===== STAT HOTSPOTS =====
-    // The field only wakes near the four stat figures; everywhere else in the
-    // band it stays at hard zero. Rects are canvas-local (frame y - 830) and
-    // hardcoded on purpose: the band's position is static (above both
-    // CAP_SHIFT_FROM and JBAND_TOP) and _fit's uniform scale is already
-    // divided out in onMove, so there is nothing to measure and nothing to
-    // recompute on resize. Hardcoding is also immune to _setupStatCounters
-    // rewriting the stat innerHTML for the odometer roll.
-    // (The baked "10 Years" at 695,2115 is hidden at runtime — not a hotspot.)
-    const BAND_TOP = 830;
-    const HOT = [
-      { x0: 222, y0: 1163 - BAND_TOP, x1: 715,  y1: 1285 - BAND_TOP }, // $500 Mn+ / AUM
-      { x0: 695, y0: 1603 - BAND_TOP, x1: 1067, y1: 1703 - BAND_TOP }, // 16 Assets + label
-      { x0: 214, y0: 1835 - BAND_TOP, x1: 520,  y1: 1935 - BAND_TOP }, // #cap-135
-      { x0: 695, y0: 2138 - BAND_TOP, x1: 1000, y1: 2238 - BAND_TOP }, // #cap-75
-    ];
-    const HOT_IN = 40, HOT_OUT = 230;  // full glow within 40px of a rect, zero past 230
-    // Distance to the nearest rect EDGE, not its centre: the $500 Mn+ block is
-    // 493px wide, so a centre-distance falloff would leave its ends dead.
-    const hotFactor = (x, y) => {
-      let best = Infinity;
-      for (const h of HOT) {
-        const dx = x < h.x0 ? h.x0 - x : (x > h.x1 ? x - h.x1 : 0);
-        const dy = y < h.y0 ? h.y0 - y : (y > h.y1 ? y - h.y1 : 0);
-        const d = Math.sqrt(dx * dx + dy * dy);
-        if (d < best) { best = d; if (best === 0) break; }
-      }
-      if (best >= HOT_OUT) return 0;
-      if (best <= HOT_IN) return 1;
-      const t = 1 - (best - HOT_IN) / (HOT_OUT - HOT_IN);
-      return t * t * (3 - 2 * t);      // smoothstep, matching the cursor falloff below
-    };
+    // ===== WAKE GATE =====
+    // Per-instance: 0..1, how strongly the field wakes at a point (canvas-local
+    // px). The band gate returns >0 only near its four stat figures; the hero
+    // gate returns 1 across the whole hero. Both are built at the call site.
+    const hotFactor = cfg.hot;
     let clickGlow = 0;                 // proximity captured at click, holds while rings live
 
     const sc = () => { const e = document.getElementById('cap-scaler'); const m = (e.style.transform || '').match(/scale\(([^)]+)\)/); return m ? parseFloat(m[1]) : 1; };
@@ -1518,17 +1553,17 @@ class Component extends DCLogic {
       // Band off-screen -> skip all physics/painting, just idle the loop
       const rect = canvas.getBoundingClientRect();
       if (rect.bottom < 0 || rect.top > window.innerHeight) {
-        this._dgRaf = requestAnimationFrame(draw);
+        st.raf = requestAnimationFrame(draw);
         return;
       }
 
       // Spring-smoothed cursor position (organic tracking)
       if (P.x > -9000) {
-        if (smoothX < -9000) { smoothX = P.x; smoothY = P.y; this._dgVX = 0; this._dgVY = 0; }
-        if (!this._dgVX) { this._dgVX = 0; this._dgVY = 0; }
-        this._dgVX += (P.x - smoothX) * 0.07; this._dgVY += (P.y - smoothY) * 0.07;
-        this._dgVX *= 0.78; this._dgVY *= 0.78;
-        smoothX += this._dgVX; smoothY += this._dgVY;
+        if (smoothX < -9000) { smoothX = P.x; smoothY = P.y; st.vx = 0; st.vy = 0; }
+        if (!st.vx) { st.vx = 0; st.vy = 0; }
+        st.vx += (P.x - smoothX) * 0.07; st.vy += (P.y - smoothY) * 0.07;
+        st.vx *= 0.78; st.vy *= 0.78;
+        smoothX += st.vx; smoothY += st.vy;
       } else { smoothX = -9999; smoothY = -9999; }
       
       // Smoothly update cursorGlow multiplier (fast fade in, slow decay on
@@ -1567,7 +1602,7 @@ class Component extends DCLogic {
       // reason to run physics or paint. This is what pays for the band being
       // ~2x the hero's height: at rest the loop does nothing at all.
       if (cursorGlow < 0.004 && !rings.length) {
-        if (this._dgWasActive) {
+        if (st.wasActive) {
           // Final clear+blit so no residue is stranded on screen, and relax
           // every offset — the culled loop below only touches dots near the
           // cursor, so dots left behind would otherwise stay displaced and
@@ -1579,15 +1614,15 @@ class Component extends DCLogic {
           // and it guarantees the resting canvas is exactly empty.
           px32.fill(0);
           ctx.putImageData(frame, 0, 0);
-          this._dgDX = this._dgDY = this._dgDW = this._dgDH = null;
+          st.dx = st.dy = st.dw = st.dh = null;
           OX.fill(0); OY.fill(0);
-          this._dgWasActive = false;
+          st.wasActive = false;
         }
-        this._dgRaf = requestAnimationFrame(draw);
+        st.raf = requestAnimationFrame(draw);
         return;
       }
-      this._dgWasActive = true;
-      const T = (this._dgT = (this._dgT || 0) + 0.025); // ambient water time
+      st.wasActive = true;
+      const T = (st.t = st.t + 0.025); // ambient water time
 
       // ===== DIRTY BOX =====
       // Union of the cursor's influence disc and every live ring, in canvas
@@ -1607,7 +1642,7 @@ class Component extends DCLogic {
         addBox(g.x - bb, g.y - bb, g.x + bb, g.y + bb);
       }
       if (bx0 === Infinity) {           // nothing to draw this frame
-        this._dgRaf = requestAnimationFrame(draw);
+        st.raf = requestAnimationFrame(draw);
         return;
       }
       // Pixel rect for this frame, unioned with last frame's so the previous
@@ -1617,10 +1652,10 @@ class Component extends DCLogic {
       // just outside the raw bounds.
       const cdx = Math.max(0, Math.floor(bx0) - 6), cdy = Math.max(0, Math.floor(by0) - 6);
       const cdw = Math.min(W, Math.ceil(bx1) + 6) - cdx, cdh = Math.min(H, Math.ceil(by1) + 6) - cdy;
-      const ux0 = Math.min(cdx, this._dgDX == null ? cdx : this._dgDX);
-      const uy0 = Math.min(cdy, this._dgDY == null ? cdy : this._dgDY);
-      const ux1 = Math.max(cdx + cdw, this._dgDX == null ? cdx + cdw : this._dgDX + this._dgDW);
-      const uy1 = Math.max(cdy + cdh, this._dgDY == null ? cdy + cdh : this._dgDY + this._dgDH);
+      const ux0 = Math.min(cdx, st.dx == null ? cdx : st.dx);
+      const uy0 = Math.min(cdy, st.dy == null ? cdy : st.dy);
+      const ux1 = Math.max(cdx + cdw, st.dx == null ? cdx + cdw : st.dx + st.dw);
+      const uy1 = Math.max(cdy + cdh, st.dy == null ? cdy + cdh : st.dy + st.dh);
       for (let y = uy0; y < uy1; y++) px32.fill(0, y * W + ux0, y * W + ux1);
 
       // Dot index range covering the dirty box
@@ -1709,16 +1744,16 @@ class Component extends DCLogic {
       // Dirty-rect blit: a full-buffer putImageData uploads 9.1MB every frame
       // regardless of how little changed, which would swamp the culling above.
       ctx.putImageData(frame, 0, 0, ux0, uy0, ux1 - ux0, uy1 - uy0);
-      this._dgDX = cdx; this._dgDY = cdy; this._dgDW = cdw; this._dgDH = cdh;
-      this._dgRaf = requestAnimationFrame(draw);
+      st.dx = cdx; st.dy = cdy; st.dw = cdw; st.dh = cdh;
+      st.raf = requestAnimationFrame(draw);
     };
-    this._dgCleanup = () => {
-      if (this._dgRaf) cancelAnimationFrame(this._dgRaf);
+    (this._dgCleanups = this._dgCleanups || []).push(() => {
+      if (st.raf) cancelAnimationFrame(st.raf);
       clearTimeout(dgIdleTimeout);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('click', onClick);
-    };
+    });
     draw();
   }
 
@@ -4665,7 +4700,7 @@ class Component extends DCLogic {
       window.removeEventListener('scroll', this._updateMenuBtnVisibility);
     }
     if (this._scrollRevealIO) this._scrollRevealIO.disconnect();
-    if (this._dgCleanup) this._dgCleanup();
+    if (this._dgCleanups) this._dgCleanups.forEach((fn) => fn());
   }
 
   renderVals() { return {}; }
