@@ -448,44 +448,65 @@
   width: 100%;
   border-radius: 18px;
 }
-/* Card lifts up over the band's lower padding. */
+/* Client 2026-07-24: the modules moved off the band onto the pale ground below
+   it (the pinned reveal uses dark text on the pale ground), so the wrap no
+   longer lifts up into the crimson band. */
 .section--skolen .skolen-cardwrap {
-  margin-top: clamp(-104px, -9vw, -72px);
+  margin-top: clamp(56px, 8vw, 104px);
   padding-bottom: clamp(72px, 10vw, 128px);
   position: relative;
 }
-/* Client 2026-07-23: the modules table became three separate cards. The
-   heading sits on the band's lower padding (which the cardwrap lifts into),
-   so it stays white; each card keeps the old table-card radius + shadow. */
+/* Sits on the pale ground now, so the heading is dark (was white on the band). */
 .section--skolen .skolen-modules-title {
-  color: var(--cap-white);
+  color: #1a1a1a;
   font-weight: 600;
-  font-size: clamp(18px, 1.8vw, 26px);
-  margin-bottom: clamp(14px, 1.8vw, 22px);
+  font-size: clamp(18px, 1.9vw, 28px);
+  margin-bottom: clamp(20px, 2.6vw, 36px);
 }
-.section--skolen .skolen-modules {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(16px, 2vw, 28px);
+/* ---- Pinned mask-reveal (client 2026-07-24) ----
+   Base/fallback layout: a single column where each module's aerial sits inline
+   beneath it. __text (articles) and __media/__pin (images) are hoisted with
+   display:contents into .skolen-reveal and interleaved by source order, so this
+   reads correctly with no JS, on mobile, and under reduced motion.
+   shared/js/about.js upgrades desktop to the pinned two-column wipe (.is-pinned). */
+.skolen-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 3vw, 40px);
 }
-.skolen-module {
-  background: var(--cap-white);
-  border-radius: 18px;
-  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.45);
-  padding: clamp(22px, 2.6vw, 34px);
+.skolen-reveal__text,
+.skolen-reveal__media,
+.skolen-reveal__pin {
+  display: contents;
 }
-.skolen-module__img {
+.skolen-reveal__img {
   width: 100%;
   aspect-ratio: 1408 / 768;
   object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: clamp(16px, 1.8vw, 22px);
+  border-radius: 14px;
 }
+/* interleave: module 1, aerial 1, module 2, aerial 2, module 3, aerial 3 */
+.skolen-reveal__text .skolen-module:nth-of-type(1) { order: 0; }
+.skolen-reveal__img[data-skolen-img="0"] { order: 1; }
+.skolen-reveal__text .skolen-module:nth-of-type(2) { order: 2; }
+.skolen-reveal__img[data-skolen-img="1"] { order: 3; }
+.skolen-reveal__text .skolen-module:nth-of-type(3) { order: 4; }
+.skolen-reveal__img[data-skolen-img="2"] { order: 5; }
+
 .skolen-module__name {
-  font-size: clamp(17px, 1.5vw, 22px);
+  font-size: clamp(22px, 2.2vw, 34px);
   font-weight: 700;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--cap-hairline);
+  letter-spacing: -0.01em;
+}
+.skolen-module__blurb {
+  color: rgba(0, 0, 0, 0.72);
+  font-size: clamp(15px, 1.15vw, 18px);
+  line-height: 1.5;
+  margin: 12px 0 clamp(18px, 2vw, 26px);
+  max-width: 46ch;
+}
+.skolen-module__specs {
+  max-width: 440px;
 }
 .skolen-module__specs div {
   display: flex;
@@ -493,9 +514,10 @@
   align-items: baseline;
   gap: 12px;
   padding-block: 13px;
-}
-.skolen-module__specs div + div {
   border-top: 1px solid var(--cap-hairline);
+}
+.skolen-module__specs div:last-child {
+  border-bottom: 1px solid var(--cap-hairline);
 }
 .skolen-module__specs dt {
   font-size: 11px;
@@ -510,10 +532,53 @@
   font-weight: 600;
   text-align: right;
 }
-@media (max-width: 899px) {
-  .section--skolen .skolen-modules {
-    grid-template-columns: 1fr;
+
+/* Pinned two-column wipe — only when about.js has confirmed desktop +
+   no-reduced-motion and added .is-pinned. The media column sticks while the
+   text column scrolls; the stacked aerials clip-wipe from the top image down. */
+@media (min-width: 901px) {
+  .skolen-reveal.is-pinned {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
   }
+  .skolen-reveal.is-pinned .skolen-reveal__text { display: block; }
+  .skolen-reveal.is-pinned .skolen-reveal__media {
+    display: block;
+    position: sticky;
+    top: 84px;
+    height: calc(100vh - 132px);
+  }
+  .skolen-reveal.is-pinned .skolen-reveal__pin {
+    display: block;
+    position: relative;
+    height: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 40px 90px -55px rgba(0, 0, 0, 0.5);
+  }
+  .skolen-reveal.is-pinned .skolen-reveal__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    border-radius: 0;
+    order: 0;
+    will-change: clip-path;
+  }
+  .skolen-reveal.is-pinned .skolen-reveal__img[data-skolen-img="0"] { z-index: 3; }
+  .skolen-reveal.is-pinned .skolen-reveal__img[data-skolen-img="1"] { z-index: 2; }
+  .skolen-reveal.is-pinned .skolen-reveal__img[data-skolen-img="2"] { z-index: 1; }
+  .skolen-reveal.is-pinned .skolen-module {
+    order: 0;
+    min-height: calc(100vh - 132px);
+    display: grid;
+    align-content: center;
+    transition: opacity 0.45s var(--cap-ease-expo);
+  }
+  .skolen-reveal.is-pinned .skolen-module.is-dim { opacity: 0.3; }
 }
 
 /* ---------- Stats · Flip-card variant (About Us) ----------

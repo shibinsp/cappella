@@ -15,6 +15,7 @@
 <script src="components/vendor/lenis.min.js" defer></script>
 <script src="components/vendor/split-type.min.js" defer></script>
 <script src="shared/site.js" defer></script>
+<script src="shared/js/about.js" defer></script>
 </head>
 <body><!-- client 2026-07-23: warm ground reverted to white -->
 <a class="skip-link" href="#main">Skip to content</a>
@@ -169,36 +170,50 @@
       </div>
     </div>
     <div class="container skolen-cardwrap">
-      <!-- Client 2026-07-23: each module is its own card (was a single table) -->
       <h3 class="skolen-modules-title" data-reveal>SKOLEN Modules</h3>
-      <div class="skolen-modules" data-reveal="scale">
-        <article class="skolen-module" data-reveal data-reveal-delay="1">
-          <img class="skolen-module__img" src="components/assets/skolen/skolen-1-acre.jpg" alt="Aerial render of the SKOLEN 1-Acre campus" loading="lazy">
-          <h4 class="skolen-module__name">SKOLEN 1-Acre</h4>
-          <dl class="skolen-module__specs">
-            <div><dt>Land</dt><dd>1 acre</dd></div>
-            <div><dt>Built-up Area</dt><dd>70,000&ndash;75,000 sq ft</dd></div>
-            <div><dt>Capacity</dt><dd>900&ndash;1,100</dd></div>
-          </dl>
-        </article>
-        <article class="skolen-module" data-reveal data-reveal-delay="2">
-          <img class="skolen-module__img" src="components/assets/skolen/skolen-2-acre.jpg" alt="Aerial render of the SKOLEN 2-Acre campus" loading="lazy">
-          <h4 class="skolen-module__name">SKOLEN 2-Acre</h4>
-          <dl class="skolen-module__specs">
-            <div><dt>Land</dt><dd>2 acres</dd></div>
-            <div><dt>Built-up Area</dt><dd>1,40,000&ndash;1,50,000 sq ft</dd></div>
-            <div><dt>Capacity</dt><dd>2,000&ndash;2,200</dd></div>
-          </dl>
-        </article>
-        <article class="skolen-module" data-reveal data-reveal-delay="3">
-          <img class="skolen-module__img" src="components/assets/skolen/skolen-3-acre.jpg" alt="Aerial render of the SKOLEN 3-Acre campus" loading="lazy">
-          <h4 class="skolen-module__name">SKOLEN 3-Acre</h4>
-          <dl class="skolen-module__specs">
-            <div><dt>Land</dt><dd>3 acres</dd></div>
-            <div><dt>Built-up Area</dt><dd>2,80,000&ndash;3,00,000 sq ft</dd></div>
-            <div><dt>Capacity</dt><dd>3,000&ndash;3,300</dd></div>
-          </dl>
-        </article>
+      <!-- Client 2026-07-24: the module cards became a pinned mask-reveal — the
+           aerial render sticks on the right and wipes 1-Acre -> 2-Acre -> 3-Acre
+           as the module blocks scroll on the left (behavior in shared/js/about.js).
+           Progressive enhancement: without JS / on mobile / under reduced motion
+           it falls back to a single-column stack with each aerial inline (the
+           __text and __media children interleave by source order). -->
+      <div class="skolen-reveal" data-skolen-reveal>
+        <div class="skolen-reveal__text">
+          <article class="skolen-module" data-reveal>
+            <h4 class="skolen-module__name">SKOLEN 1-Acre</h4>
+            <p class="skolen-module__blurb">The compact format for dense urban plots: a complete K&ndash;12 campus on a single acre.</p>
+            <dl class="skolen-module__specs">
+              <div><dt>Land</dt><dd>1 acre</dd></div>
+              <div><dt>Built-up Area</dt><dd>70,000&ndash;75,000 sq ft</dd></div>
+              <div><dt>Capacity</dt><dd>900&ndash;1,100</dd></div>
+            </dl>
+          </article>
+          <article class="skolen-module" data-reveal>
+            <h4 class="skolen-module__name">SKOLEN 2-Acre</h4>
+            <p class="skolen-module__blurb">The core campus &mdash; more room for cohorts, sport and labs, still standardised and fast to open.</p>
+            <dl class="skolen-module__specs">
+              <div><dt>Land</dt><dd>2 acres</dd></div>
+              <div><dt>Built-up Area</dt><dd>1,40,000&ndash;1,50,000 sq ft</dd></div>
+              <div><dt>Capacity</dt><dd>2,000&ndash;2,200</dd></div>
+            </dl>
+          </article>
+          <article class="skolen-module" data-reveal>
+            <h4 class="skolen-module__name">SKOLEN 3-Acre</h4>
+            <p class="skolen-module__blurb">The flagship footprint &mdash; full facilities at the highest capacity for established catchments.</p>
+            <dl class="skolen-module__specs">
+              <div><dt>Land</dt><dd>3 acres</dd></div>
+              <div><dt>Built-up Area</dt><dd>2,80,000&ndash;3,00,000 sq ft</dd></div>
+              <div><dt>Capacity</dt><dd>3,000&ndash;3,300</dd></div>
+            </dl>
+          </article>
+        </div>
+        <div class="skolen-reveal__media">
+          <div class="skolen-reveal__pin">
+            <img class="skolen-reveal__img" data-skolen-img="0" src="components/assets/skolen/skolen-1-acre.jpg" alt="Aerial render of the SKOLEN 1-Acre campus" loading="lazy">
+            <img class="skolen-reveal__img" data-skolen-img="1" src="components/assets/skolen/skolen-2-acre.jpg" alt="Aerial render of the SKOLEN 2-Acre campus" loading="lazy">
+            <img class="skolen-reveal__img" data-skolen-img="2" src="components/assets/skolen/skolen-3-acre.jpg" alt="Aerial render of the SKOLEN 3-Acre campus" loading="lazy">
+          </div>
+        </div>
       </div>
     </div>
   </section>

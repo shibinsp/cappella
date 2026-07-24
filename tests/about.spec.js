@@ -127,6 +127,40 @@ test.describe('about-us.html', () => {
     }
   });
 
+  test('SKOLEN — pinned mask-reveal on desktop, inline fallback on small screens', async ({ page }) => {
+    // Client 2026-07-24: the module cards became a sticky aerial that wipes
+    // between the three renders as the module blocks scroll (shared/js/about.js).
+    // Desktop upgrades to the pinned two-column wipe; mobile/tablet fall back to
+    // the single-column stack with each aerial inline.
+    await page.goto('/about-us.html');
+    const reveal = page.locator('[data-skolen-reveal]');
+    await expect(reveal).toHaveCount(1);
+    await expect(reveal.locator('.skolen-reveal__img')).toHaveCount(3);
+    await reveal.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+
+    const width = page.viewportSize().width;
+    if (width >= 901) {
+      await expect(reveal).toHaveClass(/is-pinned/);
+      await expect(reveal.locator('.skolen-reveal__media')).toHaveCSS('position', 'sticky');
+      // scrolling to the end of the section wipes the first aerial away and
+      // leaves the last one shown (clip-path is driven from the scroll fraction)
+      await page.evaluate(() => {
+        const r = document.querySelector('[data-skolen-reveal]');
+        const rect = r.getBoundingClientRect();
+        window.scrollTo(0, rect.top + window.scrollY + r.offsetHeight - window.innerHeight);
+      });
+      await page.waitForTimeout(300);
+      const clips = await reveal
+        .locator('.skolen-reveal__img')
+        .evaluateAll((els) => els.map((e) => e.style.clipPath));
+      expect(clips[0]).toMatch(/100(\.0+)?%/); // first fully wiped
+      expect(clips[2] === '' || /\b0(\.0+)?%/.test(clips[2])).toBeTruthy(); // last shown
+    } else {
+      await expect(reveal).not.toHaveClass(/is-pinned/);
+    }
+  });
+
   test('full-page screenshot', async ({ page }, testInfo) => {
     await page.goto('/about-us.html');
     await page.waitForTimeout(600);
