@@ -290,6 +290,15 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
 #cap-menu-btn:hover svg {
   stroke: rgb(255, 255, 255) !important;
 }
+/* The button is position:fixed and lives outside the scaled frame, so it does
+   not shrink with the hero the way everything else does — at 52px it read as
+   oversized on a phone. Scale it down to a proportionate size (2026-07-24 QA).
+   Placed after the base rule so it wins on source order — media queries do not
+   add specificity. */
+@media (max-width: 900px) {
+  #cap-menu-btn { width: 42px; height: 42px; top: 18px; right: 18px; }
+  #cap-menu-btn svg { width: 17px; height: 12px; }
+}
 
 #cap-menu-overlay {
   position: fixed;
