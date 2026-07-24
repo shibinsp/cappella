@@ -1898,7 +1898,7 @@ class Component extends DCLogic {
     // visibly mid-sky)
     const HEAD_X = PORTRAIT ? 640 : 812;
     const BASE_BODY = PORTRAIT
-      ? _scaleBodyY('C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 190 1110 180 1170 170 1230')
+      ? _scaleBodyY('C 630 90 600 200 540 300 C 480 400 420 540 360 700 C 300 860 250 940 210 1050 C 185 1110 150 1170 110 1230')
       : 'C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
     const BASE_PATH = 'M ' + HEAD_X + ' -10 ' + BASE_BODY;
     const TAIL = PORTRAIT
@@ -1907,7 +1907,7 @@ class Component extends DCLogic {
     // Dot positions; reveal fractions are recomputed per layout (the dynamic
     // head/tail change the path length), preserving the hand-tuned offsets
     const DOTS = PORTRAIT
-      ? [['0.25', 540, _sy(300)], ['0.50', 360, _sy(700)], ['0.70', 170, _sy(1230)]]
+      ? [['0.25', 540, _sy(300)], ['0.50', 360, _sy(700)], ['0.70', 110, _sy(1230)]]
       : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
     const TH_ADJ = PORTRAIT ? [0.06, 0.06, -0.067] : [0.06, 0.055, -0.019];
     const TH_LIVE = DOTS.map((d) => parseFloat(d[0]));
