@@ -4289,7 +4289,12 @@ class Component extends DCLogic {
       const vp = document.getElementById('cap-viewport');
       const s = vp ? vp.clientWidth / 1440 : 1;
       const threshold = 180 * s;
-      if (window.scrollY > threshold) {
+      // On mobile the whole frame scales down, so the baked hero nav links
+      // shrink too small to tap and there is no other nav at the top. Surface
+      // the menu button from the start there (matches the always-visible MENU
+      // button on the inner pages). Desktop keeps the scroll-in behavior.
+      const mobileNav = window.matchMedia('(max-width: 900px)').matches;
+      if (mobileNav || window.scrollY > threshold) {
         btn.style.opacity = '1';
         btn.style.pointerEvents = 'auto';
       } else {

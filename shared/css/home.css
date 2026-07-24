@@ -30,6 +30,12 @@ a:hover { color: rgb(170,20,34); }
 }
 /* nav-overlay links must stay on one line (beats the global rule) */
 #cap-scaler span.cap-nav { white-space: nowrap !important; }
+/* On mobile the scaled frame shrinks the baked hero nav links too small to
+   tap, and the cap-menu-btn hamburger now stands in as the nav there, so hide
+   the hero links below the tablet breakpoint (2026-07-24 QA). */
+@media (max-width: 900px) {
+  #cap-scaler span.cap-nav { display: none !important; }
+}
 /* two-line portfolio captions keep their authored \n line break — the
    inner selector also covers the scramble's per-char spans, which the
    global rule would otherwise force back to normal and collapse the
