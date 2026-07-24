@@ -347,46 +347,49 @@ test.describe('pinned journey', () => {
     expectNoPageErrors(errors);
   });
 
-  test('portrait phones get the recomposed vertical scene', async ({ page }, testInfo) => {
+  test('portrait phones get the pinned scene fitted to the device resolution', async ({ page }, testInfo) => {
+    // Client 2026-07-24: the portrait canvas height adapts to the device
+    // aspect so the pinned scene fills the phone with no letterbox.
     test.skip(testInfo.project.name !== 'mobile', 'portrait composition asserted at phone scale');
     testInfo.setTimeout(90000);
     await page.goto(HOME, { waitUntil: 'networkidle' });
     await page.waitForSelector('#cap-journey', { timeout: 20000 });
 
+    const shape = await page.evaluate(() => {
+      const host = document.getElementById('cap-journey');
+      const stage = host.querySelector('.cap-j-stage');
+      const sr = stage.getBoundingClientRect();
+      return {
+        hasPin: !!host.querySelector('.cap-j-pin'),
+        hasStage: !!stage,
+        phases: host.querySelectorAll('.cap-j-phase').length,
+        buildings: host.querySelectorAll('.cap-j-building').length,
+        stageH: sr.height,
+        vh: window.innerHeight,
+        aspect: sr.height / window.innerHeight
+      };
+    });
+    // Still the pinned scene (not a redesign) …
+    expect(shape.hasPin).toBe(true);
+    expect(shape.hasStage).toBe(true);
+    expect(shape.phases).toBe(3);
+    expect(shape.buildings).toBe(3);
+    // … and it fills the phone: the stage height ≈ the viewport height,
+    // no meaningful letterbox (the fixed 800x1500 canvas used to leave ~113px).
+    expect(shape.vh - shape.stageH).toBeLessThan(16);
+    expect(shape.aspect).toBeGreaterThan(0.98);
+
+    // Each phase reaches full opacity as the scrub passes its third.
     const geom = await page.evaluate(() => {
       const host = document.getElementById('cap-journey');
       return { top: window.scrollY + host.getBoundingClientRect().top, total: host.offsetHeight - window.innerHeight };
     });
-    await page.evaluate((y) => window.scrollTo(0, y), geom.top + (0.5 / 3) * geom.total);
-    await expect
-      .poll(
-        () => page.evaluate(() => +document.querySelectorAll('.cap-j-phase')[0].style.opacity),
-        { timeout: 8000 }
-      )
-      .toBeGreaterThan(0.9);
-
-    const m = await page.evaluate(() => {
-      const stage = document.querySelector('.cap-j-stage');
-      const sr = stage.getBoundingClientRect();
-      const ph = document.querySelectorAll('.cap-j-phase')[0];
-      const b = ph.querySelector('.cap-j-building');
-      const br = b.getBoundingClientRect();
-      const m3 = ph.querySelectorAll('.cap-j-marker')[2].getBoundingClientRect();
-      return {
-        ratio: sr.width / sr.height,
-        visualBase: br.top + br.height * parseFloat(b.dataset.base),
-        horizon: sr.top + sr.height * (1150 / 1500),
-        scale: sr.height / 1500,
-        buildingBottom: br.top + br.height * parseFloat(b.dataset.base),
-        m3Top: m3.top
-      };
-    });
-    // portrait canvas is 800x1500
-    expect(Math.abs(m.ratio - 800 / 1500)).toBeLessThan(0.02);
-    // building base sits on the portrait horizon
-    expect(Math.abs(m.visualBase - m.horizon)).toBeLessThan(12 * m.scale);
-    // the last marker clears the building (sits in the sea below its base)
-    expect(m.m3Top).toBeGreaterThan(m.buildingBottom - 2);
+    for (let i = 0; i < 3; i++) {
+      await page.evaluate((y) => window.scrollTo(0, y), geom.top + ((i + 0.5) / 3) * geom.total);
+      await expect
+        .poll(() => page.evaluate((n) => +document.querySelectorAll('.cap-j-phase')[n].style.opacity, i), { timeout: 8000 })
+        .toBeGreaterThan(0.9);
+    }
   });
 
   test('content below the pin is shifted and reachable', async ({ page }, testInfo) => {
