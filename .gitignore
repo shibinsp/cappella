@@ -24,3 +24,6 @@ test-artifacts/
 
 # Session scratch (screenshots, pasted media) — never repo content
 uploads/
+
+# AI-tooling working dir (local editor config, QA session logs)
+.claude/
