@@ -15,6 +15,12 @@ uploads/
 .claude/
 .gstack/
 
+# Vercel CLI state. Holds .env.preview.local, which carries a live
+# VERCEL_OIDC_TOKEN. The CLI already excludes this by default — listed
+# explicitly because deploys here upload the WORKING TREE, and a credential
+# is not something to leave resting on a default.
+.vercel/
+
 # Design drafts. Deploys here upload the WORKING TREE, not git, so an
 # untracked scratch folder still ships — without this, /mockups/*.html is
 # publicly reachable on the client-facing site. Caught on the 2026-07-22
