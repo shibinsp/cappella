@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Cappella — homepage MOBILE layout (phones, max-width 767px)
+   [SECTION]  Mobile home (#cap-mobile) — a real flow layout, not the scaler
+   [BEHAVIOR] Hero, stats band, Cappella Edge accordion, Our Journey timeline,
+              Our Portfolio grid, Operators grid, footer
+   [PURPOSE]  index.html is a fixed 1440px Figma export rendered through
+              `transform: scale(viewportWidth / 1440)` (index.html _fit).
+              At 390px that is scale 0.271 — the 100px headline lands at 27px
+              and body copy at 6.5px, and every coordinate in the frame is a
+              hardcoded 1440-space pixel, so no media query can reshape it.
+              Below 768px we therefore hide the scaler entirely and render
+              this separate, purpose-built DOM instead. Built to the client's
+              Figma `Cappella_Updated` / `Frame 6` (390 x 3290).
+   [NOTE]     Frame 6 is four stacked raster panels, so there are no
+              extractable type/spacing tokens — the values here are measured
+              off the images at 390px.
+   ========================================================================== */
+
+/* ===== BREAKPOINT SWITCH =====
+   768px, not the 900px used by the hamburger rule in home.css: tablets keep
+   the scaled frame (and the Playwright `tablet` project at 768x1024 stays on
+   the old path), phones get this layout. */
+#cap-mobile { display: none; }
+
+@media (max-width: 767px) {
+  #cap-viewport { display: none !important; }
+  #cap-mobile { display: block; }
+}
+
+/* Everything below only ever applies inside #cap-mobile, which is display:none
+   above the breakpoint — so these rules cost nothing on desktop. */
+
+#cap-mobile {
+  --cap-red: rgb(209, 32, 47);
+  --cap-ink: #1a1a1a;
+  --cap-body: #55575c;
+  --cap-rule: #e6e6e6;
+  --cap-gutter: 24px;
+  font-family: Montserrat, sans-serif;
+  color: var(--cap-ink);
+  background: #fff;
+  overflow-x: hidden;
+}
+
+#cap-mobile img { max-width: 100%; display: block; }
+#cap-mobile button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* Shared section furniture: a 28px red rule above/below a heading, per the
+   mockup's "Our Journey" / "Our Portfolio" / "Operators" headings. */
+#cap-mobile .cm-rule {
+  width: 28px; height: 2px; background: var(--cap-red); border: 0; margin: 0 0 14px;
+}
+#cap-mobile .cm-h2 {
+  font-size: 22px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; margin: 0;
+}
+#cap-mobile .cm-sub {
+  font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--cap-body); margin: 10px 0 0;
+}
+#cap-mobile .cm-section { padding: 44px var(--cap-gutter); }
+
+/* ==========================================================================
+   1. HERO
+   ========================================================================== */
+
+/* The wordmark row scrolls away; the circular hamburger is #cap-menu-btn,
+   created body-level by _setupMenuOverlay and already position:fixed — it is
+   reused as-is here, which is why there is no menu button in this markup. */
+#cap-mobile .cm-hero {
+  position: relative;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--cap-gutter) 34px;
+  overflow: hidden;
+  isolation: isolate;
+}
+#cap-mobile .cm-hero-bg {
+  position: absolute; inset: 0; z-index: -2;
+  background: url(../../components/assets/0f9374cd498a11f1-min.jpg) center / cover no-repeat;
+}
+/* Crimson wash: solid at the bottom so the copy always clears AA contrast,
+   thinning towards the top so the campus stays legible. */
+#cap-mobile .cm-hero-tint {
+  position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(180deg,
+    rgba(140, 22, 32, 0.55) 0%,
+    rgba(170, 26, 38, 0.62) 42%,
+    rgba(196, 30, 44, 0.88) 78%,
+    var(--cap-red) 100%);
+}
+#cap-mobile .cm-hero-top {
+  position: absolute; left: var(--cap-gutter); top: 26px; z-index: 2;
+}
+#cap-mobile .cm-wordmark {
+  font-size: 14px; font-weight: 700; letter-spacing: 0.26em; color: #fff; text-transform: uppercase;
+}
+#cap-mobile .cm-hero h1 {
+  font-size: 28px; font-weight: 700; line-height: 1.18; letter-spacing: -0.015em;
+  color: #fff; margin: 0;
+}
+#cap-mobile .cm-hero-sub {
+  font-size: 13px; font-weight: 400; line-height: 1.55;
+  color: rgba(255, 255, 255, 0.9); margin: 14px 0 0; max-width: 300px;
+}
+#cap-mobile .cm-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-top: 22px; padding: 13px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.85); border-radius: 3px;
+  font-size: 13px; font-weight: 600; color: #fff;
+  align-self: flex-start;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+#cap-mobile .cm-cta:active { background: #fff; color: var(--cap-red); }
+#cap-mobile .cm-cta svg { width: 15px; height: 11px; flex: none; }
+
+/* ==========================================================================
+   2. STATS BAND
+   Mockup layout: three figures staggered down a 2-column field with hairline
+   rules crossing behind them — left, right, left.
+   ========================================================================== */
+
+#cap-mobile .cm-stats {
+  position: relative;
+  background: var(--cap-red);
+  padding: 40px var(--cap-gutter) 46px;
+  overflow: hidden;
+}
+/* The crossing hairlines. Two verticals and two horizontals, drawn as a
+   background rather than elements so they can never intercept a tap. */
+#cap-mobile .cm-stats::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  /* Each layer is a 1px-wide (or 1px-tall) slab positioned by percentage —
+     the layer MUST be smaller than the box or a percentage position resolves
+     to 0 and every rule stacks on the left/top edge. */
+  --cm-hair: linear-gradient(rgba(255,255,255,0.24), rgba(255,255,255,0.24));
+  background:
+    var(--cm-hair) 22% 0 / 1px 100% no-repeat,
+    var(--cm-hair) 74% 0 / 1px 100% no-repeat,
+    var(--cm-hair) 0 38% / 100% 1px no-repeat,
+    var(--cm-hair) 0 71% / 100% 1px no-repeat;
+}
+#cap-mobile .cm-stat { position: relative; z-index: 1; }
+#cap-mobile .cm-stat + .cm-stat { margin-top: 34px; }
+#cap-mobile .cm-stat--right { text-align: left; padding-left: 46%; }
+#cap-mobile .cm-stat-fig {
+  font-size: 21px; font-weight: 700; line-height: 1; color: #fff; letter-spacing: -0.01em;
+}
+#cap-mobile .cm-stat-lbl {
+  font-size: 9px; font-weight: 400; letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.82); margin-top: 7px;
+}
+
+/* ==========================================================================
+   3. THE CAPPELLA EDGE — accordion
+   ========================================================================== */
+
+#cap-mobile .cm-edge .cm-h2 { color: var(--cap-red); }
+#cap-mobile .cm-acc { margin-top: 26px; border-top: 1px solid var(--cap-rule); }
+#cap-mobile .cm-acc-item { border-bottom: 1px solid var(--cap-rule); }
+#cap-mobile .cm-acc-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 100%; min-height: 48px; padding: 14px 0; text-align: left;
+  font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--cap-red);
+}
+/* +/− icon: one span, the vertical bar collapses when the row opens. */
+#cap-mobile .cm-acc-ico {
+  position: relative; flex: none; width: 14px; height: 14px;
+}
+#cap-mobile .cm-acc-ico::before,
+#cap-mobile .cm-acc-ico::after {
+  content: ''; position: absolute; background: var(--cap-red);
+  transition: transform 0.32s cubic-bezier(0.76, 0, 0.24, 1);
+}
+#cap-mobile .cm-acc-ico::before { left: 0; top: 6px; width: 14px; height: 2px; }
+#cap-mobile .cm-acc-ico::after  { left: 6px; top: 0; width: 2px; height: 14px; }
+#cap-mobile .cm-acc-item.is-open .cm-acc-ico::after { transform: scaleY(0); }
+/* Height animates via max-height because the panel content (copy + a photo)
+   has no knowable fixed height; 900px clears the tallest row at 390px wide. */
+#cap-mobile .cm-acc-panel {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.42s cubic-bezier(0.76, 0, 0.24, 1);
+}
+#cap-mobile .cm-acc-item.is-open .cm-acc-panel { max-height: 900px; }
+#cap-mobile .cm-acc-body {
+  font-size: 12.5px; line-height: 1.6; color: var(--cap-body); padding: 0 0 16px;
+}
+#cap-mobile .cm-acc-img {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; margin: 0 0 18px;
+}
+
+/* ==========================================================================
+   4. OUR JOURNEY — vertical timeline
+   Replaces the pinned canvas scene (_setupJourneyPinned) on phones.
+   ========================================================================== */
+
+#cap-mobile .cm-journey-img {
+  width: 100%; aspect-ratio: 16 / 10; object-fit: cover; margin: 22px 0 0;
+}
+#cap-mobile .cm-tl { margin: 26px 0 0; padding: 0 0 0 22px; list-style: none; position: relative; }
+#cap-mobile .cm-tl::before {
+  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px;
+  width: 1px; background: var(--cap-rule);
+}
+#cap-mobile .cm-tl-item { position: relative; padding: 0 0 24px; }
+#cap-mobile .cm-tl-item:last-child { padding-bottom: 0; }
+#cap-mobile .cm-tl-item::before {
+  content: ''; position: absolute; left: -22px; top: 3px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--cap-red);
+}
+#cap-mobile .cm-tl-year {
+  font-size: 14px; font-weight: 700; color: var(--cap-red); line-height: 1;
+}
+#cap-mobile .cm-tl-assets { font-size: 12.5px; color: var(--cap-ink); margin-top: 6px; }
+#cap-mobile .cm-tl-note {
+  font-size: 12px; font-weight: 600; color: var(--cap-body); margin-top: 6px; line-height: 1.45;
+}
+#cap-mobile .cm-tl-phase {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9a9ba0; margin: 0 0 12px;
+}
+#cap-mobile .cm-tl-phase:not(:first-child) { margin-top: 8px; }
+
+/* ==========================================================================
+   5. OUR PORTFOLIO — city rail + tile grid
+   Mockup puts the city list in a narrow left column beside a 2-up photo grid.
+   ========================================================================== */
+
+#cap-mobile .cm-pf-body {
+  display: grid; grid-template-columns: 92px 1fr; gap: 16px; margin-top: 22px;
+}
+#cap-mobile .cm-cities { display: flex; flex-direction: column; }
+#cap-mobile .cm-city {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 30px; padding: 4px 0;
+  font-size: 11.5px; font-weight: 400; line-height: 1.25; color: var(--cap-body);
+  text-align: left;
+  transition: color 0.2s ease;
+}
+#cap-mobile .cm-city::after {
+  content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--cap-red);
+  opacity: 0; transition: opacity 0.2s ease; flex: none;
+}
+#cap-mobile .cm-city.is-active { color: var(--cap-red); font-weight: 600; }
+#cap-mobile .cm-city.is-active::after { opacity: 1; }
+
+#cap-mobile .cm-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#cap-mobile .cm-tile { display: block; color: inherit; }
+#cap-mobile .cm-tile-img {
+  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #eceded;
+}
+#cap-mobile .cm-tile-name {
+  font-size: 10px; font-weight: 600; line-height: 1.3; margin-top: 7px; color: var(--cap-ink);
+}
+#cap-mobile .cm-tile-loc { font-size: 9px; line-height: 1.3; margin-top: 2px; color: #86888d; }
+
+/* ==========================================================================
+   6. OPERATORS
+   ========================================================================== */
+
+#cap-mobile .cm-ops { text-align: center; }
+#cap-mobile .cm-ops .cm-rule { margin-left: auto; margin-right: auto; }
+#cap-mobile .cm-ops .cm-sub { margin-left: auto; margin-right: auto; max-width: 290px; }
+/* minmax(0, 1fr), not 1fr: the logo boxes carry explicit pixel widths, and a
+   plain 1fr track floors at min-content — the widest logo would push the grid
+   past the viewport. */
+#cap-mobile .cm-ops-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px; background: var(--cap-rule); border: 1px solid var(--cap-rule);
+  margin-top: 26px;
+}
+#cap-mobile .cm-ops-cell {
+  background: #fff; aspect-ratio: 1 / 0.78;
+  display: flex; align-items: center; justify-content: center; padding: 12px;
+}
+/* The logos are percentage-cropped sprites from fig-assets.css, so the box
+   must keep the authored aspect ratio for the crop to land — width is set
+   inline per logo from its baked w/h. */
+#cap-mobile .cm-ops-logo { background-size: cover; }
+
+/* ==========================================================================
+   7. FOOTER
+   ========================================================================== */
+
+#cap-mobile .cm-footer {
+  background: var(--cap-red); color: #fff;
+  padding: 40px var(--cap-gutter) 34px;
+}
+#cap-mobile .cm-footer-mark { width: 58px; height: auto; margin: 0 0 30px; }
+#cap-mobile .cm-fnav { border-top: 1px solid rgba(255, 255, 255, 0.28); }
+#cap-mobile .cm-fnav a {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 48px; padding: 13px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #fff;
+}
+#cap-mobile .cm-fnav a:hover { color: #fff; }
+#cap-mobile .cm-fnav svg { width: 7px; height: 11px; flex: none; opacity: 0.85; }
+
+#cap-mobile .cm-frow {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+  font-size: 12px; line-height: 1.5;
+}
+#cap-mobile .cm-frow svg { width: 15px; height: 15px; flex: none; margin-top: 1px; opacity: 0.9; }
+#cap-mobile .cm-frow a { color: #fff; }
+#cap-mobile .cm-frow address { font-style: normal; white-space: pre-line; }
+
+#cap-mobile .cm-flabel {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85); margin: 26px 0 12px;
+}
+#cap-mobile .cm-social {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; background: #fff; color: var(--cap-red); border-radius: 2px;
+}
+#cap-mobile .cm-social svg { width: 15px; height: 15px; }
+
+#cap-mobile .cm-email {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 3px; padding: 0 12px;
+}
+#cap-mobile .cm-email input {
+  flex: 1 1 auto; min-width: 0; height: 44px;
+  background: none; border: 0; outline: none; color: #fff;
+  font-family: inherit; font-size: 12.5px;
+}
+#cap-mobile .cm-email input::placeholder { color: rgba(255, 255, 255, 0.7); }
+#cap-mobile .cm-email button {
+  flex: none; width: 32px; height: 44px; display: flex; align-items: center; justify-content: center;
+}
+#cap-mobile .cm-email svg { width: 17px; height: 12px; }
+
+#cap-mobile .cm-initiative {
+  margin-top: 30px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+#cap-mobile .cm-initiative-lbl {
+  font-size: 10px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.85); margin-bottom: 12px;
+}
+#cap-mobile .cm-initiative-logos { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+#cap-mobile .cm-designed {
+  display: flex; align-items: center; gap: 10px; margin-top: 26px;
+  font-size: 10px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===== REVEALS =====
+   Deliberately light: the phone layout is a long scroll and the desktop
+   reveal systems (_setupScrollReveals, the staircase, the wipes) are all
+   frame-bound and skipped here. */
+@media (prefers-reduced-motion: no-preference) {
+  #cap-mobile .cm-reveal {
+    opacity: 0; transform: translateY(18px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  #cap-mobile .cm-reveal.is-in { opacity: 1; transform: none; }
+}

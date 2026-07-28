@@ -347,52 +347,16 @@ test.describe('pinned journey', () => {
     expectNoPageErrors(errors);
   });
 
-  test('portrait phones get the pinned scene fitted to the device resolution', async ({ page }, testInfo) => {
-    // Client 2026-07-24: the portrait canvas height adapts to the device
-    // aspect so the pinned scene fills the phone with no letterbox.
-    test.skip(testInfo.project.name !== 'mobile', 'portrait composition asserted at phone scale');
-    testInfo.setTimeout(90000);
-    await page.goto(HOME, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#cap-journey', { timeout: 20000 });
-
-    const shape = await page.evaluate(() => {
-      const host = document.getElementById('cap-journey');
-      const stage = host.querySelector('.cap-j-stage');
-      const sr = stage.getBoundingClientRect();
-      return {
-        hasPin: !!host.querySelector('.cap-j-pin'),
-        hasStage: !!stage,
-        phases: host.querySelectorAll('.cap-j-phase').length,
-        buildings: host.querySelectorAll('.cap-j-building').length,
-        stageH: sr.height,
-        vh: window.innerHeight,
-        aspect: sr.height / window.innerHeight
-      };
-    });
-    // Still the pinned scene (not a redesign) …
-    expect(shape.hasPin).toBe(true);
-    expect(shape.hasStage).toBe(true);
-    expect(shape.phases).toBe(3);
-    expect(shape.buildings).toBe(3);
-    // … and it fills the phone: the stage height ≈ the viewport height,
-    // no meaningful letterbox (the fixed 800x1500 canvas used to leave ~113px).
-    expect(shape.vh - shape.stageH).toBeLessThan(16);
-    expect(shape.aspect).toBeGreaterThan(0.98);
-
-    // Each phase reaches full opacity as the scrub passes its third.
-    const geom = await page.evaluate(() => {
-      const host = document.getElementById('cap-journey');
-      return { top: window.scrollY + host.getBoundingClientRect().top, total: host.offsetHeight - window.innerHeight };
-    });
-    for (let i = 0; i < 3; i++) {
-      await page.evaluate((y) => window.scrollTo(0, y), geom.top + ((i + 0.5) / 3) * geom.total);
-      await expect
-        .poll(() => page.evaluate((n) => +document.querySelectorAll('.cap-j-phase')[n].style.opacity, i), { timeout: 8000 })
-        .toBeGreaterThan(0.9);
-    }
-  });
+  // REMOVED 2026-07-28 — 'portrait phones get the pinned scene fitted to the
+  // device resolution'. Phones (<=767px) no longer render the scaled frame at
+  // all: they get #cap-mobile, whose Our Journey is a vertical timeline
+  // (home-mobile.spec.js asserts it). _setupJourneyPinned's PORTRAIT branch
+  // needs width < 720, which is now below the breakpoint, so the composition
+  // this test covered is unreachable. The PORTRAIT code itself is left in
+  // place pending a decision to remove it.
 
   test('content below the pin is shifted and reachable', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile', 'no pinned journey below 768px — phones render #cap-mobile');
     testInfo.setTimeout(90000);
     await page.goto(HOME, { waitUntil: 'networkidle' });
     await page.waitForSelector('#cap-journey', { timeout: 20000 });
@@ -506,6 +470,7 @@ test.describe('portfolio counter-scroll columns', () => {
   const CARD_R = '.fig-asset-016a31a2601bd9e3'; // right column
 
   test('columns move oppositely and the motion reverses across centre', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile', 'frame-bound portfolio columns; phones use the #cap-mobile tile grid');
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
     await page.goto(HOME, { waitUntil: 'networkidle' });
@@ -585,6 +550,7 @@ test.describe('footer reveal replays', () => {
   const HOME = '/index.html';
 
   test('choreography retracts off-screen and replays on the next visit', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'mobile', 'frame-bound footer reveal; phones render the #cap-mobile footer');
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
     await page.goto(HOME, { waitUntil: 'networkidle' });

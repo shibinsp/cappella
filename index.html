@@ -31,6 +31,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Over+the+Rainbow&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="components/fig-assets.css">
   <link rel="stylesheet" href="shared/css/home.css">
+  <!-- Phones (<=767px) hide #cap-viewport entirely and render #cap-mobile
+       instead; see the header comment in home-mobile.css for why the scaled
+       frame cannot be made responsive. Loaded last so its breakpoint switch
+       wins over home.css. -->
+  <link rel="stylesheet" href="shared/css/home-mobile.css">
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
   <div id="cap-scaler" style="width: 1440px; height: 7882px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
@@ -99,6 +104,121 @@
     </div>
   </div>
 </div>
+
+<!-- ==========================================================================
+     MOBILE HOME (phones, <=767px). Sibling of #cap-viewport; CSS shows exactly
+     one of the two (shared/css/home-mobile.css). Built to Figma
+     `Cappella_Updated` / `Frame 6` (390x3290).
+
+     The repeated content here is NOT authored in this markup — the containers
+     with data-cm-* hooks are filled by _setupMobileHome() from the same
+     CAP_PORTFOLIO / CAP_CITIES / CAP_EDGE / CAP_JOURNEY constants the desktop
+     frame reads, so a copy or data edit is made once and lands in both.
+     ========================================================================== -->
+<div id="cap-mobile">
+
+  <!-- ===== 1. HERO ===== -->
+  <section class="cm-hero">
+    <div class="cm-hero-bg"></div>
+    <div class="cm-hero-tint"></div>
+    <div class="cm-hero-top"><span class="cm-wordmark">Cappella</span></div>
+    <h1>India&rsquo;s Leading<br>Edu-Infra Asset<br>Management Company</h1>
+    <p class="cm-hero-sub">Transforming, developing, and revamping K-12 education infrastructure across India and the GCC.</p>
+    <a class="cm-cta" href="./projects.html">
+      Explore Our Assets
+      <svg viewBox="0 0 15 11" fill="none" aria-hidden="true"><path d="M0 5.5h13M9 1l4 4.5-4 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </section>
+
+  <!-- ===== 2. STATS BAND ===== -->
+  <section class="cm-stats" data-cm-stats></section>
+
+  <!-- ===== 3. THE CAPPELLA EDGE ===== -->
+  <section class="cm-section cm-edge">
+    <h2 class="cm-h2">The Cappella Edge</h2>
+    <p class="cm-sub">Our integrated approach delivers superior performance across the asset lifecycle.</p>
+    <div class="cm-acc" data-cm-acc></div>
+  </section>
+
+  <!-- ===== 4. OUR JOURNEY ===== -->
+  <section class="cm-section cm-journey">
+    <hr class="cm-rule">
+    <h2 class="cm-h2">Our Journey</h2>
+    <p class="cm-sub">Building education infrastructure that creates lasting impact for generations.</p>
+    <img class="cm-journey-img cm-reveal" src="./components/assets/63186349250e044c-min.jpg" alt="" loading="lazy">
+    <div data-cm-timeline></div>
+  </section>
+
+  <!-- ===== 5. OUR PORTFOLIO ===== -->
+  <section class="cm-section cm-pf">
+    <hr class="cm-rule">
+    <h2 class="cm-h2">Our Portfolio</h2>
+    <div class="cm-pf-body">
+      <div class="cm-cities" data-cm-cities></div>
+      <div class="cm-tiles" data-cm-tiles></div>
+    </div>
+  </section>
+
+  <!-- ===== 6. OPERATORS ===== -->
+  <section class="cm-section cm-ops">
+    <hr class="cm-rule">
+    <h2 class="cm-h2">Operators</h2>
+    <p class="cm-sub">Partnering with reputable and experienced operators to create world-class institutions.</p>
+    <div class="cm-ops-grid" data-cm-ops></div>
+  </section>
+
+  <!-- ===== 7. FOOTER ===== -->
+  <footer class="cm-footer">
+    <!-- Same white interlocking-C asset the hero mark uses (_setupMenuOverlay) -->
+    <img class="cm-footer-mark" src="./components/assets/c9d8f12cf6e90c99.png" alt="Cappella">
+
+    <nav class="cm-fnav">
+      <a href="./about-us.html">About Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="./projects.html">Portfolio <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="./team.html">Team <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="./contact-us.html">Contact Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </nav>
+
+    <div class="cm-frow">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.8 4l6.2 4.6L14.2 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <a href="mailto:partner@cappella.in">partner@cappella.in</a>
+    </div>
+    <div class="cm-frow">
+      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.6c2.6 0 4.7 2.1 4.7 4.7 0 3.3-4.7 8.1-4.7 8.1S3.3 9.6 3.3 6.3C3.3 3.7 5.4 1.6 8 1.6z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="6.3" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>
+      <address>Suite 303, Niharika Jubilee One,
+Jubilee Hills, Road No. 1,
+Hyderabad, Telangana 500033</address>
+    </div>
+
+    <p class="cm-flabel">Connect with us</p>
+    <a class="cm-social" href="https://www.linkedin.com/company/cappella-edu-infra/" target="_blank" rel="noopener noreferrer" aria-label="Cappella on LinkedIn">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.4 5.9h2.2V13H3.4V5.9zm1.1-3.4a1.3 1.3 0 110 2.6 1.3 1.3 0 010-2.6zM7.1 5.9h2.1v1h0c.3-.6 1-1.2 2.1-1.2 2.3 0 2.7 1.5 2.7 3.4V13h-2.2V9.5c0-.8 0-1.9-1.2-1.9s-1.3.9-1.3 1.8V13H7.1V5.9z"/></svg>
+    </a>
+
+    <p class="cm-flabel">Stay in touch</p>
+    <form class="cm-email" data-cm-email>
+      <input type="email" name="email" placeholder="Your Email Id" aria-label="Your email address" required>
+      <button type="submit" aria-label="Submit email">
+        <svg viewBox="0 0 17 12" fill="none" aria-hidden="true"><path d="M0 6h15M11 1l4 5-4 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+
+    <div class="cm-initiative">
+      <p class="cm-initiative-lbl">An Initiative by</p>
+      <!-- Percentage-cropped sprites from components/fig-assets.css — the boxes
+           keep each logo's authored aspect ratio so the crop still lands. -->
+      <div class="cm-initiative-logos">
+        <div class="fig-asset-d47008086841222d-3f7e74ec" style="width:92px;height:14px;" role="img" aria-label="JV Ventures"></div>
+        <div class="fig-asset-d47008086841222d-6bf12bb9" style="width:68px;height:16px;" role="img" aria-label="Alta Capital"></div>
+        <div class="fig-asset-d47008086841222d-d3c9b6d5" style="width:54px;height:18px;" role="img" aria-label="Hillhouse Capital"></div>
+      </div>
+      <div class="cm-designed">
+        <span>Designed by</span>
+        <div class="fig-asset-ca0c02d662da06a8-15b772ae" style="width:81px;height:14px;" role="img" aria-label="Limitless"></div>
+      </div>
+    </div>
+  </footer>
+</div>
 </x-dc>
 <template id="__bundler_thumbnail" data-bg-color="#D1202F">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
@@ -128,6 +248,96 @@ const capVH = () => {
   }
   return _capVH;
 };
+
+/* ================================================================
+   [SECTION]  SHARED CONTENT CONSTANTS
+   [BEHAVIOR] Single source of truth for content rendered by BOTH the
+              desktop scaled frame and the mobile layout (#cap-mobile)
+   [PURPOSE]  These used to live inside their setup methods. The phone
+              layout renders the same content in a different shape, and
+              two copies of a school list / accordion copy would drift
+              the first time the client asks for an edit. Hoisted here
+              so each edit is made once.
+   ================================================================ */
+
+// Phones get #cap-mobile instead of the scaled frame. Matches the
+// breakpoint switch at the top of shared/css/home-mobile.css — keep the two
+// in step. NOT the 900px used for the hamburger: tablets stay on the frame.
+const CAP_MOBILE_MQ = window.matchMedia('(max-width: 767px)');
+
+// Real portfolio (source: Cappella_Website_Other Pages.docx — PROJECTS).
+// students = current enrolment, capacity = total capacity.
+// img: real campus photography (client batch 2026-07-23, shared with the
+// Projects page). Only The Shri Ram Universal School has no photo yet —
+// its tile falls back to the representative stand-in until one arrives.
+// The two ex-"Bengaluru" JPS entries are the Chintamani and Tumkur
+// campuses (6.3-acre / 3.5-acre), named to match the Projects rename.
+const CAP_PORTFOLIO = [
+  { name: 'Hartland International School',      city: 'Dubai', line1: 'Hartland International School', line2: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400', img: './components/assets/campus/hartland-dubai.jpg' },
+  { name: 'North London Collegiate School',     city: 'Dubai', line1: 'North London Collegiate School', line2: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100', img: './components/assets/campus/nlcs-dubai.jpg' },
+  { name: 'St. Andrews, Suchitra',              city: 'Hyderabad',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
+  { name: 'St. Andrews, Keesara',               city: 'Hyderabad',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
+  { name: 'St. Michael’s',                 city: 'Hyderabad',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
+  { name: 'Sancta Maria International School',  city: 'Hyderabad',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
+  { name: 'The Shri Ram Universal School',      city: 'Chennai', line1: 'The Shri Ram Universal School', line2: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600' },
+  { name: 'Billabong High International School',city: 'Pune', line1: 'Billabong High International School', line2: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350', img: './components/assets/campus/billabong-pune.jpg' },
+  { name: 'Jain International Residential School', city: 'Bangalore', line1: 'Jain International Residential School', line2: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000', img: './components/assets/campus/jain-residential-bangalore.jpg' },
+  { name: 'Jain Public School, Chintamani',     city: 'Bangalore', line1: 'Jain Public School', line2: 'Chintamani',      est: 2013, land: '6.3',  bua: '66k',    students: '1,226', capacity: '1,575', img: './components/assets/campus/jps-chintamani.jpg' },
+  { name: 'Jain Public School, Tumkur',         city: 'Bangalore', line1: 'Jain Public School', line2: 'Tumkur',      est: 2012, land: '3.5',  bua: '70k',    students: '928',   capacity: '1,240', img: './components/assets/campus/jps-tumkur.jpg' },
+  { name: 'Jain Public School, Korba',          city: 'Chhattisgarh', line1: 'Jain Public School', line2: 'Korba',   est: 2012, land: '2.8',  bua: '55k',    students: '438',   capacity: '1,050', img: './components/assets/campus/jps-korba.jpg' },
+  { name: 'Jain Public School, Kadiri',         city: 'Andhra Pradesh', line1: 'Jain Public School', line2: 'Kadiri', est: 2012, land: '3.5',  bua: '64k',    students: '795',   capacity: '1,050', img: './components/assets/campus/jps-kadiri.jpg' },
+  { name: 'IFIM – Student Housing',        city: 'Bangalore', line1: 'IFIM – Student Housing', line2: 'Bangalore',      est: 1995, land: '2.5',  bua: '73k',    students: '400',   capacity: '440', img: './components/assets/campus/ifim-hostel-bangalore.jpg' },
+  { name: 'JU-SET Hostel',                      city: 'Bangalore', line1: 'JU-SET Hostel', line2: 'Bangalore',      est: 1990, land: '10.8', bua: '271k',   students: '1,100', capacity: '1,100', img: './components/assets/campus/juset-hostel-bangalore.jpg' }
+];
+
+// Order matches the baked frame's city column.
+const CAP_CITIES = ['Dubai', 'Andhra Pradesh', 'Bangalore', 'Chhattisgarh', 'Chennai', 'Hyderabad', 'Pune'];
+
+// The Cappella Edge accordion copy. The desktop setup merges its own frame
+// geometry (closedTop / figmaIconTop / closedDividerTop) onto these.
+const CAP_EDGE = [
+  { title: 'Operator-aligned structures',
+    text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield' },
+  { title: 'Future-ready campuses',
+    text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.' },
+  { title: 'Active asset management',
+    text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.' },
+  { title: 'Proven, long-term investor value',
+    text: 'A strong track record of delivering consistent, high-quality returns across three funds.' }
+];
+
+// Our Journey. `di` is the dot index the marker attaches to in the desktop
+// pinned scene; the mobile timeline ignores it and renders in array order.
+const CAP_JOURNEY = [
+  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2], markers: [
+    { di: 0, year: '2016', assets: 'Assets', note: 'Pioneered Sale and Leaseback Model', countTo: 6 },
+    { di: 1, year: '2017', assets: '1 Asset', note: '', countTo: 0 },
+    { di: 2, year: '2018', assets: '1 Asset', note: '', countTo: 0 }
+  ] },
+  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2], markers: [
+    { di: 0, year: '2019', assets: 'Assets Acquired, 1 Asset Exited', note: 'Onboarded Institutional Investors', countTo: 3 },
+    { di: 2, year: '2021', assets: 'Assets', note: '', countTo: 2 }
+  ] },
+  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2], markers: [
+    { di: 0, year: '2023', assets: '1 Asset', note: 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', countTo: 0 },
+    { di: 1, year: '2024', assets: '1 Asset', note: '', countTo: 0 },
+    { di: 2, year: '2025', assets: 'Assets', note: 'Expansion to Dubai', countTo: 3 }
+  ] }
+];
+
+// Operators — the logo sprites already crop-mapped in components/fig-assets.css.
+// w/h are the baked frame dimensions; the mobile grid scales them to a common
+// height while keeping each aspect ratio so the percentage crop still lands.
+const CAP_OPERATORS = [
+  { cls: 'fig-asset-91ee4f07ef1ea5a8',            name: 'Crimson Education',            w: 177, h: 93 },
+  { cls: 'fig-asset-620dc3d6704178dd',            name: 'International Schools Partnership', w: 244.454, h: 91 },
+  { cls: 'fig-asset-79356d431474ada0',            name: 'JGI',                          w: 146, h: 141 },
+  { cls: 'fig-asset-1e639ffbc0aca215',            name: 'Meraki Education',             w: 206, h: 49 },
+  { cls: 'fig-asset-1462c629c4c2879d',            name: 'The Shri Ram Universal School', w: 249, h: 67 },
+  { cls: 'fig-asset-1ec5ca333db94fc0',            name: 'Saint Mary’s',                 w: 207, h: 48 },
+  { cls: 'fig-asset-55a8dd7666421f70-d65f9521',   name: 'Lighthouse Learning',          w: 184, h: 35 }
+];
+
 class Component extends DCLogic {
   /* ================================================================
      STRUCTURE — homepage logic, grouped by page section (top to
@@ -446,6 +656,10 @@ class Component extends DCLogic {
     }
 
     this._fit = () => {
+      // Phones render #cap-mobile instead; #cap-viewport is display:none, so
+      // clientWidth is 0 and scaling it is both pointless and would write a
+      // scale(0) that has to be undone when the window grows back.
+      if (CAP_MOBILE_MQ.matches) return;
       const scalerEl = document.getElementById('cap-scaler');
       const vp = document.getElementById('cap-viewport');
       if (!scalerEl || !vp) return;
@@ -548,23 +762,69 @@ class Component extends DCLogic {
       const safe = (fn, name) => {
         try { fn(); } catch (e) { console.error('[cappella] ' + name + ' failed:', e); }
       };
-      // Journey band FIRST: it opens the scroll gap (shifting everything
-      // below) and mounts the pinned experience — later setups classify
-      // from live (post-shift) positions.
-      safe(() => this._setupJourneyBand(), 'journeyBand');
-      safe(() => this._setupJourneyPinned(), 'journeyPinned');
-      safe(() => this._setupScrollReveals(), 'scrollReveals');
-      safe(() => this._setupStatCounters(), 'statCounters');
-      safe(() => this._setupPortfolioInteraction(), 'portfolio');
-      safe(() => this._setupAccordion(), 'accordion');
-      // this._setupMetaLabels();
-      safe(() => this._setupFooterAnimations(), 'footer');
-      // (Operators marquee removed per client feedback 2026-07-16 — the
-      // baked static logo grid + triangle decorations render as designed.)
-      safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
-      safe(() => this._setupOperatorTriangles(), 'operatorTriangles');
-      safe(() => this._setupBandGrid(), 'bandGrid');
-      safe(() => this._setupEdgeImageCut(), 'edgeImageCut');
+      // Everything in here reads or writes 1440-frame coordinates inside
+      // #cap-scaler. On phones that frame is display:none and #cap-mobile is
+      // showing instead, so running any of it is wasted work (and the pinned
+      // journey would install a body-level scroll track for a hidden scene).
+      // Deferred, not dropped: if the window is later widened past the
+      // breakpoint the one-shot below runs it then.
+      // Lenis + the nav→page bindings are wanted on both layouts, but the
+      // reveal classification inside this reads live element positions — on
+      // the frame path it MUST still run after the journey band has opened
+      // its gap. Hence a run-once wrapper called from two places rather than
+      // a plain call: mobile runs it immediately, the frame path runs it in
+      // its original slot, and crossing the breakpoint never runs it twice.
+      const runScrollReveals = () => {
+        if (this._srRun) return;
+        this._srRun = true;
+        safe(() => this._setupScrollReveals(), 'scrollReveals');
+      };
+
+      const frameSetups = () => {
+        // Journey band FIRST: it opens the scroll gap (shifting everything
+        // below) and mounts the pinned experience — later setups classify
+        // from live (post-shift) positions.
+        safe(() => this._setupJourneyBand(), 'journeyBand');
+        safe(() => this._setupJourneyPinned(), 'journeyPinned');
+        runScrollReveals();
+        safe(() => this._setupStatCounters(), 'statCounters');
+        safe(() => this._setupPortfolioInteraction(), 'portfolio');
+        safe(() => this._setupAccordion(), 'accordion');
+        // this._setupMetaLabels();
+        safe(() => this._setupFooterAnimations(), 'footer');
+        // (Operators marquee removed per client feedback 2026-07-16 — the
+        // baked static logo grid + triangle decorations render as designed.)
+        safe(() => this._setupOperatorsGridStitch(), 'operatorsStitch');
+        safe(() => this._setupOperatorTriangles(), 'operatorTriangles');
+        safe(() => this._setupBandGrid(), 'bandGrid');
+        safe(() => this._setupEdgeImageCut(), 'edgeImageCut');
+      };
+
+      if (CAP_MOBILE_MQ.matches) {
+        // Nothing to classify against on this path — the frame is hidden —
+        // so ordering does not matter here.
+        runScrollReveals();
+        safe(() => this._setupMobileHome(), 'mobileHome');
+      } else {
+        frameSetups();
+      }
+
+      // Crossing the breakpoint upward (rotation, or a resized desktop
+      // window): run the frame setups once, the first time the frame is
+      // actually visible. Going back down needs nothing — the frame keeps
+      // its state and CSS hides it again.
+      const onBreak = () => {
+        if (CAP_MOBILE_MQ.matches || this._frameSetupsRun) return;
+        this._frameSetupsRun = true;
+        CAP_MOBILE_MQ.removeEventListener('change', onBreak);
+        this._fit();
+        frameSetups();
+      };
+      if (CAP_MOBILE_MQ.matches) {
+        CAP_MOBILE_MQ.addEventListener('change', onBreak);
+      } else {
+        this._frameSetupsRun = true;
+      }
     }, 1600);
 
     // Hero intro: slight delay so first-frame paint is visible before elements vanish
@@ -2028,20 +2288,12 @@ class Component extends DCLogic {
         '</div>' +
         '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:' + CW + 'px;height:' + CH + 'px;transform:translate(-50%,-50%);transform-origin:center center;">' +
           '<div style="position:absolute;' + (PORTRAIT ? 'left:40px;top:76px;font-size:66px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
-          phaseHtml(0, 'foundation.png',
-            marker(0, '2016', 'Assets', 'Pioneered Sale and Leaseback Model', 6) +
-            marker(1, '2017', '1 Asset', '', 0) +
-            marker(2, '2018', '1 Asset', '', 0),
-            'Foundation', 'Phase', [0, 1, 2]) +
-          phaseHtml(1, 'growth.png',
-            marker(0, '2019', 'Assets Acquired, 1 Asset Exited', 'Onboarded Institutional Investors', 3) +
-            marker(2, '2021', 'Assets', '', 2),
-            'Growth', 'Phase', [0, 2]) +
-          phaseHtml(2, 'expansion.png',
-            marker(0, '2023', '1 Asset', 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', 0) +
-            marker(1, '2024', '1 Asset', '', 0) +
-            marker(2, '2025', 'Assets', 'Expansion to Dubai', 3),
-            'Expansion', 'Phase', [0, 1, 2]) +
+          // Phases/markers come from CAP_JOURNEY (shared with #cap-mobile's
+          // vertical timeline). Array order is foundation/growth/expansion,
+          // which is what BDIM and PNAT are indexed by.
+          CAP_JOURNEY.map((p, pi) => phaseHtml(pi, p.img,
+            p.markers.map(m => marker(m.di, m.year, m.assets, m.note, m.countTo)).join(''),
+            p.word[0], p.word[1], p.dots)).join('') +
         '</div>' +
         '<div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 52%, rgba(18,26,36,0.20) 100%);"></div>' +
         '<div class="cap-j-railbox" style="position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:8;">' +
@@ -2535,30 +2787,9 @@ class Component extends DCLogic {
 
     let currentCityName = 'Hyderabad';
 
-    // Real portfolio (source: Cappella_Website_Other Pages.docx — PROJECTS).
-    // students = current enrolment, capacity = total capacity.
-    // img: real campus photography (client batch 2026-07-23, shared with the
-    // Projects page). Only The Shri Ram Universal School has no photo yet —
-    // its tile falls back to the representative stand-in until one arrives.
-    // The two ex-"Bengaluru" JPS entries are the Chintamani and Tumkur
-    // campuses (6.3-acre / 3.5-acre), named to match the Projects rename.
-    const PORTFOLIO_DATA = [
-      { name: 'Hartland International School',      city: 'Dubai', line1: 'Hartland International School', line2: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400', img: './components/assets/campus/hartland-dubai.jpg' },
-      { name: 'North London Collegiate School',     city: 'Dubai', line1: 'North London Collegiate School', line2: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100', img: './components/assets/campus/nlcs-dubai.jpg' },
-      { name: 'St. Andrews, Suchitra',              city: 'Hyderabad',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
-      { name: 'St. Andrews, Keesara',               city: 'Hyderabad',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
-      { name: 'St. Michael’s',                 city: 'Hyderabad',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
-      { name: 'Sancta Maria International School',  city: 'Hyderabad',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
-      { name: 'The Shri Ram Universal School',      city: 'Chennai', line1: 'The Shri Ram Universal School', line2: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600' },
-      { name: 'Billabong High International School',city: 'Pune', line1: 'Billabong High International School', line2: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350', img: './components/assets/campus/billabong-pune.jpg' },
-      { name: 'Jain International Residential School', city: 'Bangalore', line1: 'Jain International Residential School', line2: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000', img: './components/assets/campus/jain-residential-bangalore.jpg' },
-      { name: 'Jain Public School, Chintamani',     city: 'Bangalore', line1: 'Jain Public School', line2: 'Chintamani',      est: 2013, land: '6.3',  bua: '66k',    students: '1,226', capacity: '1,575', img: './components/assets/campus/jps-chintamani.jpg' },
-      { name: 'Jain Public School, Tumkur',         city: 'Bangalore', line1: 'Jain Public School', line2: 'Tumkur',      est: 2012, land: '3.5',  bua: '70k',    students: '928',   capacity: '1,240', img: './components/assets/campus/jps-tumkur.jpg' },
-      { name: 'Jain Public School, Korba',          city: 'Chhattisgarh', line1: 'Jain Public School', line2: 'Korba',   est: 2012, land: '2.8',  bua: '55k',    students: '438',   capacity: '1,050', img: './components/assets/campus/jps-korba.jpg' },
-      { name: 'Jain Public School, Kadiri',         city: 'Andhra Pradesh', line1: 'Jain Public School', line2: 'Kadiri', est: 2012, land: '3.5',  bua: '64k',    students: '795',   capacity: '1,050', img: './components/assets/campus/jps-kadiri.jpg' },
-      { name: 'IFIM – Student Housing',        city: 'Bangalore', line1: 'IFIM – Student Housing', line2: 'Bangalore',      est: 1995, land: '2.5',  bua: '73k',    students: '400',   capacity: '440', img: './components/assets/campus/ifim-hostel-bangalore.jpg' },
-      { name: 'JU-SET Hostel',                      city: 'Bangalore', line1: 'JU-SET Hostel', line2: 'Bangalore',      est: 1990, land: '10.8', bua: '271k',   students: '1,100', capacity: '1,100', img: './components/assets/campus/juset-hostel-bangalore.jpg' }
-    ];
+    // Hoisted to CAP_PORTFOLIO (top of this script) so #cap-mobile's tile grid
+    // renders the same records — see the SHARED CONTENT CONSTANTS section.
+    const PORTFOLIO_DATA = CAP_PORTFOLIO;
 
     // Scale helper function - must be defined before alignLogo uses it
     const sc = () => { 
@@ -2568,7 +2799,7 @@ class Component extends DCLogic {
     };
 
     // 1. Find city elements
-    const cityNames = ['Dubai', 'Andhra Pradesh', 'Bangalore', 'Chhattisgarh', 'Chennai', 'Hyderabad', 'Pune'];
+    const cityNames = CAP_CITIES;
     const cityEls = [];
     cityNames.forEach(name => {
       const el = [...scaler.querySelectorAll('span')].find(e => 
@@ -3697,28 +3928,15 @@ class Component extends DCLogic {
     const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)'; // OCI power curve
     const BAKED_OPEN_INDEX = 2, BAKED_SHIFT = 258;
 
-    const data = [
-      {
-        title: 'Operator-aligned structures',
-        text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield',
-        closedTop: 2575, figmaIconTop: 2595, closedDividerTop: 2646
-      },
-      {
-        title: 'Future-ready campuses',
-        text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.',
-        closedTop: 2649, figmaIconTop: 2669, closedDividerTop: 2712
-      },
-      {
-        title: 'Active asset management',
-        text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.',
-        closedTop: 2715, figmaIconTop: 2747, closedDividerTop: 2794
-      },
-      {
-        title: 'Proven, long-term investor value',
-        text: 'A strong track record of delivering consistent, high-quality returns across three funds.',
-        closedTop: 2797, figmaIconTop: 3077, closedDividerTop: 2863
-      }
+    // Copy comes from CAP_EDGE (shared with #cap-mobile); the frame geometry
+    // below is desktop-only and stays here, merged on by index.
+    const GEO = [
+      { closedTop: 2575, figmaIconTop: 2595, closedDividerTop: 2646 },
+      { closedTop: 2649, figmaIconTop: 2669, closedDividerTop: 2712 },
+      { closedTop: 2715, figmaIconTop: 2747, closedDividerTop: 2794 },
+      { closedTop: 2797, figmaIconTop: 3077, closedDividerTop: 2863 }
     ];
+    const data = CAP_EDGE.map((d, i) => Object.assign({}, d, GEO[i]));
 
     // Hide the baked Figma +/− icons (replaced with animatable ones below)
     data.forEach(d => {
@@ -4680,6 +4898,172 @@ class Component extends DCLogic {
   }
 
   /* ================================================================
+     [SECTION]  MOBILE HOME
+     [BEHAVIOR] Fills #cap-mobile from the shared content constants and wires
+                its accordion, city filter, email capture and scroll reveals
+     [PURPOSE]  Phones do not get the scaled 1440 frame (see the header of
+                shared/css/home-mobile.css). Runs only when CAP_MOBILE_MQ
+                matches; every frame-bound setup is skipped in that case.
+     ================================================================ */
+
+  _setupMobileHome() {
+    const root = document.getElementById('cap-mobile');
+    if (!root || this._mobileHomeDone) return;
+    this._mobileHomeDone = true;
+
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // ===== STATS =====
+    // Frame 6 shows three figures staggered left / right / left. The desktop
+    // band carries a fourth ("75 Years+", index.html #cap-75) which the
+    // mockup drops — omitted here to match, not lost from the desktop frame.
+    const STATS = [
+      { fig: '$500 Mn+', lbl: 'AUM' },
+      { fig: '16 Assets', lbl: 'Across India and GCC', right: true },
+      { fig: '135 Acres', lbl: 'Total Land Area' }
+    ];
+    const statsEl = root.querySelector('[data-cm-stats]');
+    if (statsEl) {
+      statsEl.innerHTML = STATS.map(s =>
+        '<div class="cm-stat cm-reveal' + (s.right ? ' cm-stat--right' : '') + '">' +
+          '<div class="cm-stat-fig">' + esc(s.fig) + '</div>' +
+          '<div class="cm-stat-lbl">' + esc(s.lbl) + '</div>' +
+        '</div>').join('');
+    }
+
+    // ===== THE CAPPELLA EDGE ACCORDION =====
+    // Row 2 ("Future-ready campuses") carries the section photo and starts
+    // open, matching the mockup.
+    const OPEN_INDEX = 1, EDGE_IMG = './components/assets/63186349250e044c-min.jpg';
+    const accEl = root.querySelector('[data-cm-acc]');
+    if (accEl) {
+      accEl.innerHTML = CAP_EDGE.map((d, i) =>
+        '<div class="cm-acc-item' + (i === OPEN_INDEX ? ' is-open' : '') + '">' +
+          '<button class="cm-acc-btn" type="button" aria-expanded="' + (i === OPEN_INDEX) + '">' +
+            '<span>' + esc(d.title) + '</span><span class="cm-acc-ico" aria-hidden="true"></span>' +
+          '</button>' +
+          '<div class="cm-acc-panel">' +
+            '<p class="cm-acc-body">' + esc(d.text) + '</p>' +
+            (i === OPEN_INDEX ? '<img class="cm-acc-img" src="' + EDGE_IMG + '" alt="" loading="lazy">' : '') +
+          '</div>' +
+        '</div>').join('');
+
+      accEl.querySelectorAll('.cm-acc-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const item = btn.closest('.cm-acc-item');
+          const open = item.classList.toggle('is-open');
+          btn.setAttribute('aria-expanded', String(open));
+        });
+      });
+    }
+
+    // ===== OUR JOURNEY TIMELINE =====
+    // The desktop pinned scene (_setupJourneyPinned) is skipped on phones;
+    // the same CAP_JOURNEY records render as a plain vertical timeline.
+    const tlEl = root.querySelector('[data-cm-timeline]');
+    if (tlEl) {
+      tlEl.innerHTML = CAP_JOURNEY.map(p =>
+        '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
+        '<ul class="cm-tl">' + p.markers.map(m =>
+          '<li class="cm-tl-item cm-reveal">' +
+            '<div class="cm-tl-year">' + esc(m.year) + '</div>' +
+            '<div class="cm-tl-assets">' + (m.countTo ? esc(m.countTo) + ' ' : '') + esc(m.assets) + '</div>' +
+            // note carries an authored <br> in one record, so it is not escaped
+            (m.note ? '<div class="cm-tl-note">' + m.note + '</div>' : '') +
+          '</li>').join('') + '</ul>').join('');
+    }
+
+    // ===== OUR PORTFOLIO =====
+    const citiesEl = root.querySelector('[data-cm-cities]');
+    const tilesEl = root.querySelector('[data-cm-tiles]');
+    if (citiesEl && tilesEl) {
+      const renderTiles = (city) => {
+        const rows = CAP_PORTFOLIO.filter(a => a.city === city);
+        tilesEl.innerHTML = rows.map((a, i) =>
+          '<a class="cm-tile" href="./projects.html">' +
+            // Same stand-in rule as the desktop tiles: only The Shri Ram
+            // Universal School still lacks a real campus photo.
+            '<img class="cm-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '" alt="" loading="lazy">' +
+            '<div class="cm-tile-name">' + esc(a.line1 || a.name) + '</div>' +
+            '<div class="cm-tile-loc">' + esc(a.line2 ? a.line2 + ', ' + a.city : a.city) + '</div>' +
+          '</a>').join('');
+      };
+
+      // Hyderabad first, matching the desktop default (currentCityName).
+      let active = 'Hyderabad';
+      citiesEl.innerHTML = CAP_CITIES.map(c =>
+        '<button class="cm-city' + (c === active ? ' is-active' : '') + '" type="button" data-city="' + esc(c) + '">' +
+          '<span>' + esc(c) + '</span>' +
+        '</button>').join('');
+      renderTiles(active);
+
+      citiesEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cm-city');
+        if (!btn || btn.dataset.city === active) return;
+        active = btn.dataset.city;
+        citiesEl.querySelectorAll('.cm-city').forEach(b => b.classList.toggle('is-active', b === btn));
+        renderTiles(active);
+      });
+    }
+
+    // ===== OPERATORS =====
+    // Each logo is a percentage-cropped sprite, so the cell keeps the baked
+    // aspect ratio and only the height is normalised.
+    const opsEl = root.querySelector('[data-cm-ops]');
+    if (opsEl) {
+      // Fit each logo inside the cell's content box on BOTH axes — the
+      // sprites range from 146x141 (JGI, nearly square) to 184x35
+      // (Lighthouse, very wide), so capping height alone overflows the track.
+      const MAX_W = 76, MAX_H = 28, COLS = 3;
+      const cells = CAP_OPERATORS.map(o => {
+        const k = Math.min(MAX_W / o.w, MAX_H / o.h, 1);
+        const w = o.w * k, h = o.h * k;
+        return '<div class="cm-ops-cell">' +
+          '<div class="cm-ops-logo ' + o.cls + '" style="width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;"' +
+            ' role="img" aria-label="' + esc(o.name) + '"></div>' +
+        '</div>';
+      });
+      // 7 operators over a 3-wide grid leaves two holes in the last row, and
+      // the grid's 1px rule background shows through them as grey blocks.
+      // Pad with empty white cells so the block still reads as a clean grid.
+      const pad = (COLS - (cells.length % COLS)) % COLS;
+      for (let i = 0; i < pad; i++) cells.push('<div class="cm-ops-cell"></div>');
+      opsEl.innerHTML = cells.join('');
+    }
+
+    // ===== FOOTER EMAIL — same behaviour as the desktop footer input =====
+    const form = root.querySelector('[data-cm-email]');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = form.querySelector('input');
+        if (input.value && input.value.includes('@')) {
+          alert('Thank you for subscribing, ' + input.value + '!');
+          input.value = '';
+        } else {
+          alert('Please enter a valid email address.');
+        }
+      });
+    }
+
+    // ===== SCROLL REVEALS =====
+    // Deliberately minimal — the desktop reveal systems are all frame-bound.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          en.target.classList.add('is-in');
+          io.unobserve(en.target);
+        });
+      }, { rootMargin: '0px 0px -12% 0px' });
+      root.querySelectorAll('.cm-reveal').forEach(el => io.observe(el));
+      this._cmObserver = io;
+    } else {
+      root.querySelectorAll('.cm-reveal').forEach(el => el.classList.add('is-in'));
+    }
+  }
+
+  /* ================================================================
      [SECTION]  LIFECYCLE
      [BEHAVIOR] Teardown of every listener/raf/observer the setups install; DC render contract
      ================================================================ */
@@ -4690,6 +5074,7 @@ class Component extends DCLogic {
     clearTimeout(this._t3); clearTimeout(this._t4); clearTimeout(this._t5);
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
+    if (this._cmObserver) this._cmObserver.disconnect();
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);
