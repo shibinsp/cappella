@@ -191,11 +191,27 @@
    ========================================================================== */
 
 #cap-mobile .cm-edge .cm-h2 { color: var(--cap-red); }
-#cap-mobile .cm-acc { margin-top: 26px; border-top: 1px solid var(--cap-rule); }
-#cap-mobile .cm-acc-item { border-bottom: 1px solid var(--cap-rule); }
+
+/* The rows are separate raised CARDS in Frame 6, not a hairline-divided list:
+   measured at x14-x376 (so 14px in from the frame edge), ~6px radius, ~10px
+   apart, and separated from the ground by a soft shadow rather than a border.
+   The negative margin pulls them 6px outside the section's 24px text gutter,
+   which reproduces the design's "cards break out past the copy" relationship
+   without giving this one section its own gutter value. */
+#cap-mobile .cm-acc {
+  margin: 26px -6px 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#cap-mobile .cm-acc-item {
+  background: #fff; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20, 30, 45, 0.07), 0 4px 14px rgba(20, 30, 45, 0.05);
+}
+/* 14px inner padding puts the title at x≈28 as designed. min-height holds 44px
+   rather than the design's 42px card — 42 is under the accessible tap target,
+   and 2px is not worth failing that for. */
 #cap-mobile .cm-acc-btn {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  width: 100%; min-height: 48px; padding: 14px 0; text-align: left;
+  width: 100%; min-height: 44px; padding: 13px 14px; text-align: left;
   font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--cap-red);
 }
 /* +/− icon: one span, the vertical bar collapses when the row opens. */
@@ -218,10 +234,14 @@
 }
 #cap-mobile .cm-acc-item.is-open .cm-acc-panel { max-height: 900px; }
 #cap-mobile .cm-acc-body {
-  font-size: 12.5px; line-height: 1.6; color: var(--cap-body); padding: 0 0 16px;
+  font-size: 12.5px; line-height: 1.6; color: var(--cap-body);
+  margin: 0; padding: 0 14px 14px;
 }
+/* Inset INSIDE its card (12px on each side in the export), not run edge to
+   edge across the content width. */
 #cap-mobile .cm-acc-img {
-  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; margin: 0 0 18px;
+  width: calc(100% - 24px); aspect-ratio: 16 / 9; object-fit: cover;
+  margin: 0 12px 12px; border-radius: 5px;
 }
 
 /* ==========================================================================
@@ -229,6 +249,27 @@
    Replaces the pinned canvas scene (_setupJourneyPinned) on phones.
    ========================================================================== */
 
+/* Frame 6 washes this section in a blue-grey that dissolves downward: a sharp
+   start at rgb(214,227,239), fading over ~185px to #F1F2F2, holding ~#F4F4F4,
+   and clean white by ~380px. Sampled at 20px intervals off the export.
+   Fixed height + no-repeat over a white base, deliberately NOT stretched: our
+   timeline carries all 8 real journey records and is far taller than the one
+   entry visible in the design, so a percentage gradient would smear the wash
+   down the whole section. */
+#cap-mobile .cm-journey {
+  background:
+    linear-gradient(180deg,
+      #d6e3ef 0px,
+      #e2eaf1 65px,
+      #f1f2f2 185px,
+      #f4f4f4 205px,
+      #f4f4f4 365px,
+      #ffffff 385px) top left / 100% 385px no-repeat,
+    #ffffff;
+}
+/* Our Journey is the one section whose red rule sits BELOW its heading in the
+   export (Portfolio and Operators keep theirs above). */
+#cap-mobile .cm-journey .cm-rule { margin: 12px 0 14px; }
 #cap-mobile .cm-journey-img {
   width: 100%; aspect-ratio: 16 / 10; object-fit: cover; margin: 22px 0 0;
 }

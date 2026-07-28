@@ -112,6 +112,53 @@ test.describe('mobile home', () => {
     expect(short, 'interactive rows should not be smaller than a fingertip').toEqual([]);
   });
 
+  test('the rows render as separated cards, not a flat divided list', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    // Frame 6 renders each row as a raised white card: rounded, soft-shadowed,
+    // and clear of its neighbours. A regression to the old hairline list would
+    // drop the radius/shadow and close the gaps.
+    const cards = await page.evaluate(() => {
+      const items = [...document.querySelectorAll('#cap-mobile .cm-acc-item')];
+      const gaps = [];
+      for (let i = 1; i < items.length; i++) {
+        gaps.push(items[i].getBoundingClientRect().top - items[i - 1].getBoundingClientRect().bottom);
+      }
+      const cs = getComputedStyle(items[0]);
+      return {
+        radius: parseFloat(cs.borderRadius),
+        hasShadow: cs.boxShadow !== 'none' && cs.boxShadow !== '',
+        minGap: Math.min(...gaps)
+      };
+    });
+    expect(cards.radius).toBeGreaterThan(0);
+    expect(cards.hasShadow, 'cards are separated by a shadow, not a border').toBe(true);
+    expect(cards.minGap, 'cards must not touch').toBeGreaterThanOrEqual(6);
+
+    // The open row's photo sits INSIDE its card, not edge-to-edge.
+    const inset = await page.evaluate(() => {
+      const img = document.querySelector('#cap-mobile .cm-acc-img');
+      const card = img.closest('.cm-acc-item').getBoundingClientRect();
+      const r = img.getBoundingClientRect();
+      return { left: r.left - card.left, right: card.right - r.right };
+    });
+    expect(inset.left).toBeGreaterThan(0);
+    expect(inset.right).toBeGreaterThan(0);
+  });
+
+  test('Our Journey carries its blue-grey ground', async ({ page }) => {
+    await gotoMobileHome(page);
+    // The export washes the top of this section in rgb(214,227,239) and fades
+    // it out; flat white means the gradient was lost.
+    const cast = await page.evaluate(() => {
+      const s = getComputedStyle(document.querySelector('#cap-mobile .cm-journey'));
+      const m = s.backgroundImage.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      return m ? { r: +m[1], g: +m[2], b: +m[3] } : null;
+    });
+    expect(cast, 'journey section should have a gradient background').not.toBeNull();
+    expect(cast.b - cast.r, 'the wash should read blue, not neutral grey').toBeGreaterThanOrEqual(15);
+  });
+
   test('the city rail swaps the portfolio tiles', async ({ page }) => {
     await gotoMobileHome(page);
 
