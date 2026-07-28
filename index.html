@@ -4914,21 +4914,30 @@ class Component extends DCLogic {
     const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     // ===== STATS =====
-    // Frame 6 shows three figures staggered left / right / left. The desktop
-    // band carries a fourth ("75 Years+", index.html #cap-75) which the
-    // mockup drops — omitted here to match, not lost from the desktop frame.
+    // Frame 6 shows three figures staggered left / right / left inside a
+    // 390x413 crimson band (design y433-846). `top` is that band's percentage
+    // height, measured off the export at 1:1. The desktop band carries a
+    // fourth figure ("75 Years+", index.html #cap-75) which the mockup drops —
+    // omitted here to match, not removed from the desktop frame.
     const STATS = [
-      { fig: '$500 Mn+', lbl: 'AUM' },
-      { fig: '16 Assets', lbl: 'Across India and GCC', right: true },
-      { fig: '135 Acres', lbl: 'Total Land Area' }
+      { fig: '$500 Mn+',  lbl: 'AUM',                  side: 'l', top: 20.6 },
+      { fig: '16 Assets', lbl: 'Across India and GCC', side: 'r', top: 46.5 },
+      { fig: '135 Acres', lbl: 'Total Land Area',      side: 'l', top: 67.6 }
     ];
+    // Rule segments: [left%, width%, top%] — they alternate sides and sit
+    // between the figures rather than spanning the full width.
+    const STAT_RULES = [[8.5, 40.3, 33.9], [50.0, 39.7, 42.4], [8.5, 37.9, 62.9]];
     const statsEl = root.querySelector('[data-cm-stats]');
     if (statsEl) {
-      statsEl.innerHTML = STATS.map(s =>
-        '<div class="cm-stat cm-reveal' + (s.right ? ' cm-stat--right' : '') + '">' +
-          '<div class="cm-stat-fig">' + esc(s.fig) + '</div>' +
-          '<div class="cm-stat-lbl">' + esc(s.lbl) + '</div>' +
-        '</div>').join('');
+      statsEl.innerHTML =
+        STAT_RULES.map(r =>
+          '<hr class="cm-stat-rule" style="left:' + r[0] + '%; width:' + r[1] + '%; top:' + r[2] + '%;">'
+        ).join('') +
+        STATS.map(s =>
+          '<div class="cm-stat cm-stat--' + s.side + ' cm-reveal" style="top:' + s.top + '%;">' +
+            '<div class="cm-stat-fig">' + esc(s.fig) + '</div>' +
+            '<div class="cm-stat-lbl">' + esc(s.lbl) + '</div>' +
+          '</div>').join('');
     }
 
     // ===== THE CAPPELLA EDGE ACCORDION =====

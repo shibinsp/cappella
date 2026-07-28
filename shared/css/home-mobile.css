@@ -120,35 +120,42 @@
    rules crossing behind them — left, right, left.
    ========================================================================== */
 
+/* Geometry measured off the 390x3290 Frame 6 export at 1:1. The band's solid
+   crimson runs y433-846, so the box is 390x413 and every child is placed as a
+   percentage of that — the composition then holds at any phone width.
+   Design x-positions: verticals 60 / 300; stat text 71 (left) and 203 (right);
+   rule segments 33-190, 195-350, 33-181. The rules are SEGMENTS that alternate
+   sides, not full-width lines. */
 #cap-mobile .cm-stats {
   position: relative;
   background: var(--cap-red);
-  padding: 40px var(--cap-gutter) 46px;
+  aspect-ratio: 390 / 413;
   overflow: hidden;
 }
-/* The crossing hairlines. Two verticals and two horizontals, drawn as a
-   background rather than elements so they can never intercept a tap. */
+/* The two full-height verticals, drawn as a background so they can never
+   intercept a tap. A percentage background-position only moves a layer that is
+   SMALLER than the box, hence the 1px slab sizing. */
 #cap-mobile .cm-stats::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  /* Each layer is a 1px-wide (or 1px-tall) slab positioned by percentage —
-     the layer MUST be smaller than the box or a percentage position resolves
-     to 0 and every rule stacks on the left/top edge. */
-  --cm-hair: linear-gradient(rgba(255,255,255,0.24), rgba(255,255,255,0.24));
+  --cm-hair: linear-gradient(rgba(255,255,255,0.26), rgba(255,255,255,0.26));
   background:
-    var(--cm-hair) 22% 0 / 1px 100% no-repeat,
-    var(--cm-hair) 74% 0 / 1px 100% no-repeat,
-    var(--cm-hair) 0 38% / 100% 1px no-repeat,
-    var(--cm-hair) 0 71% / 100% 1px no-repeat;
+    var(--cm-hair) 15.4% 0 / 1px 100% no-repeat,
+    var(--cm-hair) 76.9% 0 / 1px 100% no-repeat;
 }
-#cap-mobile .cm-stat { position: relative; z-index: 1; }
-#cap-mobile .cm-stat + .cm-stat { margin-top: 34px; }
-#cap-mobile .cm-stat--right { text-align: left; padding-left: 46%; }
+#cap-mobile .cm-stat { position: absolute; z-index: 1; }
+#cap-mobile .cm-stat--l { left: 18.2%; }
+#cap-mobile .cm-stat--r { left: 52.1%; }
 #cap-mobile .cm-stat-fig {
-  font-size: 21px; font-weight: 700; line-height: 1; color: #fff; letter-spacing: -0.01em;
+  font-size: 24px; font-weight: 700; line-height: 1; color: #fff; letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 #cap-mobile .cm-stat-lbl {
-  font-size: 9px; font-weight: 400; letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.82); margin-top: 7px;
+  font-size: 10px; font-weight: 400; letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85); margin-top: 8px; white-space: nowrap;
+}
+#cap-mobile .cm-stat-rule {
+  position: absolute; height: 1px; border: 0; margin: 0;
+  background: rgba(255, 255, 255, 0.26);
 }
 
 /* ==========================================================================
@@ -286,11 +293,13 @@
    7. FOOTER
    ========================================================================== */
 
+/* The footer sits on a wider inset than the rest of the page — measured at
+   ~30px against ~24px elsewhere on the Frame 6 export. */
 #cap-mobile .cm-footer {
   background: var(--cap-red); color: #fff;
-  padding: 40px var(--cap-gutter) 34px;
+  padding: 44px 30px 30px;
 }
-#cap-mobile .cm-footer-mark { width: 58px; height: auto; margin: 0 0 30px; }
+#cap-mobile .cm-footer-mark { width: 90px; height: auto; margin: 0 0 34px; }
 #cap-mobile .cm-fnav { border-top: 1px solid rgba(255, 255, 255, 0.28); }
 #cap-mobile .cm-fnav a {
   display: flex; align-items: center; justify-content: space-between;
@@ -301,12 +310,18 @@
 #cap-mobile .cm-fnav a:hover { color: #fff; }
 #cap-mobile .cm-fnav svg { width: 7px; height: 11px; flex: none; opacity: 0.85; }
 
+/* Contact rows put the icon in a hairline circle in the design, and the copy
+   sits clear of it at ~x70 (i.e. a 32px badge + ~10px gap from the 30px inset). */
 #cap-mobile .cm-frow {
-  display: flex; align-items: flex-start; gap: 12px;
+  display: flex; align-items: flex-start; gap: 10px;
   padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-  font-size: 12px; line-height: 1.5;
+  font-size: 12px; line-height: 1.55;
 }
-#cap-mobile .cm-frow svg { width: 15px; height: 15px; flex: none; margin-top: 1px; opacity: 0.9; }
+#cap-mobile .cm-frow svg {
+  width: 32px; height: 32px; flex: none; padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%;
+  box-sizing: border-box;
+}
 #cap-mobile .cm-frow a { color: #fff; }
 #cap-mobile .cm-frow address { font-style: normal; white-space: pre-line; }
 
