@@ -135,15 +135,70 @@ test.describe('mobile home', () => {
     expect(cards.hasShadow, 'cards are separated by a shadow, not a border').toBe(true);
     expect(cards.minGap, 'cards must not touch').toBeGreaterThanOrEqual(6);
 
-    // The open row's photo sits INSIDE its card, not edge-to-edge.
+    // The open row's photo sits INSIDE its card, not edge-to-edge. Scoped to
+    // the OPEN row: every row carries an image now, and the others sit in
+    // collapsed panels.
     const inset = await page.evaluate(() => {
-      const img = document.querySelector('#cap-mobile .cm-acc-img');
+      const img = document.querySelector('#cap-mobile .cm-acc-item.is-open .cm-acc-img');
       const card = img.closest('.cm-acc-item').getBoundingClientRect();
       const r = img.getBoundingClientRect();
       return { left: r.left - card.left, right: card.right - r.right };
     });
     expect(inset.left).toBeGreaterThan(0);
     expect(inset.right).toBeGreaterThan(0);
+  });
+
+  test('every dropdown carries a photo, and only the open one is fetched', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    // The ask: all four rows have an image, not just the default-open one.
+    const shape = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-acc-item')].map((it) => {
+        const img = it.querySelector('.cm-acc-img');
+        return {
+          open: it.classList.contains('is-open'),
+          hasImg: !!img,
+          src: img ? img.getAttribute('src') : null,
+          deferred: img ? img.hasAttribute('data-src') : null,
+          alt: img ? img.getAttribute('alt') : null
+        };
+      })
+    );
+    expect(shape).toHaveLength(4);
+    expect(shape.every((r) => r.hasImg), 'every dropdown should contain a photo').toBe(true);
+    expect(shape.every((r) => r.alt && r.alt.length > 3), 'photos should carry real alt text').toBe(true);
+
+    // The open row renders immediately…
+    const openRow = shape.find((r) => r.open);
+    expect(openRow.src).toBeTruthy();
+    expect(openRow.deferred).toBe(false);
+    await expect
+      .poll(() => page.evaluate(() => {
+        const i = document.querySelector('#cap-mobile .cm-acc-item.is-open .cm-acc-img');
+        return i.complete && i.naturalWidth;
+      }))
+      .toBeGreaterThan(0);
+
+    // …and the closed rows are deferred. loading="lazy" would not hold these
+    // back (a collapsed panel is still in layout), so this guards ~765KB of
+    // photography from being fetched for panels nobody opened.
+    const closed = shape.filter((r) => !r.open);
+    expect(closed).toHaveLength(3);
+    expect(closed.every((r) => r.src === null && r.deferred), 'closed rows must not fetch').toBe(true);
+
+    // Opening one promotes it, and it actually loads.
+    await page.locator('#cap-mobile .cm-acc-item').first().locator('.cm-acc-btn').click();
+    await expect
+      .poll(() => page.evaluate(() => {
+        const i = document.querySelector('#cap-mobile .cm-acc-item .cm-acc-img');
+        return i.getAttribute('src') && i.complete && i.naturalWidth;
+      }))
+      .toBeGreaterThan(0);
+    // The two still-closed rows stay deferred.
+    const stillDeferred = await page.evaluate(
+      () => document.querySelectorAll('#cap-mobile .cm-acc-img[data-src]').length
+    );
+    expect(stillDeferred).toBe(2);
   });
 
   test('Our Journey carries its blue-grey ground', async ({ page }) => {

@@ -297,15 +297,27 @@ const CAP_CITIES = ['Dubai', 'Andhra Pradesh', 'Bangalore', 'Chhattisgarh', 'Che
 
 // The Cappella Edge accordion copy. The desktop setup merges its own frame
 // geometry (closedTop / figmaIconTop / closedDividerTop) onto these.
+// img/alt are read by #cap-mobile only — the desktop accordion is text-only
+// and never looks at them. Real campus photography (client batch 2026-07-23);
+// the rep-campus-* stand-ins are too low-res (266-547px) for a card image.
 const CAP_EDGE = [
   { title: 'Operator-aligned structures',
-    text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield' },
+    text: 'Flexible models — PropCo+OpCo, Sale & Leaseback, Greenfield',
+    img: './components/assets/campus/nlcs-dubai.jpg',
+    alt: 'North London Collegiate School, Dubai' },
   { title: 'Future-ready campuses',
-    text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.' },
+    text: 'Purpose-built and revamped campuses with modern facilities, green spaces, and scalable infrastructure.',
+    // The photo Frame 6 shows on this row — the one row the export renders open.
+    img: './components/assets/63186349250e044c-min.jpg',
+    alt: 'A Cappella campus' },
   { title: 'Active asset management',
-    text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.' },
+    text: 'Through our ecosystem affiliates, we integrate operations, value-added services, and construction expertise to create a high-performance, future-ready institution from day one.',
+    img: './components/assets/campus/jain-residential-bangalore.jpg',
+    alt: 'Jain International Residential School, Bangalore' },
   { title: 'Proven, long-term investor value',
-    text: 'A strong track record of delivering consistent, high-quality returns across three funds.' }
+    text: 'A strong track record of delivering consistent, high-quality returns across three funds.',
+    img: './components/assets/campus/hartland-dubai.jpg',
+    alt: 'Hartland International School, Dubai' }
 ];
 
 // Our Journey. `di` is the dot index the marker attaches to in the desktop
@@ -4916,27 +4928,40 @@ class Component extends DCLogic {
     }
 
     // ===== THE CAPPELLA EDGE ACCORDION =====
-    // Row 2 ("Future-ready campuses") carries the section photo and starts
-    // open, matching the mockup.
-    const OPEN_INDEX = 1, EDGE_IMG = './components/assets/63186349250e044c-min.jpg';
+    // Every row carries its own campus photo (CAP_EDGE.img). Row 2
+    // ("Future-ready campuses") starts open, matching the mockup.
+    //
+    // Only the open row gets a real `src`; the rest carry `data-src` and are
+    // promoted on first expand. loading="lazy" alone would NOT hold them back —
+    // a collapsed .cm-acc-panel is max-height:0 with overflow:hidden, so the
+    // images are still in layout and the browser fetches them as the section
+    // nears the viewport, spending ~765KB on panels the reader may never open.
+    const OPEN_INDEX = 1;
     const accEl = root.querySelector('[data-cm-acc]');
     if (accEl) {
-      accEl.innerHTML = CAP_EDGE.map((d, i) =>
-        '<div class="cm-acc-item' + (i === OPEN_INDEX ? ' is-open' : '') + '">' +
-          '<button class="cm-acc-btn" type="button" aria-expanded="' + (i === OPEN_INDEX) + '">' +
+      accEl.innerHTML = CAP_EDGE.map((d, i) => {
+        const open = i === OPEN_INDEX;
+        return '<div class="cm-acc-item' + (open ? ' is-open' : '') + '">' +
+          '<button class="cm-acc-btn" type="button" aria-expanded="' + open + '">' +
             '<span>' + esc(d.title) + '</span><span class="cm-acc-ico" aria-hidden="true"></span>' +
           '</button>' +
           '<div class="cm-acc-panel">' +
             '<p class="cm-acc-body">' + esc(d.text) + '</p>' +
-            (i === OPEN_INDEX ? '<img class="cm-acc-img" src="' + EDGE_IMG + '" alt="" loading="lazy">' : '') +
+            '<img class="cm-acc-img" ' + (open ? 'src' : 'data-src') + '="' + d.img + '"' +
+              ' alt="' + esc(d.alt) + '" loading="lazy" decoding="async">' +
           '</div>' +
-        '</div>').join('');
+        '</div>';
+      }).join('');
 
       accEl.querySelectorAll('.cm-acc-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           const item = btn.closest('.cm-acc-item');
           const open = item.classList.toggle('is-open');
           btn.setAttribute('aria-expanded', String(open));
+          if (open) {
+            const img = item.querySelector('.cm-acc-img[data-src]');
+            if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+          }
         });
       });
     }
