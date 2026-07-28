@@ -65,28 +65,42 @@
 /* The wordmark row scrolls away; the circular hamburger is #cap-menu-btn,
    created body-level by _setupMenuOverlay and already position:fixed — it is
    reused as-is here, which is why there is no menu button in this markup. */
+/* Frame 6 runs the hero 0-433 (~37px of which is the mockup's device status
+   bar we don't render). We sit a little taller: the real asset carries ~41% of
+   its height as sky above the campus, where the mockup's AI reinterpretation
+   of it did not, so 433 would push the buildings down into the headline. */
 #cap-mobile .cm-hero {
   position: relative;
-  min-height: 560px;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 var(--cap-gutter) 34px;
+  padding: 0 var(--cap-gutter) 30px;
   overflow: hidden;
   isolation: isolate;
 }
+/* The SAME hero photo the desktop frame uses (fig-asset-9f9c83f5695a1af6, the
+   dusk campus). It is authored 1291x1400 with the crimson fade already baked
+   into its lower half, which is what makes the join into the stats band
+   seamless — so the wash below only has to carry the top. */
 #cap-mobile .cm-hero-bg {
   position: absolute; inset: 0; z-index: -2;
-  background: url(../../components/assets/0f9374cd498a11f1-min.jpg) center / cover no-repeat;
+  /* Not `cover`: the source is 1291x1400 with a white margin down its left
+     edge and the campus band at 41-58% of its height. Scaling to 138% of the
+     hero height overflows both axes, which crops the white margin away and
+     lifts the buildings clear of the headline. */
+  background: url(../../components/assets/9f9c83f5695a1af6-min.jpg) 45% 100% / auto 125% no-repeat;
 }
-/* Crimson wash: solid at the bottom so the copy always clears AA contrast,
-   thinning towards the top so the campus stays legible. */
+/* Crimson wash: light over the sky and buildings so they stay readable (the
+   mockup shows them clearly), resolving to flat brand red at the very bottom
+   so there is no seam against .cm-stats. */
 #cap-mobile .cm-hero-tint {
   position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg,
-    rgba(140, 22, 32, 0.55) 0%,
-    rgba(170, 26, 38, 0.62) 42%,
-    rgba(196, 30, 44, 0.88) 78%,
+    rgba(150, 24, 34, 0.42) 0%,
+    rgba(168, 26, 37, 0.34) 38%,
+    rgba(190, 29, 42, 0.52) 70%,
+    rgba(205, 31, 46, 0.90) 92%,
     var(--cap-red) 100%);
 }
 #cap-mobile .cm-hero-top {
@@ -101,7 +115,7 @@
 }
 #cap-mobile .cm-hero-sub {
   font-size: 13px; font-weight: 400; line-height: 1.55;
-  color: rgba(255, 255, 255, 0.9); margin: 14px 0 0; max-width: 300px;
+  color: rgba(255, 255, 255, 0.9); margin: 16px 0 0; max-width: 300px;
 }
 #cap-mobile .cm-cta {
   display: inline-flex; align-items: center; gap: 10px;
