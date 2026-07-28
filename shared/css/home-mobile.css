@@ -227,8 +227,11 @@
    Mockup puts the city list in a narrow left column beside a 2-up photo grid.
    ========================================================================== */
 
+/* Measured off Frame 6's portfolio panel at 1:1 (393x663 raster, X offset -3):
+   city column ~100px, ~24px to the tiles, tiles ~112px with a ~6px gutter
+   between them. */
 #cap-mobile .cm-pf-body {
-  display: grid; grid-template-columns: 92px 1fr; gap: 16px; margin-top: 22px;
+  display: grid; grid-template-columns: 100px 1fr; gap: 24px; margin-top: 22px;
 }
 #cap-mobile .cm-cities { display: flex; flex-direction: column; }
 #cap-mobile .cm-city {
@@ -245,7 +248,7 @@
 #cap-mobile .cm-city.is-active { color: var(--cap-red); font-weight: 600; }
 #cap-mobile .cm-city.is-active::after { opacity: 1; }
 
-#cap-mobile .cm-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#cap-mobile .cm-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 6px; }
 #cap-mobile .cm-tile { display: block; color: inherit; }
 #cap-mobile .cm-tile-img {
   width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: #eceded;
