@@ -118,12 +118,20 @@ test.describe('mobile home', () => {
     // Hyderabad is the default, matching the desktop frame.
     await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Hyderabad');
     await expect(page.locator('#cap-mobile .cm-tile')).toHaveCount(4);
-    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('St. Andrews, Suchitra');
+    // Real school names and real localities — never the mockup's garbled
+    // "Spruha Mata" / "Bowrampet" / "Sainikpuri".
+    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Sancta Maria International School');
+    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Serilingampally, Hyderabad');
+    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Suchitra, Hyderabad');
+    await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Spruha');
+    await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Bowrampet');
 
     await page.locator('#cap-mobile .cm-city', { hasText: 'Dubai' }).click();
     await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Dubai');
     await expect(page.locator('#cap-mobile .cm-tile')).toHaveCount(2);
     await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Hartland International School');
+    // Single-campus cities: the locality IS the city, so it must not double up.
+    await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Dubai, Dubai');
 
     // Every tile resolves an image (the Shri Ram stand-in included).
     const broken = await page.evaluate(() =>

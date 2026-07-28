@@ -275,10 +275,10 @@ const CAP_MOBILE_MQ = window.matchMedia('(max-width: 767px)');
 const CAP_PORTFOLIO = [
   { name: 'Hartland International School',      city: 'Dubai', line1: 'Hartland International School', line2: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400', img: './components/assets/campus/hartland-dubai.jpg' },
   { name: 'North London Collegiate School',     city: 'Dubai', line1: 'North London Collegiate School', line2: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100', img: './components/assets/campus/nlcs-dubai.jpg' },
-  { name: 'St. Andrews, Suchitra',              city: 'Hyderabad',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
-  { name: 'St. Andrews, Keesara',               city: 'Hyderabad',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
-  { name: 'St. Michael’s',                 city: 'Hyderabad',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
-  { name: 'Sancta Maria International School',  city: 'Hyderabad',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
+  { name: 'St. Andrews, Suchitra',              city: 'Hyderabad', line1: 'St. Andrews', line2: 'Suchitra',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
+  { name: 'St. Andrews, Keesara',               city: 'Hyderabad', line1: 'St. Andrews', line2: 'Keesara',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
+  { name: 'St. Michael’s',                 city: 'Hyderabad', line1: 'St. Michael’s', line2: 'Alwal',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
+  { name: 'Sancta Maria International School',  city: 'Hyderabad', line1: 'Sancta Maria International School', line2: 'Serilingampally',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
   { name: 'The Shri Ram Universal School',      city: 'Chennai', line1: 'The Shri Ram Universal School', line2: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600' },
   { name: 'Billabong High International School',city: 'Pune', line1: 'Billabong High International School', line2: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350', img: './components/assets/campus/billabong-pune.jpg' },
   { name: 'Jain International Residential School', city: 'Bangalore', line1: 'Jain International Residential School', line2: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000', img: './components/assets/campus/jain-residential-bangalore.jpg' },
@@ -2831,47 +2831,20 @@ class Component extends DCLogic {
     const findElByClass = (cls) => scaler.querySelector('.' + cls);
     
     // All four photo cards are Hyderabad schools (per the docx portfolio).
-    // assetName links each card to its PORTFOLIO_DATA record for the detail strip.
-    // line1/line2: client 2026-07-23 caption nomenclature — line 1 school
-    // name, line 2 location — rendered left-aligned to the card's edge.
+    // assetName links each card to its PORTFOLIO_DATA record — the caption
+    // (client 2026-07-23 nomenclature: line 1 school name, line 2 location,
+    // left-aligned to the card's edge) is read from that record rather than
+    // repeated here, so the desktop cards and the mobile tiles can never
+    // disagree about a school's name.
     const cardData = [
-      {
-        id: 1,
-        imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725',
-        labelKeywords: ['Sancta', 'Maria'],
-        cities: ['Hyderabad'],
-        assetName: 'Sancta Maria International School',
-        line1: 'Sancta Maria International School',
-        line2: 'Serilingampally'
-      },
-      {
-        id: 2,
-        imgCls: 'fig-asset-016a31a2601bd9e3',
-        labelKeywords: ['Michael'],
-        cities: ['Hyderabad'],
-        assetName: 'St. Michael’s',
-        line1: 'St. Michael’s',
-        line2: 'Alwal'
-      },
-      {
-        id: 3,
-        imgCls: 'fig-asset-0f9374cd498a11f1-a670101d',
-        labelKeywords: ['Keesara'],
-        cities: ['Hyderabad'],
-        assetName: 'St. Andrews, Keesara',
-        line1: 'St. Andrews',
-        line2: 'Keesara'
-      },
-      {
-        id: 4,
-        imgCls: 'fig-asset-76ba2d1ec2162f53',
-        labelKeywords: ['Suchitra'],
-        cities: ['Hyderabad'],
-        assetName: 'St. Andrews, Suchitra',
-        line1: 'St. Andrews',
-        line2: 'Suchitra'
-      }
-    ];
+      { id: 1, imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725', labelKeywords: ['Sancta', 'Maria'], cities: ['Hyderabad'], assetName: 'Sancta Maria International School' },
+      { id: 2, imgCls: 'fig-asset-016a31a2601bd9e3',          labelKeywords: ['Michael'],         cities: ['Hyderabad'], assetName: 'St. Michael’s' },
+      { id: 3, imgCls: 'fig-asset-0f9374cd498a11f1-a670101d', labelKeywords: ['Keesara'],         cities: ['Hyderabad'], assetName: 'St. Andrews, Keesara' },
+      { id: 4, imgCls: 'fig-asset-76ba2d1ec2162f53',          labelKeywords: ['Suchitra'],        cities: ['Hyderabad'], assetName: 'St. Andrews, Suchitra' }
+    ].map(c => {
+      const rec = CAP_PORTFOLIO.find(a => a.name === c.assetName) || {};
+      return Object.assign({ line1: rec.line1 || rec.name, line2: rec.line2 || rec.city }, c);
+    });
 
     // =====================================================================
     // WebGL card treatment: photo under a translucent Cappella-red overlay
@@ -4994,7 +4967,9 @@ class Component extends DCLogic {
             // Universal School still lacks a real campus photo.
             '<img class="cm-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '" alt="" loading="lazy">' +
             '<div class="cm-tile-name">' + esc(a.line1 || a.name) + '</div>' +
-            '<div class="cm-tile-loc">' + esc(a.line2 ? a.line2 + ', ' + a.city : a.city) + '</div>' +
+            // line2 is the locality; for the single-campus cities it IS the
+            // city, and "Dubai, Dubai" reads as a bug.
+            '<div class="cm-tile-loc">' + esc(a.line2 && a.line2 !== a.city ? a.line2 + ', ' + a.city : a.city) + '</div>' +
           '</a>').join('');
       };
 
