@@ -451,9 +451,13 @@
   display: grid; grid-template-columns: 100px 1fr; gap: 24px; margin-top: 22px;
 }
 #cap-mobile .cm-cities { display: flex; flex-direction: column; }
+/* 44px, not 30: these are the section's primary control and 30px is under
+   platform guidance for a touch target. Measured cost is 10px of section
+   height — the column goes 298 -> 308, which is exactly the tile grid's
+   height beside it, so the two now set the row together. */
 #cap-mobile .cm-city {
   display: flex; align-items: center; gap: 6px;
-  min-height: 30px; padding: 4px 0;
+  min-height: 44px; padding: 4px 0;
   font-size: 11.5px; font-weight: 400; line-height: 1.25; color: var(--cap-body);
   text-align: left;
   transition: color 0.2s ease;
@@ -544,16 +548,24 @@
   border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%;
   box-sizing: border-box;
 }
-#cap-mobile .cm-frow a { color: #fff; }
+/* The mailto sits at the row's text height — 19px, under the 24px minimum a
+   touch target needs. Padding grows the hit area and the matching negative
+   margin gives the space back, so it becomes tappable without moving anything. */
+#cap-mobile .cm-frow a {
+  color: #fff;
+  display: inline-block; padding: 13px 0; margin: -13px 0;
+}
 #cap-mobile .cm-frow address { font-style: normal; white-space: pre-line; }
 
 #cap-mobile .cm-flabel {
   font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85); margin: 26px 0 12px;
 }
+/* 44px so the only social link on the page is a full-size touch target; the
+   glyph stays 15px, only the tappable badge grows. */
 #cap-mobile .cm-social {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; background: #fff; color: var(--cap-red); border-radius: 2px;
+  width: 44px; height: 44px; background: #fff; color: var(--cap-red); border-radius: 2px;
 }
 #cap-mobile .cm-social svg { width: 15px; height: 15px; }
 
