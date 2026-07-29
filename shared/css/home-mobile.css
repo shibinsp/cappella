@@ -475,15 +475,27 @@
 /* minmax(0, 1fr), not 1fr: the logo boxes carry explicit pixel widths, and a
    plain 1fr track floors at min-content — the widest logo would push the grid
    past the viewport. */
+/* Two columns, not three: 7 logos cannot fill a rectangular grid at any column
+   count, so the last row always has an orphan — and given that, 2-up is worth
+   it because it roughly doubles the cell width and lets the partner marks
+   render at a legible size instead of being capped at 76px. */
 #cap-mobile .cm-ops-grid {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px; background: var(--cap-rule); border: 1px solid var(--cap-rule);
   margin-top: 26px;
 }
+/* A fixed height rather than aspect-ratio. The spanning cell below is twice as
+   wide, so under a ratio it would come out ~244px tall — a giant final row.
+   Fixed also stops every cell ballooning as the viewport nears 767px. */
 #cap-mobile .cm-ops-cell {
-  background: #fff; aspect-ratio: 1 / 0.78;
+  background: #fff; height: 120px;
   display: flex; align-items: center; justify-content: center; padding: 12px;
+  box-sizing: border-box;
 }
+/* The odd one out spans the row, so there are no empty cells for the grid's
+   rule-coloured background to show through. Keyed on "odd last child" rather
+   than the number 7, so it stays right if an operator is added or removed. */
+#cap-mobile .cm-ops-cell:last-child:nth-child(odd) { grid-column: 1 / -1; }
 /* The logos are percentage-cropped sprites from fig-assets.css, so the box
    must keep the authored aspect ratio for the crop to land — width is set
    inline per logo from its baked w/h. */
