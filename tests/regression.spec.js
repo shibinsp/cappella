@@ -10,19 +10,30 @@ const {
 
 const HOME = '/index.html';
 
+/** Phones (<=767px) render #cap-mobile instead of the scaled 1440 frame. */
+const isPhone = (testInfo) => testInfo.project.name === 'mobile';
+
 /** The homepage hydrates its React frame + binds nav ~0.5–1.6s after load. */
-async function gotoHome(page) {
+async function gotoHome(page, testInfo) {
   await page.goto(HOME, { waitUntil: 'networkidle' });
   // Nav spans get role="link" when the binding timer has run — wait on that,
-  // not on a fixed sleep.
+  // not on a fixed sleep. (Attached, not visible: below 900px they are hidden
+  // and below 768px the whole frame is.)
   await page
     .locator('span[role="link"]', { hasText: 'ABOUT US' })
     .first()
     .waitFor({ state: 'attached', timeout: 15000 });
-  // The journey band setup (deferred ~1.6s) reorganizes the whole page
-  // (shifts every element below the band) — clicking before it lands races
-  // moving targets. The #cap-journey host appears only after that reorg.
-  await page.waitForSelector('#cap-journey', { timeout: 15000 });
+  if (testInfo && isPhone(testInfo)) {
+    // The frame-bound setups (including the journey band) are skipped on
+    // phones, so #cap-journey never mounts — wait on the mobile layout being
+    // populated instead.
+    await page.waitForSelector('#cap-mobile .cm-acc-item', { timeout: 15000 });
+  } else {
+    // The journey band setup (deferred ~1.6s) reorganizes the whole page
+    // (shifts every element below the band) — clicking before it lands races
+    // moving targets. The #cap-journey host appears only after that reorg.
+    await page.waitForSelector('#cap-journey', { timeout: 15000 });
+  }
   await page.waitForTimeout(300); // one settle beat for the reflow
 }
 
@@ -31,26 +42,34 @@ test.describe('homepage regression', () => {
   // suite CPU contention they slow down without being broken — give the
   // whole group headroom instead of racing the 30s default.
   test.describe.configure({ timeout: 90000 });
-  test('smoke: loads at /, hero renders, no console errors or failed assets', async ({ page }) => {
+  test('smoke: loads at /, hero renders, no console errors or failed assets', async ({ page }, testInfo) => {
     const errors = attachErrorCapture(page);
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.waitForTimeout(2500); // hydration + deferred animation setups
 
-    // The materialized frame mounted and laid out (hero text is split into
-    // per-character spans by SplitType, so text matching is not reliable —
-    // assert structural integrity instead).
     await expect(page).toHaveTitle(/Cappella/);
-    await expect(page.locator('#cap-scaler')).toBeVisible();
-    // The frame is scaled by viewportWidth/1440, so its rendered height is
-    // viewport-dependent — assert relative to the design height at scale.
-    const { frameHeight, expected } = await page.locator('#cap-scaler').evaluate((el) => ({
-      frameHeight: el.getBoundingClientRect().height,
-      expected: 7000 * (window.innerWidth / 1440)
-    }));
-    expect(frameHeight, 'materialized frame should have its scaled design height').toBeGreaterThan(expected * 0.8);
-    // The hero heading element exists inside the frame
-    const heroSpans = await page.locator('#cap-scaler span').count();
-    expect(heroSpans, 'frame should contain its text spans').toBeGreaterThan(50);
+
+    if (isPhone(testInfo)) {
+      // Phones swap the scaled frame for the purpose-built mobile layout.
+      await expect(page.locator('#cap-viewport')).toBeHidden();
+      await expect(page.locator('#cap-mobile')).toBeVisible();
+      await expect(page.locator('#cap-mobile h1')).toContainText('Edu-Infra Asset');
+    } else {
+      // The materialized frame mounted and laid out (hero text is split into
+      // per-character spans by SplitType, so text matching is not reliable —
+      // assert structural integrity instead).
+      await expect(page.locator('#cap-scaler')).toBeVisible();
+      // The frame is scaled by viewportWidth/1440, so its rendered height is
+      // viewport-dependent — assert relative to the design height at scale.
+      const { frameHeight, expected } = await page.locator('#cap-scaler').evaluate((el) => ({
+        frameHeight: el.getBoundingClientRect().height,
+        expected: 7000 * (window.innerWidth / 1440)
+      }));
+      expect(frameHeight, 'materialized frame should have its scaled design height').toBeGreaterThan(expected * 0.8);
+      // The hero heading element exists inside the frame
+      const heroSpans = await page.locator('#cap-scaler span').count();
+      expect(heroSpans, 'frame should contain its text spans').toBeGreaterThan(50);
+    }
 
     expectNoPageErrors(errors);
   });
@@ -102,7 +121,7 @@ test.describe('homepage regression', () => {
       ['contact-us.html', /contact-us\.html$/]
     ];
     for (const [href, url] of targets) {
-      await gotoHome(page);
+      await gotoHome(page, testInfo);
       // Hero spans must be out of the way on small screens.
       await expect(page.locator('#cap-scaler span.cap-nav').first()).toBeHidden();
       const btn = page.locator('#cap-menu-btn');
@@ -147,10 +166,13 @@ test.describe('homepage regression', () => {
   });
 
   test('footer spans navigate (PORTFOLIO → projects)', async ({ page }, testInfo) => {
+    // Phones render the mobile footer instead of the baked frame's; its
+    // equivalent link is asserted in home-mobile.spec.js.
+    test.skip(isPhone(testInfo), 'baked footer spans are frame-bound; phones use #cap-mobile .cm-fnav');
     // The page is much taller with the pinned journey gap — scrolling to the
     // footer and binding retries need headroom under parallel load.
     testInfo.setTimeout(60000);
-    await gotoHome(page);
+    await gotoHome(page, testInfo);
     // Wait for the footer reveal flip, re-nudging the scroll each poll (the
     // flip listens to scroll; under heavy CPU contention a single programmatic
     // jump can land before the listener registers).
