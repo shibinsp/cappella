@@ -302,6 +302,54 @@ test.describe('mobile home', () => {
     expect(activeDot).toBe(2);
   });
 
+  test('each Journey phase carries its own photo, fetched on arrival', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    const shots = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-j-phase')].map((ph) => {
+        const img = ph.querySelector('.cm-journey-img');
+        return {
+          has: !!img,
+          src: img && img.getAttribute('src'),
+          deferred: img && img.getAttribute('data-src'),
+          alt: img && img.getAttribute('alt')
+        };
+      })
+    );
+
+    expect(shots).toHaveLength(3);
+    expect(shots.every((s) => s.has), 'every phase needs a photo').toBe(true);
+    expect(shots.every((s) => s.alt && s.alt.length > 3)).toBe(true);
+
+    // The point of the change: three DIFFERENT photos. A copy-paste slip would
+    // otherwise satisfy every other assertion here.
+    const sources = shots.map((s) => s.src || s.deferred);
+    expect(new Set(sources).size, 'the three phases must not share a photo').toBe(3);
+
+    // Only the first is fetched up front; the rest wait for their phase.
+    expect(shots[0].src).toBeTruthy();
+    expect(shots[0].deferred).toBeNull();
+    expect(shots[1].src).toBeNull();
+    expect(shots[2].src).toBeNull();
+
+    // Scrolling to the last phase promotes it, and it really loads.
+    const g = await page.evaluate(() => {
+      const t = document.querySelector('#cap-mobile .cm-j-track');
+      const s = document.querySelector('#cap-mobile .cm-j-stage');
+      return {
+        top: window.scrollY + t.getBoundingClientRect().top,
+        travel: t.offsetHeight - Math.min(s.offsetHeight, window.innerHeight)
+      };
+    });
+    await page.evaluate((y) => window.scrollTo(0, y), g.top + g.travel * 0.95);
+    await expect
+      .poll(() => page.evaluate(() => {
+        const i = document.querySelectorAll('#cap-mobile .cm-j-phase')[2].querySelector('.cm-journey-img');
+        return i.getAttribute('src') && i.complete && i.naturalWidth;
+      }), { timeout: 8000 })
+      .toBeGreaterThan(0);
+  });
+
   test('reduced motion: Our Journey does not pin and shows every record', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
@@ -312,12 +360,20 @@ test.describe('mobile home', () => {
       stage: document.querySelectorAll('#cap-mobile .cm-j-stage').length,
       visiblePhases: [...document.querySelectorAll('#cap-mobile .cm-j-phase')]
         .filter((e) => parseFloat(getComputedStyle(e).opacity) > 0.99).length,
-      items: document.querySelectorAll('#cap-mobile .cm-tl-item').length
+      items: document.querySelectorAll('#cap-mobile .cm-tl-item').length,
+      // Nothing promotes data-src on this branch — there is no stage and no
+      // scroll driver — so every photo must ship a real src or two phases
+      // render broken images.
+      deferredPhotos: document.querySelectorAll('#cap-mobile .cm-journey-img[data-src]').length,
+      realPhotos: [...document.querySelectorAll('#cap-mobile .cm-journey-img')]
+        .filter((i) => i.getAttribute('src')).length
     }));
     expect(r.track, 'no scroll track under reduced motion').toBe(0);
     expect(r.stage).toBe(0);
     expect(r.visiblePhases, 'all three phases readable at once').toBe(3);
     expect(r.items).toBe(8);
+    expect(r.deferredPhotos, 'nothing would ever promote these').toBe(0);
+    expect(r.realPhotos).toBe(3);
     await ctx.close();
   });
 

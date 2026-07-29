@@ -147,7 +147,8 @@
     <h2 class="cm-h2">Our Journey</h2>
     <hr class="cm-rule">
     <p class="cm-sub">Building education infrastructure that creates lasting impact for generations.</p>
-    <img class="cm-journey-img cm-reveal" src="./components/assets/63186349250e044c-min.jpg" alt="" loading="lazy">
+    <!-- The photo is per-phase and lives inside each .cm-j-phase; see
+         CAP_JOURNEY.photo and _setupMobileHome's timeline render. -->
     <div data-cm-timeline></div>
   </section>
 
@@ -322,17 +323,26 @@ const CAP_EDGE = [
 
 // Our Journey. `di` is the dot index the marker attaches to in the desktop
 // pinned scene; the mobile timeline ignores it and renders in array order.
+// `img` is the desktop scene's building cutout; `photo`/`photoAlt` are the
+// mobile phase photography — separate keys on purpose, the desktop path reads
+// only `img` and the cutouts have no background to sit on in a photo band.
 const CAP_JOURNEY = [
-  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2], markers: [
+  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2],
+    photo: './components/assets/campus/st-andrews-suchitra.jpg',
+    photoAlt: 'St. Andrews, Suchitra — Hyderabad', markers: [
     { di: 0, year: '2016', assets: 'Assets', note: 'Pioneered Sale and Leaseback Model', countTo: 6 },
     { di: 1, year: '2017', assets: '1 Asset', note: '', countTo: 0 },
     { di: 2, year: '2018', assets: '1 Asset', note: '', countTo: 0 }
   ] },
-  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2], markers: [
+  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2],
+    photo: './components/assets/campus/juset-hostel-bangalore.jpg',
+    photoAlt: 'JU-SET Hostel — Bangalore', markers: [
     { di: 0, year: '2019', assets: 'Assets Acquired, 1 Asset Exited', note: 'Onboarded Institutional Investors', countTo: 3 },
     { di: 2, year: '2021', assets: 'Assets', note: '', countTo: 2 }
   ] },
-  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2], markers: [
+  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2],
+    photo: './components/assets/campus/nlcs-dubai.jpg',
+    photoAlt: 'North London Collegiate School — Dubai', markers: [
     { di: 0, year: '2023', assets: '1 Asset', note: 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', countTo: 0 },
     { di: 1, year: '2024', assets: '1 Asset', note: '', countTo: 0 },
     { di: 2, year: '2025', assets: 'Assets', note: 'Expansion to Dubai', countTo: 3 }
@@ -4977,8 +4987,16 @@ class Component extends DCLogic {
     const tlEl = root.querySelector('[data-cm-timeline]');
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (tlEl) {
+      // Each phase carries its own photo, so it swaps as part of the phase and
+      // inherits the staggered transition. Only the first is fetched up front:
+      // the other two carry data-src and are promoted by setActive the first
+      // time their phase runs, which keeps ~500KB off the initial load.
+      // REDUCED never builds a stage and so never promotes anything — its
+      // photos must all be real src or two phases render broken images.
       const phases = CAP_JOURNEY.map((p, i) =>
         '<div class="cm-j-phase" data-i="' + i + '">' +
+          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.photo + '"' +
+            ' alt="' + esc(p.photoAlt) + '" loading="lazy" decoding="async">' +
           '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
           '<ul class="cm-tl">' + p.markers.map(m =>
             '<li class="cm-tl-item">' +
@@ -5003,13 +5021,6 @@ class Component extends DCLogic {
               '<div class="cm-j-phases">' + phases + '</div>' +
             '</div>' +
           '</div>';
-        // The section photo rides INSIDE the pin, above the phases: it holds
-        // steady while they swap, and without it ~260px of text floats alone
-        // in a 100svh stage. Moved rather than duplicated, so the reduced-
-        // motion branch (which never builds a stage) keeps it in flow.
-        const photo = root.querySelector('.cm-journey-img');
-        const stageEl = tlEl.querySelector('.cm-j-stage');
-        if (photo && stageEl) stageEl.insertBefore(photo, stageEl.querySelector('.cm-j-phases'));
         this._setupMobileJourney(tlEl);
       }
     }
@@ -5125,6 +5136,10 @@ class Component extends DCLogic {
     const setActive = (i) => {
       if (i === active) return;
       active = i;
+      // Fetch this phase's photo the first time it runs. loading="lazy" would
+      // not hold them back — every phase sits in the layout inside the stage.
+      const img = phases[i] && phases[i].querySelector('.cm-journey-img[data-src]');
+      if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
       phases.forEach((el, n) => el.classList.toggle('is-on', n === i));
       dots.forEach((el, n) => {
         el.classList.toggle('is-on', n === i);

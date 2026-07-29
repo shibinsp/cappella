@@ -302,9 +302,13 @@
    below the photo in the stage's flex flow. min-height clears the tallest
    phase (Expansion: three records, one with a two-line note) so the photo
    above it does not jump as they swap. */
+/* Tall enough for the worst case — Expansion: photo + label + three records,
+   one carrying a two-line note — so the phases do not resize the stage as they
+   swap. Still has to fit a 320x568 stage, which the pin test asserts. */
 #cap-mobile .cm-j-phases {
-  position: relative; min-height: 280px; margin-top: 24px;
+  position: relative; min-height: 400px; margin-top: 8px;
 }
+#cap-mobile .cm-j-phase .cm-journey-img { margin: 0 0 22px; }
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible
    at once — the outgoing one clears first, then the incoming rises in. */
