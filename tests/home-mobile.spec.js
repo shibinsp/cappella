@@ -134,12 +134,34 @@ test.describe('mobile home', () => {
     await first.locator('.cm-acc-btn').click();
     await expect(first).not.toHaveClass(/is-open/);
 
+    // Regression: ISSUE-001 — the mailto in the footer rendered 19px tall,
+    // under the 24px minimum a touch target needs; the city buttons and the
+    // LinkedIn badge sat at 30px, under platform guidance.
+    // Found by /qa on 2026-07-29
+    // Report: .gstack/qa-reports/qa-report-cappella-2026-07-29.md
+    //
+    // Scoped to EVERY interactive element, not a hand-picked three: the old
+    // assertion listed .cm-acc-btn/.cm-city/.cm-fnav and floored at 30px, so
+    // the 19px mailto was outside the selector AND under the bar.
     const short = await page.evaluate(() =>
-      [...document.querySelectorAll('#cap-mobile .cm-acc-btn, #cap-mobile .cm-city, #cap-mobile .cm-fnav a')]
-        .map((el) => ({ t: el.textContent.trim().slice(0, 28), h: Math.round(el.getBoundingClientRect().height) }))
-        .filter((r) => r.h < 30)
+      [...document.querySelectorAll('#cap-mobile a, #cap-mobile button, #cap-mobile input')]
+        .map((el) => ({
+          t: (el.textContent || el.getAttribute('aria-label') || el.tagName).trim().slice(0, 28),
+          h: Math.round(el.getBoundingClientRect().height)
+        }))
+        // height 0 = inside a collapsed accordion panel, not on screen to tap
+        .filter((r) => r.h > 0 && r.h < 44)
     );
-    expect(short, 'interactive rows should not be smaller than a fingertip').toEqual([]);
+    expect(short, 'every tappable element should be at least 44px tall').toEqual([]);
+
+    // Growing the city buttons must not make their hit areas overlap.
+    const overlaps = await page.evaluate(() => {
+      const r = [...document.querySelectorAll('#cap-mobile .cm-city')].map((c) => c.getBoundingClientRect());
+      let n = 0;
+      for (let i = 1; i < r.length; i++) if (r[i].top < r[i - 1].bottom - 0.5) n++;
+      return n;
+    });
+    expect(overlaps, 'adjacent city hit areas must not overlap').toBe(0);
   });
 
   test('the rows render as separated cards, not a flat divided list', async ({ page }) => {
