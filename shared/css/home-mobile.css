@@ -305,15 +305,21 @@
 #cap-mobile .cm-j-phases {
   position: relative; min-height: 280px; margin-top: 24px;
 }
+/* Staggered, not a straight cross-fade. The phases sit exactly on top of one
+   another, so overlapping fades double-expose the text and both are legible
+   at once — the outgoing one clears first, then the incoming rises in. */
 #cap-mobile .cm-j-phase {
   position: absolute; left: 0; right: 0; top: 0;
-  opacity: 0; visibility: hidden;
-  transition: opacity 0.45s cubic-bezier(0.76, 0, 0.24, 1),
-              visibility 0s linear 0.45s;
+  opacity: 0; visibility: hidden; transform: translateY(10px);
+  transition: opacity 0.2s ease,
+              transform 0.2s ease,
+              visibility 0s linear 0.2s;
 }
 #cap-mobile .cm-j-phase.is-on {
-  opacity: 1; visibility: visible;
-  transition: opacity 0.45s cubic-bezier(0.76, 0, 0.24, 1), visibility 0s;
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 0.34s cubic-bezier(0.25, 1, 0.5, 1) 0.18s,
+              transform 0.34s cubic-bezier(0.25, 1, 0.5, 1) 0.18s,
+              visibility 0s;
 }
 #cap-mobile .cm-j-phase .cm-tl-phase { margin-top: 0; }
 
