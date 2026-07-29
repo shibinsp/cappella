@@ -222,7 +222,7 @@ test.describe('mobile home', () => {
       const r = img.getBoundingClientRect();
       const rgb = (s) => (s.match(/\d+/g) || []).map(Number);
       return {
-        aspect: r.width / r.height,
+        height: r.height,
         radius: parseFloat(getComputedStyle(img).borderRadius),
         marker: (() => {
           const cs = getComputedStyle(document.querySelector('#cap-mobile .cm-tl-item'), '::before');
@@ -232,10 +232,11 @@ test.describe('mobile home', () => {
       };
     });
 
-    // A wide letterbox band (350x128 in the export), not the old 16:10 block.
-    expect(geo.aspect).toBeGreaterThan(2.4);
-    expect(geo.aspect).toBeLessThan(3.1);
+    // The photo no longer holds the export's 2.73:1 band inside the pin — it
+    // flexes to fill the stage, because a fixed ratio left dead space above
+    // and below a 100svh pin. It keeps its rounded corners and a sane floor.
     expect(geo.radius, 'the photo has rounded corners in the export').toBeGreaterThan(0);
+    expect(geo.height, 'the photo must not collapse to a sliver').toBeGreaterThanOrEqual(130);
 
     // A target, not a hollow ring — the centre must be filled red. This is the
     // one that would regress silently back to a white-centred circle.
@@ -300,6 +301,19 @@ test.describe('mobile home', () => {
     const activeDot = await page.evaluate(() =>
       [...document.querySelectorAll('#cap-mobile .cm-j-dot')].findIndex((e) => e.classList.contains('is-on')));
     expect(activeDot).toBe(2);
+
+    // The phase fills the pin. Centring ~400px of content in a 100svh stage
+    // left visible dead space above the photo and below the last record; the
+    // photo now flexes to take up the slack.
+    const slack = await page.evaluate(() => {
+      const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
+      const ph = document.querySelector('#cap-mobile .cm-j-phase.is-on').getBoundingClientRect();
+      const last = [...document.querySelectorAll('#cap-mobile .cm-j-phase.is-on .cm-tl-item')].pop()
+        .getBoundingClientRect();
+      return { above: ph.top - s.top, below: s.bottom - last.bottom };
+    });
+    expect(slack.above, 'dead space above the phase').toBeLessThanOrEqual(30);
+    expect(slack.below, 'dead space below the last record').toBeLessThanOrEqual(40);
   });
 
   test('each Journey phase carries its own photo, fetched on arrival', async ({ page }) => {

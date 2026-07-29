@@ -296,19 +296,31 @@
   height: 100vh;
   height: 100svh;
   overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column;
+  padding: 18px 0 24px;
+  box-sizing: border-box;
 }
 /* The phases stack on top of each other inside a fixed-height well that sits
    below the photo in the stage's flex flow. min-height clears the tallest
    phase (Expansion: three records, one with a two-line note) so the photo
    above it does not jump as they swap. */
-/* Tall enough for the worst case — Expansion: photo + label + three records,
-   one carrying a two-line note — so the phases do not resize the stage as they
-   swap. Still has to fit a 320x568 stage, which the pin test asserts. */
-#cap-mobile .cm-j-phases {
-  position: relative; min-height: 400px; margin-top: 8px;
+/* The phases fill the stage rather than floating centred in it. A 100svh pin
+   holding ~400px of centred content left obvious dead space above and below,
+   visible as a gap between the subcopy and the photo on the way in and after
+   the last record on the way out. */
+#cap-mobile .cm-j-phases { position: relative; flex: 1 1 auto; min-height: 0; }
+#cap-mobile .cm-j-phase {
+  display: flex; flex-direction: column;
+  top: 0; bottom: 0;
 }
-#cap-mobile .cm-j-phase .cm-journey-img { margin: 0 0 22px; }
+/* The photo takes whatever height the records leave, so the stage is always
+   full. This is a deliberate departure from the export's fixed 2.73:1 band —
+   that ratio cannot fill a viewport-height pin. It keeps a floor so a short
+   screen never squeezes it to a sliver. */
+#cap-mobile .cm-j-phase .cm-journey-img {
+  flex: 1 1 auto; min-height: 130px; aspect-ratio: auto;
+  margin: 0 0 20px; width: 100%;
+}
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible
    at once — the outgoing one clears first, then the incoming rises in. */
@@ -332,12 +344,15 @@
   position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
   display: flex; flex-direction: column; gap: 10px; z-index: 2;
 }
+/* The dots sit over the photo now that it fills the stage, so they carry a
+   white ring — red on grass or sky is otherwise unreadable. */
 #cap-mobile .cm-j-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--cap-red); opacity: 0.28;
+  background: var(--cap-red); opacity: 0.45;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
-#cap-mobile .cm-j-dot.is-on { opacity: 1; transform: scale(1.25); }
+#cap-mobile .cm-j-dot.is-on { opacity: 1; transform: scale(1.3); }
 
 /* Reduced motion: no track, no pin — the phases simply stack. */
 #cap-mobile .cm-j-static .cm-j-phase { position: static; opacity: 1; visibility: visible; transform: none; }
