@@ -65,6 +65,36 @@ test.describe('mobile home', () => {
     await expect(page.locator('#cap-mobile .cm-cta')).toHaveAttribute('href', './projects.html');
   });
 
+  test('the hero mark is the real wordmark asset, not text', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    // It used to be a <span>Cappella</span> letter-spaced to imitate the logo.
+    // A "does a mark exist" check passes on that, so assert the asset itself.
+    const mark = await page.evaluate(() => {
+      const el = document.querySelector('#cap-mobile .cm-wordmark');
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        bg: cs.backgroundImage,
+        text: el.textContent.trim(),
+        label: el.getAttribute('aria-label'),
+        opacity: parseFloat(cs.opacity),
+        aspect: r.width / r.height
+      };
+    });
+
+    expect(mark.bg).toContain('7cb777f5a65019d1');
+    expect(mark.text, 'the mark is artwork, not type').toBe('');
+    expect(mark.label).toBeTruthy();
+    // _setupPreloader hides the header wordmark by class and restores it the
+    // same way. Reusing that class here put this element first in the DOM
+    // before the frame hydrated, so it was hidden and never restored.
+    expect(mark.opacity, 'the mark must not be left hidden by the preloader').toBe(1);
+    // The crop's authored box is 214x37; off-ratio would stretch the letters.
+    expect(mark.aspect).toBeGreaterThan(5.5);
+    expect(mark.aspect).toBeLessThan(6.1);
+  });
+
   test('content is driven by the shared constants', async ({ page }) => {
     await gotoMobileHome(page);
 

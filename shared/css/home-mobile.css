@@ -131,8 +131,20 @@
 #cap-mobile .cm-hero-top {
   position: absolute; left: var(--cap-gutter); top: 26px; z-index: 2;
 }
+/* A box for the wordmark asset, not type. The crop values are the desktop
+   hero's (.fig-asset-7cb777f5a65019d1-0d894d80 in components/fig-assets.css):
+   over-scaled and offset so only the CAPPELLA band shows and the "Insightful
+   Edvesting" tagline underneath it is cropped away. Repeated rather than
+   reusing that class because _setupPreloader treats it as a singleton — see
+   the note on the markup in index.html.
+   The authored box is 214x37, so the 5.78 aspect must hold or the letterforms
+   stretch. Width tuned by measuring the rendered glyphs, not assumed — the
+   letters fill only part of the cropped box, and 95px lands them at the ~83px
+   wide the Frame 6 export shows. */
 #cap-mobile .cm-wordmark {
-  font-size: 14px; font-weight: 700; letter-spacing: 0.26em; color: #fff; text-transform: uppercase;
+  width: 95px; height: 16.4px;
+  background: url(../../components/assets/7cb777f5a65019d1.png)
+    50% 16.729% / 100% 164.981% no-repeat;
 }
 #cap-mobile .cm-hero h1 {
   font-size: 28px; font-weight: 700; line-height: 1.18; letter-spacing: -0.015em;
