@@ -102,11 +102,18 @@
      least hero/(1-0.0837) wide => hero * 1.184 tall. 125vw gives that with
      headroom at every width up to the 767 breakpoint, and is above the 660px
      term only past ~528px, so the phone composition is untouched.
-     Anchored RIGHT, not centred: the margin is on the source's LEFT and its
-     right margin is zero, so right-alignment makes the margin the first thing
-     cropped at every width. */
+     The source has junk on BOTH edges: 108px of pure white on the left, and a
+     55px strip on the right (columns 1236-1290) where the pixels are near
+     identical — a smear, not white, which is why a pure-white margin check
+     missed it. Anchoring right cropped the white but parked the smear flush
+     against the hero's right edge, reading as a vertical fade.
+     So: still anchored right, but pushed a further 42px right so the smear
+     goes past the edge too. 42px clears it across the whole range (the strip
+     renders ~26px at 300px wide and ~38px at 767px) while leaving far more
+     than enough left crop to keep the white margin out — 360px of crop
+     against a 51px margin at the narrow end. */
   background: url(../../components/assets/9f9c83f5695a1af6-min.jpg)
-    100% 100% / auto max(660px, 125vw) no-repeat;
+    calc(100% + 42px) 100% / auto max(660px, 125vw) no-repeat;
   background-color: #b81f2d; /* last-resort ground if the image ever fails */
 }
 /* Crimson wash: light over the sky and buildings so they stay readable (the
