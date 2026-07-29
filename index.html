@@ -121,7 +121,17 @@
   <section class="cm-hero">
     <div class="cm-hero-bg"></div>
     <div class="cm-hero-tint"></div>
-    <div class="cm-hero-top"><span class="cm-wordmark">Cappella</span></div>
+    <!-- The real wordmark, not letter-spaced text dressed up to look like it.
+         Deliberately NOT the .fig-asset-7cb777f5a65019d1-0d894d80 class the
+         desktop hero uses, even though the crop is identical: _setupPreloader
+         treats that class as a singleton (querySelector to hide it, and again
+         to restore it). Carrying it here made this element the first match
+         before the frame hydrated, so it was hidden — and by restore time the
+         hydrated frame's copy was first, so this one stayed at opacity 0.
+         Background image, so it needs an explicit accessible name. -->
+    <div class="cm-hero-top">
+      <div class="cm-wordmark" role="img" aria-label="Cappella"></div>
+    </div>
     <h1>India&rsquo;s Leading<br>Edu-Infra Asset<br>Management Company</h1>
     <p class="cm-hero-sub">Transforming, developing, and revamping K-12 education infrastructure across India and the GCC.</p>
     <a class="cm-cta" href="./projects.html">
