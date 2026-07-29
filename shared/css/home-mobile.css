@@ -284,12 +284,22 @@
    as two stubs — one down the journey's bottom padding, one down the
    portfolio's top padding — because they are separate sections and nothing can
    span both. x=33 is where the rail sits (24px gutter + the list's 9px offset)
-   and falls inside the 28px rule's 24-52 span, so they meet as a T. */
+   and falls inside the 28px rule's 24-52 span, so they meet as a T.
+   One knob, --cm-joint, drives BOTH the two sections' facing padding and the
+   two stub heights. They have to stay equal — if the padding grows past the
+   stub the line stops short of the rule, and if it shrinks the line overshoots
+   past it. Tying them together makes that desync impossible.
+   Set tighter than the page's usual 44px section padding on purpose: the rail
+   is there to make these two read as one continuous run, so a full section
+   break either side of it left ~88px of bare white. */
 #cap-mobile .cm-journey,
-#cap-mobile .cm-pf { position: relative; }
+#cap-mobile .cm-pf { position: relative; --cm-joint: 24px; }
+#cap-mobile .cm-journey { padding-bottom: var(--cm-joint); }
+#cap-mobile .cm-pf { padding-top: var(--cm-joint); }
 #cap-mobile .cm-journey::after,
 #cap-mobile .cm-pf::before {
-  content: ''; position: absolute; left: 33px; width: 1px; height: 44px;
+  content: ''; position: absolute; left: 33px; width: 1px;
+  height: var(--cm-joint);
   background: rgba(209, 32, 47, 0.55);
 }
 #cap-mobile .cm-journey::after { bottom: 0; }
