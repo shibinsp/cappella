@@ -456,6 +456,43 @@ test.describe('mobile home', () => {
     expect(broken).toEqual([]);
   });
 
+  test('portfolio tiles are decoded before the grid reaches the fold', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    // Plain loading="lazy" only starts the fetch once the tiles are nearly on
+    // screen, so the #eceded placeholder showed as you arrived. They are
+    // warmed ~800px ahead instead — while still not costing ~1MB up front.
+    const atLoad = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-tile-img')].filter((i) => i.complete && i.naturalWidth > 0).length);
+    expect(atLoad, 'tiles should not all load before anyone scrolls').toBeLessThan(4);
+
+    // Stop short of the section — the grid must still be below the fold.
+    await page.evaluate(() => {
+      const pf = document.querySelector('#cap-mobile .cm-pf');
+      window.scrollTo(0, window.scrollY + pf.getBoundingClientRect().top - 900);
+    });
+    const belowFold = await page.evaluate(() =>
+      document.querySelector('#cap-mobile .cm-pf').getBoundingClientRect().top > window.innerHeight - 50);
+    expect(belowFold, 'the grid should still be off screen at this point').toBe(true);
+
+    await expect
+      .poll(() => page.evaluate(() =>
+        [...document.querySelectorAll('#cap-mobile .cm-tile-img')].filter((i) => i.complete && i.naturalWidth > 0).length
+      ), { timeout: 8000 })
+      .toBe(4);
+
+    // A city switch happens with the grid already in view, so its tiles must
+    // not be lazy at all.
+    await page.evaluate(() => {
+      const pf = document.querySelector('#cap-mobile .cm-pf');
+      window.scrollTo(0, window.scrollY + pf.getBoundingClientRect().top - 40);
+    });
+    await page.locator('#cap-mobile .cm-city', { hasText: 'Bangalore' }).click();
+    const loadingAttrs = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-tile-img')].map((i) => i.getAttribute('loading')));
+    expect(loadingAttrs.every((v) => v === 'eager'), 'switched-in tiles should not lazy-load').toBe(true);
+  });
+
   test('footer links navigate', async ({ page }) => {
     await gotoMobileHome(page);
     await page.locator('#cap-mobile .cm-fnav a[href="./projects.html"]').click();
