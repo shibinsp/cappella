@@ -331,21 +331,13 @@
   display: flex; flex-direction: column;
   top: 0; bottom: 0;
 }
-/* The phase artwork is the same building the desktop scene shows, and it is a
-   transparent cutout with a ground shadow — so it needs a backdrop or it
-   floats on white. object-fit:contain leaves this element's own background
-   visible around the image, which lets one <img> be both the building and the
-   sky it stands on, with no wrapper.
-   Gradient mirrors the desktop pin (#b9cbdc -> #c9d3dc -> #dfe1e1 -> #d7d5d2)
-   with a hard horizon at 76% and a ground plane below it.
-   It still flexes to absorb the stage's slack, so there is no dead space. */
+/* The photo takes whatever height the records leave, so the stage is always
+   full. This is a deliberate departure from the export's fixed 2.73:1 band —
+   that ratio cannot fill a viewport-height pin. It keeps a floor so a short
+   screen never squeezes it to a sliver. */
 #cap-mobile .cm-j-phase .cm-journey-img {
   flex: 1 1 auto; min-height: 130px; aspect-ratio: auto;
   margin: 0 0 20px; width: 100%;
-  object-fit: contain; object-position: 50% 100%;
-  background: linear-gradient(180deg,
-    #b9cbdc 0%, #c9d3dc 42%, #dfe1e1 64%, #ead9cf 75%,
-    #cdcbc8 76%, #c3c1be 100%);
 }
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible

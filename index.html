@@ -323,22 +323,26 @@ const CAP_EDGE = [
 
 // Our Journey. `di` is the dot index the marker attaches to in the desktop
 // pinned scene; the mobile timeline ignores it and renders in array order.
-// `img` is the phase's building artwork, under CAP_JOURNEY_ART. Both views
-// render it: the desktop scene stands it on its canvas horizon, and the mobile
-// phase does the same against a CSS sky (see .cm-journey-img in
-// home-mobile.css) — so a phase's building is defined in exactly one place.
-const CAP_JOURNEY_ART = './components/assets/journey/';
+// `img` is the desktop scene's building cutout; `photo`/`photoAlt` are the
+// mobile phase photography — separate keys on purpose, the desktop path reads
+// only `img` and the cutouts have no background to sit on in a photo band.
 const CAP_JOURNEY = [
-  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2], markers: [
+  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2],
+    photo: './components/assets/campus/st-andrews-suchitra.jpg',
+    photoAlt: 'St. Andrews, Suchitra — Hyderabad', markers: [
     { di: 0, year: '2016', assets: 'Assets', note: 'Pioneered Sale and Leaseback Model', countTo: 6 },
     { di: 1, year: '2017', assets: '1 Asset', note: '', countTo: 0 },
     { di: 2, year: '2018', assets: '1 Asset', note: '', countTo: 0 }
   ] },
-  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2], markers: [
+  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2],
+    photo: './components/assets/campus/juset-hostel-bangalore.jpg',
+    photoAlt: 'JU-SET Hostel — Bangalore', markers: [
     { di: 0, year: '2019', assets: 'Assets Acquired, 1 Asset Exited', note: 'Onboarded Institutional Investors', countTo: 3 },
     { di: 2, year: '2021', assets: 'Assets', note: '', countTo: 2 }
   ] },
-  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2], markers: [
+  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2],
+    photo: './components/assets/campus/nlcs-dubai.jpg',
+    photoAlt: 'North London Collegiate School — Dubai', markers: [
     { di: 0, year: '2023', assets: '1 Asset', note: 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', countTo: 0 },
     { di: 1, year: '2024', assets: '1 Asset', note: '', countTo: 0 },
     { di: 2, year: '2025', assets: 'Assets', note: 'Expansion to Dubai', countTo: 3 }
@@ -4991,8 +4995,8 @@ class Component extends DCLogic {
       // photos must all be real src or two phases render broken images.
       const phases = CAP_JOURNEY.map((p, i) =>
         '<div class="cm-j-phase" data-i="' + i + '">' +
-          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + CAP_JOURNEY_ART + p.img + '"' +
-            ' alt="' + esc(p.word.join(' ')) + '" loading="lazy" decoding="async">' +
+          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.photo + '"' +
+            ' alt="' + esc(p.photoAlt) + '" loading="lazy" decoding="async">' +
           '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
           '<ul class="cm-tl">' + p.markers.map(m =>
             '<li class="cm-tl-item">' +

@@ -340,13 +340,10 @@ test.describe('mobile home', () => {
     expect(shots.every((s) => s.has), 'every phase needs a photo').toBe(true);
     expect(shots.every((s) => s.alt && s.alt.length > 3)).toBe(true);
 
-    // Three DIFFERENT images, and specifically the desktop scene's phase
-    // artwork — the same files _setupJourneyPinned stands on its horizon, so
-    // both views tell the story with the same buildings.
+    // The point of the change: three DIFFERENT photos. A copy-paste slip would
+    // otherwise satisfy every other assertion here.
     const sources = shots.map((s) => s.src || s.deferred);
-    expect(new Set(sources).size, 'the three phases must not share an image').toBe(3);
-    expect(sources.every((s) => s.includes('components/assets/journey/')),
-      'phases should use the desktop scene artwork').toBe(true);
+    expect(new Set(sources).size, 'the three phases must not share a photo').toBe(3);
 
     // Only the first is fetched up front; the rest wait for their phase.
     expect(shots[0].src).toBeTruthy();
