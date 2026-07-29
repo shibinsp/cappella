@@ -493,6 +493,58 @@ test.describe('mobile home', () => {
     expect(loadingAttrs.every((v) => v === 'eager'), 'switched-in tiles should not lazy-load').toBe(true);
   });
 
+  test('the journey rail runs unbroken into Our Portfolio\'s rule', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    // Park past the pin so the stage has released and the two sections are
+    // adjacent — that is the only point where the join is visible.
+    const g = await page.evaluate(() => {
+      const t = document.querySelector('#cap-mobile .cm-j-track');
+      const s = document.querySelector('#cap-mobile .cm-j-stage');
+      return {
+        top: window.scrollY + t.getBoundingClientRect().top,
+        travel: t.offsetHeight - Math.min(s.offsetHeight, window.innerHeight)
+      };
+    });
+    await page.evaluate((y) => window.scrollTo(0, y), g.top + g.travel + 160);
+    await page.waitForTimeout(600);
+
+    const joint = await page.evaluate(() => {
+      const j = document.querySelector('#cap-mobile .cm-journey');
+      const pf = document.querySelector('#cap-mobile .cm-pf');
+      const on = document.querySelector('#cap-mobile .cm-j-phase.is-on')
+        || document.querySelector('#cap-mobile .cm-j-phase');
+      const last = [...on.querySelectorAll('.cm-tl-item')].pop();
+      const rule = pf.querySelector('.cm-rule');
+      const R = (n) => n.getBoundingClientRect();
+      return {
+        lastBottom: R(last).bottom,
+        journeyBottom: R(j).bottom,
+        pfTop: R(pf).top,
+        ruleTop: R(rule).top,
+        jPad: parseFloat(getComputedStyle(j).paddingBottom),
+        pfPad: parseFloat(getComputedStyle(pf).paddingTop),
+        jStub: parseFloat(getComputedStyle(j, '::after').height),
+        pfStub: parseFloat(getComputedStyle(pf, '::before').height)
+      };
+    });
+
+    // The stubs must equal the padding they sit in. If padding grows past the
+    // stub the line stops short of the rule; if it shrinks the line overshoots
+    // past it. Both are driven by --cm-joint precisely so this cannot drift.
+    expect(joint.jStub).toBeCloseTo(joint.jPad, 0);
+    expect(joint.pfStub).toBeCloseTo(joint.pfPad, 0);
+
+    // …and the run is continuous: last record → journey edge → portfolio edge → rule.
+    expect(joint.journeyBottom).toBeCloseTo(joint.lastBottom + joint.jPad, 0);
+    expect(joint.pfTop).toBeCloseTo(joint.journeyBottom, 0);
+    expect(joint.ruleTop).toBeCloseTo(joint.pfTop + joint.pfPad, 0);
+
+    // Tighter than a normal 44+44 section break — the rail makes these read as
+    // one run, so a full break either side left ~88px of bare white.
+    expect(joint.ruleTop - joint.lastBottom).toBeLessThanOrEqual(60);
+  });
+
   test('the operators grid has no empty cells and readable logos', async ({ page }) => {
     await gotoMobileHome(page);
 
