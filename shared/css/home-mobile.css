@@ -260,6 +260,22 @@
    timeline carries all 8 real journey records and is far taller than the one
    entry visible in the design, so a percentage gradient would smear the wash
    down the whole section. */
+/* The timeline rail carries on past the last record and joins the red rule
+   above Our Portfolio, so the two sections read as one continuous line. Drawn
+   as two stubs — one down the journey's bottom padding, one down the
+   portfolio's top padding — because they are separate sections and nothing can
+   span both. x=33 is where the rail sits (24px gutter + the list's 9px offset)
+   and falls inside the 28px rule's 24-52 span, so they meet as a T. */
+#cap-mobile .cm-journey,
+#cap-mobile .cm-pf { position: relative; }
+#cap-mobile .cm-journey::after,
+#cap-mobile .cm-pf::before {
+  content: ''; position: absolute; left: 33px; width: 1px; height: 44px;
+  background: rgba(209, 32, 47, 0.55);
+}
+#cap-mobile .cm-journey::after { bottom: 0; }
+#cap-mobile .cm-pf::before { top: 0; }
+
 #cap-mobile .cm-journey {
   background:
     linear-gradient(180deg,
@@ -297,7 +313,9 @@
   height: 100svh;
   overflow: hidden;
   display: flex; flex-direction: column;
-  padding: 18px 0 24px;
+  /* No bottom padding: the list ends flush with the stage so its rail can hand
+     straight over to the connector below. */
+  padding: 18px 0 0;
   box-sizing: border-box;
 }
 /* The phases stack on top of each other inside a fixed-height well that sits
@@ -362,8 +380,10 @@
    centres at frame x26 and the copy starts at x54, i.e. 30px in from the
    section's 24px gutter. */
 #cap-mobile .cm-tl { margin: 26px 0 0; padding: 0 0 0 30px; list-style: none; position: relative; }
+/* bottom:0, not 8px — the rail has to reach the foot of the list so it meets
+   the connector that carries it down to Our Portfolio's rule. */
 #cap-mobile .cm-tl::before {
-  content: ''; position: absolute; left: 9px; top: 8px; bottom: 8px;
+  content: ''; position: absolute; left: 9px; top: 8px; bottom: 0;
   width: 1px; background: rgba(209, 32, 47, 0.55);
 }
 #cap-mobile .cm-tl-item { position: relative; padding: 0 0 24px; }
@@ -385,8 +405,8 @@
   font-size: 12px; font-weight: 600; color: var(--cap-body); margin-top: 6px; line-height: 1.45;
 }
 #cap-mobile .cm-tl-phase {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #9a9ba0; margin: 0 0 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--cap-ink); margin: 0 0 12px;
 }
 #cap-mobile .cm-tl-phase:not(:first-child) { margin-top: 8px; }
 

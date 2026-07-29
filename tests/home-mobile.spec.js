@@ -261,8 +261,13 @@ test.describe('mobile home', () => {
         sticky: getComputedStyle(stage).position,
         stageH: stage.offsetHeight,
         vh: window.innerHeight,
-        // The stage must not be taller than what it holds, or content is cut.
-        contentH: stage.scrollHeight,
+        // Measure the ACTIVE phase, not stage.scrollHeight: the inactive
+        // phases sit at translateY(10px) as their entry offset, so scrollHeight
+        // always reads 10px over and says nothing about whether content fits.
+        contentH: (() => {
+          const on = stage.querySelector('.cm-j-phase.is-on') || stage.querySelector('.cm-j-phase');
+          return on.getBoundingClientRect().bottom - stage.getBoundingClientRect().top;
+        })(),
         top: window.scrollY + track.getBoundingClientRect().top,
         travel: track.offsetHeight - Math.min(stage.offsetHeight, window.innerHeight)
       };
