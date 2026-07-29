@@ -154,8 +154,14 @@
   font-size: 13px; font-weight: 400; line-height: 1.55;
   color: rgba(255, 255, 255, 0.9); margin: 16px 0 0; max-width: 300px;
 }
+/* min-height, not just padding: the height was falling out of 13px padding +
+   a `normal` line box + a 1px border, and that border renders 0.571px at
+   DPR 1.75 — so the button measured 43.14px on a real phone while measuring
+   exactly 44 in headless CI at DPR 1. Pinning it removes the sub-pixel
+   dependency so the 44px target holds on real hardware, not just in tests. */
 #cap-mobile .cm-cta {
-  display: inline-flex; align-items: center; gap: 10px;
+  display: inline-flex; align-items: center; gap: 10px; min-height: 44px;
+  box-sizing: border-box;
   margin-top: 22px; padding: 13px 18px;
   border: 1px solid rgba(255, 255, 255, 0.85); border-radius: 3px;
   font-size: 13px; font-weight: 600; color: #fff;
