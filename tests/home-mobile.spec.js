@@ -248,6 +248,79 @@ test.describe('mobile home', () => {
     expect(geo.rail[0]).toBeGreaterThan(geo.rail[2] + 60);
   });
 
+  test('Our Journey pins and advances one phase per scroll', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    const setup = await page.evaluate(() => {
+      const track = document.querySelector('#cap-mobile .cm-j-track');
+      const stage = document.querySelector('#cap-mobile .cm-j-stage');
+      return {
+        phases: document.querySelectorAll('#cap-mobile .cm-j-phase').length,
+        dots: document.querySelectorAll('#cap-mobile .cm-j-dot').length,
+        sticky: getComputedStyle(stage).position,
+        stageH: stage.offsetHeight,
+        vh: window.innerHeight,
+        // The stage must not be taller than what it holds, or content is cut.
+        contentH: stage.scrollHeight,
+        top: window.scrollY + track.getBoundingClientRect().top,
+        travel: track.offsetHeight - Math.min(stage.offsetHeight, window.innerHeight)
+      };
+    });
+
+    expect(setup.phases).toBe(3);
+    expect(setup.dots).toBe(3);
+    expect(setup.sticky, 'the stage pins with position:sticky').toBe('sticky');
+    // #cap-mobile used to carry overflow-x:hidden, which coerces the other axis
+    // to auto and silently kills sticky for everything inside it.
+    expect(setup.stageH).toBeLessThanOrEqual(setup.vh);
+    expect(setup.contentH, 'stage content must fit the pin').toBeLessThanOrEqual(setup.stageH + 1);
+    expect(setup.travel, 'the track must be taller than the stage').toBeGreaterThan(200);
+
+    const activeAt = async (fraction) => {
+      await page.evaluate((y) => window.scrollTo(0, y), setup.top + setup.travel * fraction);
+      return await expect
+        .poll(async () => page.evaluate(() => {
+          const ops = [...document.querySelectorAll('#cap-mobile .cm-j-phase')]
+            .map((e) => parseFloat(getComputedStyle(e).opacity));
+          return ops.indexOf(Math.max(...ops));
+        }), { timeout: 5000 });
+    };
+
+    // The stage stays pinned to the top of the viewport throughout…
+    await (await activeAt(0.05)).toBe(0);
+    const pinnedTop = await page.evaluate(() =>
+      Math.round(document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect().top));
+    expect(pinnedTop).toBe(0);
+
+    // …and each phase takes its turn.
+    await (await activeAt(0.5)).toBe(1);
+    await (await activeAt(0.95)).toBe(2);
+
+    // The dot rail follows.
+    const activeDot = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-j-dot')].findIndex((e) => e.classList.contains('is-on')));
+    expect(activeDot).toBe(2);
+  });
+
+  test('reduced motion: Our Journey does not pin and shows every record', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await gotoMobileHome(page);
+
+    const r = await page.evaluate(() => ({
+      track: document.querySelectorAll('#cap-mobile .cm-j-track').length,
+      stage: document.querySelectorAll('#cap-mobile .cm-j-stage').length,
+      visiblePhases: [...document.querySelectorAll('#cap-mobile .cm-j-phase')]
+        .filter((e) => parseFloat(getComputedStyle(e).opacity) > 0.99).length,
+      items: document.querySelectorAll('#cap-mobile .cm-tl-item').length
+    }));
+    expect(r.track, 'no scroll track under reduced motion').toBe(0);
+    expect(r.stage).toBe(0);
+    expect(r.visiblePhases, 'all three phases readable at once').toBe(3);
+    expect(r.items).toBe(8);
+    await ctx.close();
+  });
+
   test('the city rail swaps the portfolio tiles', async ({ page }) => {
     await gotoMobileHome(page);
 

@@ -4967,19 +4967,51 @@ class Component extends DCLogic {
     }
 
     // ===== OUR JOURNEY TIMELINE =====
-    // The desktop pinned scene (_setupJourneyPinned) is skipped on phones;
-    // the same CAP_JOURNEY records render as a plain vertical timeline.
+    // The desktop pinned scene (_setupJourneyPinned) is skipped on phones, but
+    // the phase-per-scroll idea is not: the same CAP_JOURNEY records render
+    // into a sticky stage that swaps Foundation -> Growth -> Expansion as the
+    // reader scrolls the track. _setupMobileJourney drives it.
+    //
+    // Under reduced motion there is no track and no stage — the three phases
+    // stack in flow, as every other motion system on this page degrades.
     const tlEl = root.querySelector('[data-cm-timeline]');
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (tlEl) {
-      tlEl.innerHTML = CAP_JOURNEY.map(p =>
-        '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
-        '<ul class="cm-tl">' + p.markers.map(m =>
-          '<li class="cm-tl-item cm-reveal">' +
-            '<div class="cm-tl-year">' + esc(m.year) + '</div>' +
-            '<div class="cm-tl-assets">' + (m.countTo ? esc(m.countTo) + ' ' : '') + esc(m.assets) + '</div>' +
-            // note carries an authored <br> in one record, so it is not escaped
-            (m.note ? '<div class="cm-tl-note">' + m.note + '</div>' : '') +
-          '</li>').join('') + '</ul>').join('');
+      const phases = CAP_JOURNEY.map((p, i) =>
+        '<div class="cm-j-phase" data-i="' + i + '">' +
+          '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
+          '<ul class="cm-tl">' + p.markers.map(m =>
+            '<li class="cm-tl-item">' +
+              '<div class="cm-tl-year">' + esc(m.year) + '</div>' +
+              '<div class="cm-tl-assets">' + (m.countTo ? esc(m.countTo) + ' ' : '') + esc(m.assets) + '</div>' +
+              // note carries an authored <br> in one record, so it is not escaped
+              (m.note ? '<div class="cm-tl-note">' + m.note + '</div>' : '') +
+            '</li>').join('') + '</ul>' +
+        '</div>').join('');
+
+      if (REDUCED) {
+        tlEl.innerHTML = '<div class="cm-j-static">' + phases + '</div>';
+      } else {
+        tlEl.innerHTML =
+          '<div class="cm-j-track">' +
+            '<div class="cm-j-stage">' +
+              '<div class="cm-j-dots" role="tablist" aria-label="Journey phases">' +
+                CAP_JOURNEY.map((p, i) =>
+                  '<span class="cm-j-dot" role="tab" aria-label="' + esc(p.word.join(' ')) + '"' +
+                    (i === 0 ? ' aria-selected="true"' : '') + '></span>').join('') +
+              '</div>' +
+              '<div class="cm-j-phases">' + phases + '</div>' +
+            '</div>' +
+          '</div>';
+        // The section photo rides INSIDE the pin, above the phases: it holds
+        // steady while they swap, and without it ~260px of text floats alone
+        // in a 100svh stage. Moved rather than duplicated, so the reduced-
+        // motion branch (which never builds a stage) keeps it in flow.
+        const photo = root.querySelector('.cm-journey-img');
+        const stageEl = tlEl.querySelector('.cm-j-stage');
+        if (photo && stageEl) stageEl.insertBefore(photo, stageEl.querySelector('.cm-j-phases'));
+        this._setupMobileJourney(tlEl);
+      }
     }
 
     // ===== OUR PORTFOLIO =====
@@ -5074,6 +5106,59 @@ class Component extends DCLogic {
     }
   }
 
+  /* ----------------------------------------------------------------
+     Our Journey, phase per scroll. A sticky stage inside a taller
+     track: progress across the track picks the active phase, exactly
+     the model _setupJourneyPinned uses on desktop. position:sticky
+     rather than a GSAP pin — desktop only has to mount its pin
+     body-level because #cap-scaler's transform breaks sticky, and
+     there is no scaler on this path.
+     ---------------------------------------------------------------- */
+  _setupMobileJourney(tlEl) {
+    const track = tlEl.querySelector('.cm-j-track');
+    const stage = tlEl.querySelector('.cm-j-stage');
+    const phases = Array.from(tlEl.querySelectorAll('.cm-j-phase'));
+    const dots = Array.from(tlEl.querySelectorAll('.cm-j-dot'));
+    if (!track || !stage || phases.length < 2) return;
+
+    let active = -1;
+    const setActive = (i) => {
+      if (i === active) return;
+      active = i;
+      phases.forEach((el, n) => el.classList.toggle('is-on', n === i));
+      dots.forEach((el, n) => {
+        el.classList.toggle('is-on', n === i);
+        if (n === i) el.setAttribute('aria-selected', 'true');
+        else el.removeAttribute('aria-selected');
+      });
+    };
+    setActive(0);
+
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = track.getBoundingClientRect();
+      // capVH, not innerHeight: it refreshes only when the WIDTH changes, so
+      // iOS Safari's collapsing toolbar cannot resize the denominator
+      // mid-scroll and make the phase index jump.
+      const travel = track.offsetHeight - Math.min(stage.offsetHeight, capVH());
+      const p = travel > 0 ? Math.min(Math.max(-r.top / travel, 0), 1) : 0;
+      // The last phase gets the tail of the track rather than a 1/n slice that
+      // only lands exactly at p === 1.
+      setActive(Math.min(phases.length - 1, Math.floor(p * phases.length)));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    this._cmJourneyCleanup = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+    update();
+  }
+
   /* ================================================================
      [SECTION]  LIFECYCLE
      [BEHAVIOR] Teardown of every listener/raf/observer the setups install; DC render contract
@@ -5086,6 +5171,7 @@ class Component extends DCLogic {
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
     if (this._cmObserver) this._cmObserver.disconnect();
+    if (this._cmJourneyCleanup) this._cmJourneyCleanup();
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
       window.removeEventListener('scroll', this._onRevealScroll);

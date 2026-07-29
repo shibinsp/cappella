@@ -39,7 +39,11 @@
   font-family: Montserrat, sans-serif;
   color: var(--cap-ink);
   background: #fff;
-  overflow-x: hidden;
+  /* `clip`, NOT `hidden`. overflow-x:hidden coerces the other axis to `auto`,
+     which makes this a scroll container and silently breaks position:sticky
+     for everything inside it — that is what stopped .cm-j-stage pinning.
+     `clip` contains overflow without creating a scroll container. */
+  overflow-x: clip;
 }
 
 #cap-mobile img { max-width: 100%; display: block; }
@@ -276,6 +280,59 @@
   width: 100%; aspect-ratio: 350 / 128; object-fit: cover;
   margin: 22px 0 0; border-radius: 8px;
 }
+/* ===== PHASE PER SCROLL =====
+   The track supplies the scroll length; the stage sticks inside it and the
+   three phases cross-fade as the reader moves through. svh BEFORE vh (later
+   declaration wins where supported) so iOS Safari's collapsing toolbar cannot
+   change the pin height mid-scroll — same order the desktop pin uses. */
+#cap-mobile .cm-j-track {
+  position: relative;
+  height: 300vh;
+  height: 300svh;
+  margin-top: 26px;
+}
+#cap-mobile .cm-j-stage {
+  position: sticky; top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+}
+/* The phases stack on top of each other inside a fixed-height well that sits
+   below the photo in the stage's flex flow. min-height clears the tallest
+   phase (Expansion: three records, one with a two-line note) so the photo
+   above it does not jump as they swap. */
+#cap-mobile .cm-j-phases {
+  position: relative; min-height: 280px; margin-top: 24px;
+}
+#cap-mobile .cm-j-phase {
+  position: absolute; left: 0; right: 0; top: 0;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.45s cubic-bezier(0.76, 0, 0.24, 1),
+              visibility 0s linear 0.45s;
+}
+#cap-mobile .cm-j-phase.is-on {
+  opacity: 1; visibility: visible;
+  transition: opacity 0.45s cubic-bezier(0.76, 0, 0.24, 1), visibility 0s;
+}
+#cap-mobile .cm-j-phase .cm-tl-phase { margin-top: 0; }
+
+/* Which phase you are on, and how many are left. */
+#cap-mobile .cm-j-dots {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 10px; z-index: 2;
+}
+#cap-mobile .cm-j-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--cap-red); opacity: 0.28;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#cap-mobile .cm-j-dot.is-on { opacity: 1; transform: scale(1.25); }
+
+/* Reduced motion: no track, no pin — the phases simply stack. */
+#cap-mobile .cm-j-static .cm-j-phase { position: static; opacity: 1; visibility: visible; transform: none; }
+#cap-mobile .cm-j-static { margin-top: 26px; }
+
 /* Rail and markers measured off the export: the rail sits under the marker
    centres at frame x26 and the copy starts at x54, i.e. 30px in from the
    section's 24px gutter. */
