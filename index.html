@@ -5039,13 +5039,22 @@ class Component extends DCLogic {
     const citiesEl = root.querySelector('[data-cm-cities]');
     const tilesEl = root.querySelector('[data-cm-tiles]');
     if (citiesEl && tilesEl) {
+      // Tiles start lazy so the page does not pay ~1MB of campus photography
+      // before anyone scrolls near the portfolio. The cost of plain lazy is
+      // that the fetch only begins once they are almost on screen, so the
+      // #eceded placeholder is visible as you arrive. `warm` flips them eager
+      // ~800px ahead of the section (see the observer below) and stays true
+      // afterwards, so a city switch — which happens with the grid already in
+      // view — never lazy-loads at all.
+      let tilesEager = false;
       const renderTiles = (city) => {
         const rows = CAP_PORTFOLIO.filter(a => a.city === city);
         tilesEl.innerHTML = rows.map((a, i) =>
           '<a class="cm-tile" href="./projects.html">' +
             // Same stand-in rule as the desktop tiles: only The Shri Ram
             // Universal School still lacks a real campus photo.
-            '<img class="cm-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '" alt="" loading="lazy">' +
+            '<img class="cm-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '"' +
+              ' alt="" loading="' + (tilesEager ? 'eager' : 'lazy') + '" decoding="async">' +
             '<div class="cm-tile-name">' + esc(a.line1 || a.name) + '</div>' +
             // line2 is the locality; for the single-campus cities it IS the
             // city, and "Dubai, Dubai" reads as a bug.
@@ -5068,6 +5077,24 @@ class Component extends DCLogic {
         citiesEl.querySelectorAll('.cm-city').forEach(b => b.classList.toggle('is-active', b === btn));
         renderTiles(active);
       });
+
+      // Start the fetch well before the grid is on screen. Setting `loading`
+      // to eager on an already-lazy img kicks its load off immediately, so the
+      // photos are decoded by the time the reader gets there instead of
+      // resolving from grey under them.
+      const pf = root.querySelector('.cm-pf');
+      if (pf && 'IntersectionObserver' in window) {
+        const warm = new IntersectionObserver((entries) => {
+          if (!entries[0].isIntersecting) return;
+          tilesEager = true;
+          tilesEl.querySelectorAll('.cm-tile-img').forEach((img) => { img.loading = 'eager'; });
+          warm.disconnect();
+        }, { rootMargin: '800px 0px' });
+        warm.observe(pf);
+        this._cmTileWarm = warm;
+      } else {
+        tilesEager = true;
+      }
     }
 
     // ===== OPERATORS =====
@@ -5196,6 +5223,7 @@ class Component extends DCLogic {
     if (this._onMenuKey) window.removeEventListener('keydown', this._onMenuKey);
     if (this._pfRaf) cancelAnimationFrame(this._pfRaf);
     if (this._cmObserver) this._cmObserver.disconnect();
+    if (this._cmTileWarm) this._cmTileWarm.disconnect();
     if (this._cmJourneyCleanup) this._cmJourneyCleanup();
     if (this._jCleanup) this._jCleanup();
     if (this._onRevealScroll) {
