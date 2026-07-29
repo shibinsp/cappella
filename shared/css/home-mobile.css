@@ -270,20 +270,30 @@
 /* Our Journey is the one section whose red rule sits BELOW its heading in the
    export (Portfolio and Operators keep theirs above). */
 #cap-mobile .cm-journey .cm-rule { margin: 12px 0 14px; }
+/* A wide letterbox band in the export, not a 16:10 block — measured
+   x19-x369 by y1510-y1638, so 350x128. Corners ~8px on all four. */
 #cap-mobile .cm-journey-img {
-  width: 100%; aspect-ratio: 16 / 10; object-fit: cover; margin: 22px 0 0;
+  width: 100%; aspect-ratio: 350 / 128; object-fit: cover;
+  margin: 22px 0 0; border-radius: 8px;
 }
-#cap-mobile .cm-tl { margin: 26px 0 0; padding: 0 0 0 22px; list-style: none; position: relative; }
+/* Rail and markers measured off the export: the rail sits under the marker
+   centres at frame x26 and the copy starts at x54, i.e. 30px in from the
+   section's 24px gutter. */
+#cap-mobile .cm-tl { margin: 26px 0 0; padding: 0 0 0 30px; list-style: none; position: relative; }
 #cap-mobile .cm-tl::before {
-  content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px;
-  width: 1px; background: var(--cap-rule);
+  content: ''; position: absolute; left: 9px; top: 8px; bottom: 8px;
+  width: 1px; background: rgba(209, 32, 47, 0.55);
 }
 #cap-mobile .cm-tl-item { position: relative; padding: 0 0 24px; }
 #cap-mobile .cm-tl-item:last-child { padding-bottom: 0; }
+/* A target, not a hollow ring: 2px red rim, 3px white gap, 9px solid red
+   centre — 19px across. The white gap is an inset shadow so the whole marker
+   is still one pseudo-element. */
 #cap-mobile .cm-tl-item::before {
-  content: ''; position: absolute; left: -22px; top: 3px;
-  width: 11px; height: 11px; border-radius: 50%;
-  background: #fff; border: 2px solid var(--cap-red);
+  content: ''; position: absolute; left: -30px; top: -1px;
+  width: 19px; height: 19px; box-sizing: border-box; border-radius: 50%;
+  background: var(--cap-red); border: 2px solid var(--cap-red);
+  box-shadow: inset 0 0 0 3px #fff;
 }
 #cap-mobile .cm-tl-year {
   font-size: 14px; font-weight: 700; color: var(--cap-red); line-height: 1;

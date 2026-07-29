@@ -214,6 +214,40 @@ test.describe('mobile home', () => {
     expect(cast.b - cast.r, 'the wash should read blue, not neutral grey').toBeGreaterThanOrEqual(15);
   });
 
+  test('Our Journey photo and timeline markers match the export', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    const geo = await page.evaluate(() => {
+      const img = document.querySelector('#cap-mobile .cm-journey-img');
+      const r = img.getBoundingClientRect();
+      const rgb = (s) => (s.match(/\d+/g) || []).map(Number);
+      return {
+        aspect: r.width / r.height,
+        radius: parseFloat(getComputedStyle(img).borderRadius),
+        marker: (() => {
+          const cs = getComputedStyle(document.querySelector('#cap-mobile .cm-tl-item'), '::before');
+          return { w: parseFloat(cs.width), bg: rgb(cs.backgroundColor), shadow: cs.boxShadow };
+        })(),
+        rail: rgb(getComputedStyle(document.querySelector('#cap-mobile .cm-tl'), '::before').backgroundColor)
+      };
+    });
+
+    // A wide letterbox band (350x128 in the export), not the old 16:10 block.
+    expect(geo.aspect).toBeGreaterThan(2.4);
+    expect(geo.aspect).toBeLessThan(3.1);
+    expect(geo.radius, 'the photo has rounded corners in the export').toBeGreaterThan(0);
+
+    // A target, not a hollow ring — the centre must be filled red. This is the
+    // one that would regress silently back to a white-centred circle.
+    expect(geo.marker.w).toBeGreaterThanOrEqual(16);
+    expect(geo.marker.bg.slice(0, 3)).toEqual([209, 32, 47]);
+    expect(geo.marker.shadow, 'the white gap between rim and centre').toContain('inset');
+
+    // The rail is red, not the grey hairline it used to be.
+    expect(geo.rail[0]).toBeGreaterThan(geo.rail[1] + 60);
+    expect(geo.rail[0]).toBeGreaterThan(geo.rail[2] + 60);
+  });
+
   test('the city rail swaps the portfolio tiles', async ({ page }) => {
     await gotoMobileHome(page);
 
