@@ -493,6 +493,46 @@ test.describe('mobile home', () => {
     expect(loadingAttrs.every((v) => v === 'eager'), 'switched-in tiles should not lazy-load').toBe(true);
   });
 
+  test('the operators grid has no empty cells and readable logos', async ({ page }) => {
+    await gotoMobileHome(page);
+
+    const grid = await page.evaluate(() => {
+      const g = document.querySelector('#cap-mobile .cm-ops-grid').getBoundingClientRect();
+      const cells = [...document.querySelectorAll('#cap-mobile .cm-ops-cell')];
+      const logos = [...document.querySelectorAll('#cap-mobile .cm-ops-logo')];
+      const last = cells[cells.length - 1].getBoundingClientRect();
+      return {
+        cells: cells.length,
+        empty: cells.filter((c) => !c.querySelector('.cm-ops-logo')).length,
+        logos: logos.length,
+        lastSpans: last.width / g.width,
+        minLogoW: Math.min(...logos.map((l) => l.getBoundingClientRect().width)),
+        maxLogoW: Math.max(...logos.map((l) => l.getBoundingClientRect().width)),
+        // any logo wider than its cell means the box outgrew its track
+        overflowing: logos.filter((l) => {
+          const c = l.closest('.cm-ops-cell').getBoundingClientRect();
+          const r = l.getBoundingClientRect();
+          return r.width > c.width || r.height > c.height;
+        }).length
+      };
+    });
+
+    // 7 logos cannot fill a rectangular grid, so the odd one spans the row
+    // rather than sitting beside padded blanks — the old 3-up rendered 9 cells,
+    // two of them empty.
+    expect(grid.cells).toBe(7);
+    expect(grid.empty, 'no padded blank cells').toBe(0);
+    expect(grid.logos).toBe(7);
+    expect(grid.lastSpans, 'the odd logo should span the full row').toBeGreaterThan(0.9);
+
+    // The point of going 2-up: the marks were capped at 76px wide before.
+    expect(grid.maxLogoW).toBeGreaterThan(76);
+    expect(grid.overflowing, 'no logo may outgrow its cell').toBe(0);
+    expect(grid.minLogoW).toBeGreaterThan(0);
+
+    await assertNoHorizontalOverflow(page);
+  });
+
   test('footer links navigate', async ({ page }) => {
     await gotoMobileHome(page);
     await page.locator('#cap-mobile .cm-fnav a[href="./projects.html"]').click();

@@ -5105,7 +5105,9 @@ class Component extends DCLogic {
       // Fit each logo inside the cell's content box on BOTH axes — the
       // sprites range from 146x141 (JGI, nearly square) to 184x35
       // (Lighthouse, very wide), so capping height alone overflows the track.
-      const MAX_W = 76, MAX_H = 28, COLS = 3;
+      // Sized for the 2-up grid's ~156px cells (less 12px padding each side).
+      // Each logo keeps its authored ratio so its percentage crop still lands.
+      const MAX_W = 120, MAX_H = 44;
       const cells = CAP_OPERATORS.map(o => {
         const k = Math.min(MAX_W / o.w, MAX_H / o.h, 1);
         const w = o.w * k, h = o.h * k;
@@ -5114,11 +5116,8 @@ class Component extends DCLogic {
             ' role="img" aria-label="' + esc(o.name) + '"></div>' +
         '</div>';
       });
-      // 7 operators over a 3-wide grid leaves two holes in the last row, and
-      // the grid's 1px rule background shows through them as grey blocks.
-      // Pad with empty white cells so the block still reads as a clean grid.
-      const pad = (COLS - (cells.length % COLS)) % COLS;
-      for (let i = 0; i < pad; i++) cells.push('<div class="cm-ops-cell"></div>');
+      // No padding cells: the odd logo out spans the full row in CSS, so there
+      // are no holes for the grid's rule background to show through.
       opsEl.innerHTML = cells.join('');
     }
 
