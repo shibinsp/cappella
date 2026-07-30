@@ -472,6 +472,16 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
      it measures 43px and shrinking its padding would walk back the 44px touch
      target from 911e643 / f97562e. */
   .cap-menu-info { text-align: left; font-size: 14px; line-height: 1.45; }
+  /* The 14px/1.45 above buys vertical room, but it also shrank the line box to
+     20.3px — and these four are LINKS, so that put their tap targets under the
+     24px WCAG 2.5.8 AA floor. Padding restores the target without touching the
+     type size: these are inline-block, so vertical padding grows the line box
+     with them. Do NOT reach for display:block here — the items are separated by
+     <br>, so block-level breaks stack with the <br> and add four phantom blank
+     lines (~61px, enough to blow the 320x568 fit). Costs 16px of the panel's
+     28px of headroom, so the no-scroll fit holds. Width is already clear of the
+     24px floor at glyph width (69px for the narrowest, "Operators"). */
+  .cap-menu-info a { padding: 2px 0; }
   .cap-menu-email { margin-top: 12px; }
   .cap-menu-email input { padding: 12px 16px; }
   .cap-menu-email button { padding: 0 16px; }
