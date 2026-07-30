@@ -435,6 +435,48 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
 }
 .cap-menu-email button:hover { transform: translateX(5px); }
 
+/* 48px is a desktop size. The panel is min(600px, 94vw) with 44px of padding a
+   side, so at 390px only ~278px of measure is left and "Contact Us" needs ~298px
+   — it wrapped to two lines and the stack crowded the panel. 30px is not a new
+   value: it is what the other four pages already give their own slide-out nav
+   links (.js .site-nav a, shell.css:332), so all five pages now match.
+   Must live AFTER the base .cap-menu-links a rule above — media queries add no
+   specificity, so the earlier max-width:900px block near the top of the menu
+   section cannot carry this; see the note there. 900px, not shell.css's 899px,
+   to stay with the #cap-menu-btn breakpoint in this file. */
+@media (max-width: 900px) {
+  .cap-menu-links a { font-size: 30px; }
+}
+
+/* Squeeze the panel so it fits a 320x568 phone without scrolling. It measured
+   740px of content against 568px of viewport, and the padding was only ~70 of
+   that 172px gap — the rest was a genuine bug: .cap-menu-row is a flex with a
+   nowrap label, so at 320 the STAY IN TOUCH row wanted label 121 + gap 24 +
+   info 153 = 298px inside a 212px content box. It overflowed sideways and
+   crushed the address into 7 lines. Stacking the label over the info hands the
+   info the full measure and is the same one-column collapse shell.css:447
+   already does at this breakpoint — hence 599px, matching it rather than
+   inventing a third value.
+   599px and not the 900px above: the panel is min(600px, 94vw), so it only
+   starts narrowing below a ~638px viewport. Above that it has its full 600px
+   and the roomier desktop padding is correct. */
+@media (max-width: 599px) {
+  #cap-menu-panel { padding: 18px 24px 12px; }
+  .cap-menu-top { margin-bottom: 16px; }
+  /* gap 0: the 1.25 line-height already separates 30px links, and the stack is
+     where the last few pixels of headroom had to come from. */
+  .cap-menu-links { gap: 0; }
+  .cap-menu-row { flex-direction: column; gap: 4px; padding: 8px 0; }
+  /* 14px, not 15: the last few pixels had to come from somewhere and this is
+     the panel's secondary type. #cap-menu-close is deliberately left alone —
+     it measures 43px and shrinking its padding would walk back the 44px touch
+     target from 911e643 / f97562e. */
+  .cap-menu-info { text-align: left; font-size: 14px; line-height: 1.45; }
+  .cap-menu-email { margin-top: 12px; }
+  .cap-menu-email input { padding: 12px 16px; }
+  .cap-menu-email button { padding: 0 16px; }
+}
+
 /* ===== FOOTER PREMIUM ===== */
 .cap-ft-link { position: relative; }
 .cap-ft-link::after {
