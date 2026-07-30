@@ -111,21 +111,38 @@
      goes past the edge too. 42px clears it across the whole range (the strip
      renders ~26px at 300px wide and ~38px at 767px) while leaving far more
      than enough left crop to keep the white margin out — 360px of crop
-     against a 51px margin at the narrow end. */
+     against a 51px margin at the narrow end.
+     Y is lifted 30px off the bottom, not flush: the mockup sits its horizon
+     ~5% of the hero higher than a bottom anchor puts ours, so the buildings
+     land closer under the headline. Nothing is exposed by the lift — the wash
+     below is already >=0.9 opaque past 92% and background-color backs it. */
   background: url(../../components/assets/9f9c83f5695a1af6-min.jpg)
-    calc(100% + 42px) 100% / auto max(660px, 125vw) no-repeat;
+    calc(100% + 42px) calc(100% - 30px) / auto max(660px, 125vw) no-repeat;
   background-color: #b81f2d; /* last-resort ground if the image ever fails */
 }
-/* Crimson wash: light over the sky and buildings so they stay readable (the
-   mockup shows them clearly), resolving to flat brand red at the very bottom
-   so there is no seam against .cm-stats. */
+/* Crimson wash, graded to the mockup rather than kept uniformly light. Sampling
+   the mockup down its centre line gives a dark maroon sky (rgb 89,45,45 at 2%),
+   a surviving sunset glow at the horizon (~206,148,137 at 25%), then a heavily
+   shadowed foreground — so the wash is heavy at the top, opens up across the
+   glow band, closes again over the grass, and still resolves to flat brand red
+   at the bottom so there is no seam against .cm-stats.
+   Stop colours were solved against the photo's own pixels, not guessed: at the
+   top the source reads rgb(167,183,173), so rgba(88,7,17,.72) over it lands on
+   the mockup's 89,45,45 once its ~0.81 global grade is divided out. That grade
+   is why the wash is matched to the mockup's RATIOS and --cap-red is left
+   alone — the band is brand colour and shows up unmuted everywhere else. */
 #cap-mobile .cm-hero-tint {
   position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(180deg,
-    rgba(150, 24, 34, 0.42) 0%,
-    rgba(168, 26, 37, 0.34) 38%,
-    rgba(190, 29, 42, 0.52) 70%,
-    rgba(205, 31, 46, 0.90) 92%,
+    rgba(88, 7, 17, 0.72) 0%,
+    rgba(104, 12, 22, 0.62) 12%,
+    rgba(150, 24, 34, 0.34) 24%,
+    rgba(150, 24, 34, 0.30) 33%,
+    rgba(62, 15, 5, 0.86) 40%,
+    rgba(120, 20, 24, 0.72) 55%,
+    rgba(170, 26, 38, 0.72) 70%,
+    rgba(198, 30, 44, 0.86) 88%,
+    rgba(205, 31, 46, 0.95) 95%,
     var(--cap-red) 100%);
 }
 #cap-mobile .cm-hero-top {
@@ -150,9 +167,14 @@
   font-size: 28px; font-weight: 700; line-height: 1.18; letter-spacing: -0.015em;
   color: #fff; margin: 0;
 }
+/* 215px, not 300: the mockup runs the sub over four short lines, breaking after
+   "and" / "education" / "and". 300px is wide enough to pull "revamping K-" up
+   onto line 1, which drops it to three lines and widens the measure to ~0.88 of
+   the headline where the mockup holds ~0.58. Ratios, not the mockup's absolute
+   pixels — the reference crop is upscaled, so only proportions carry over. */
 #cap-mobile .cm-hero-sub {
   font-size: 13px; font-weight: 400; line-height: 1.55;
-  color: rgba(255, 255, 255, 0.9); margin: 16px 0 0; max-width: 300px;
+  color: rgba(255, 255, 255, 0.9); margin: 16px 0 0; max-width: 215px;
 }
 /* min-height, not just padding: the height was falling out of 13px padding +
    a `normal` line box + a 1px border, and that border renders 0.571px at
