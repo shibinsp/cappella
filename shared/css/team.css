@@ -201,7 +201,7 @@
 .leader-card h2 {
   font-size: var(--cap-type-subhead);
   font-weight: 600;
-  letter-spacing: .02em;
+  /* Tracking normalised with the other subheads (was .02em). */
   text-transform: uppercase;
   line-height: 1.15;
   /* Reserve two lines so a one-line name and a two-line name in the same

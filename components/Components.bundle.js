@@ -2011,11 +2011,25 @@ function Frame4(_p = {}) {
       lineHeight: "100%",
       color: "rgb(255,231,231)"
     }
-  }, "TEAM"), /*#__PURE__*/React.createElement("span", {
+  }, "SKOLEN"), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 720,
       top: 7236,
+      width: 154,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 16,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(255,231,231)"
+    }
+  }, "TEAM"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 720,
+      top: 7261,
       width: 160,
       height: 29,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",

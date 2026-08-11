@@ -159,8 +159,11 @@
     align-self: start;
   }
 }
+/* The one description still carrying its own size — 23px against the 20px
+   every other body copy uses since p12. The client has raised font
+   consistency repeatedly, so it joins the token. */
 .section--who .who-body p {
-  font-size: clamp(18px, 1.9vw, 23px);
+  font-size: var(--cap-type-desc);
   line-height: 1.5;
   max-width: 60ch;
   color: rgba(255, 255, 255, 0.92);
@@ -545,10 +548,11 @@
 .skolen-reveal__text .skolen-module:nth-of-type(3) { order: 4; }
 .skolen-reveal__img[data-skolen-img="2"] { order: 5; }
 
+/* Tracking normalised with the other subheads (was -0.01em): same size and
+   weight everywhere was not enough while three of them tracked differently. */
 .skolen-module__name {
   font-size: var(--cap-type-subhead);
   font-weight: 600;
-  letter-spacing: -0.01em;
 }
 .skolen-module__blurb {
   color: rgba(0, 0, 0, 0.72);
