@@ -4570,14 +4570,20 @@ class Component extends DCLogic {
   }
 
   _setupNavScramble() {
-    const labels = ['ABOUT US', 'PROJECTS', 'TEAM', 'CONTACT US'];
+    const labels = ['ABOUT US', 'PROJECTS', 'SKOLEN', 'TEAM', 'CONTACT US'];
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&*<>/';
+    // Whitespace-insensitive, the same normalisation bindNav uses. The export
+    // splits two-word labels into separate child spans ("ABOUT" + "US"), so
+    // their textContent reads "ABOUTUS" and an exact match silently failed —
+    // ABOUT US and CONTACT US never scrambled despite being listed here, and
+    // spans.length stalled at 2, burning all 40 retries every load.
+    const norm = (v) => (v || '').replace(/\s+/g, '').toUpperCase();
+    const wanted = labels.map(norm);
     const spans = [...document.querySelectorAll('#cap-scaler span')].filter((s) => {
-      const t = (s.textContent || '').trim();
       const r = s.getBoundingClientRect();
-      return labels.includes(t) && r.top < 300;
+      return wanted.includes(norm(s.textContent)) && r.top < 300;
     });
-    if (spans.length < 4 && (this._navTries = (this._navTries || 0) + 1) < 40) {
+    if (spans.length < labels.length && (this._navTries = (this._navTries || 0) + 1) < 40) {
       setTimeout(() => this._setupNavScramble(), 200);
       return;
     }
