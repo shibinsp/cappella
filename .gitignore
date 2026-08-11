@@ -27,3 +27,4 @@ uploads/
 
 # AI-tooling working dir (local editor config, QA session logs)
 .claude/
+.gstack/

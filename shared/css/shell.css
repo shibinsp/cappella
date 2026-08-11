@@ -129,17 +129,33 @@ a {
   line-height: 1.1;
 }
 
+/* ---- One type scale (client 2026-08-09 p12) ----
+   "Font size for all the subheadings, tags, title descriptions should be same
+   across the website." An audit at 1440 found five subheading sizes
+   (24/25/27/30/32), four tag treatments (two of them a different family) and
+   four description sizes. These three tokens are now the single source for
+   those roles; every rule below and in about/team/projects points at them, so
+   the scale is retuned in one place.
+   Subhead sits deliberately above description at every viewport — p15's note
+   ("the subhead cannot be smaller than the description") was true on About Us,
+   where both were 24px and only the weight separated them. */
+:root {
+  --cap-type-subhead: clamp(21px, 1.95vw, 28px);
+  --cap-type-desc: clamp(16px, 1.4vw, 20px);
+  --cap-type-tag: 12px;
+}
+
 .caption,
 .stat-caption {
-  font-size: clamp(16px, 1.67vw, 24px);
+  font-size: var(--cap-type-desc);
   font-weight: 400;
   line-height: 1.3;
 }
 
 .body-copy {
-  font-size: clamp(17px, 1.67vw, 24px);
+  font-size: var(--cap-type-desc);
   font-weight: 300;
-  line-height: 1.23;
+  line-height: 1.45;
 }
 
 /* ---------- Layout primitives ---------- */
@@ -329,10 +345,17 @@ a {
     gap: 26px;
   }
 
+  /* Client 2026-08-09 (p30): "FONT STYLE IS DIFFERENT". Measured against the
+     homepage overlay (.cap-menu-links a), every font property already matched
+     — Montserrat 30/600 — except tracking: this carried 0.5px where the
+     overlay carries none. Set to `normal` rather than deleted, because the
+     desktop rule above would otherwise leak its 1.5px in. 0.5px was a hangover
+     from that 14px desktop nav anyway; positive tracking at 30px is not doing
+     any work. */
   .js .site-nav a {
     font-size: 30px;
     font-weight: 600;
-    letter-spacing: 0.5px;
+    letter-spacing: normal;
     text-transform: none;
   }
 
@@ -395,6 +418,7 @@ a {
   .js .site-nav.is-open li:nth-child(2) a { transition-delay: 0.19s; }
   .js .site-nav.is-open li:nth-child(3) a { transition-delay: 0.26s; }
   .js .site-nav.is-open li:nth-child(4) a { transition-delay: 0.33s; }
+  .js .site-nav.is-open li:nth-child(5) a { transition-delay: 0.40s; }
 }
 
 /* ---------- Hero ---------- */
@@ -425,8 +449,10 @@ a {
   border-bottom: 1px solid var(--cap-hairline);
 }
 
+/* Montserrat, not Space Mono — client 2026-08-09 p13/p14 ("Fonts for the
+   numbers are different"). This is the base rule the About Us badges inherit
+   from, so it is the one that actually decides the face. */
 .item-index {
-  font-family: 'Space Mono', monospace;
   font-size: 13px;
   letter-spacing: 2px;
   color: var(--cap-red);
@@ -499,9 +525,9 @@ a {
 }
 
 .footer-heading {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: var(--cap-type-tag);
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(255, 231, 231, 0.75);
   margin-bottom: 20px;
@@ -556,6 +582,98 @@ a {
   text-transform: uppercase;
   color: var(--cap-white);
   margin-top: 18px;
+}
+
+/* ---- Footer parity with the homepage (client 2026-08-09) ----
+   "Check the fonts, make all footers same pls" (p7) and, for mobile, "please
+   follow the design and text in the desktop version" (p33). The homepage
+   footer carried three things these did not: the LinkedIn link, the "An
+   Initiative by" partner logos and the Limitless credit. They are rebuilt here
+   in flow rather than lifted from the baked frame, which is absolutely
+   positioned and not reusable.
+   The one thing deliberately NOT carried across is the homepage's email
+   subscribe form: it is an alert() stub with no backend, and p23 has the
+   client removing the same input from the menu overlay. */
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 32px, not the icon's 16: this is a link, so it owes the 24px AA floor the
+     menu work (ISSUE-001) settled on. */
+  width: 32px;
+  height: 32px;
+  margin-top: 20px;
+  border: 1px solid var(--cap-hairline-inverse);
+  border-radius: 3px;
+  color: var(--cap-white);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.footer-social:hover,
+.footer-social:focus-visible {
+  background: var(--cap-white);
+  color: var(--cap-red);
+}
+.footer-social svg {
+  width: 16px;
+  height: 16px;
+}
+
+.footer-initiative {
+  margin-top: clamp(28px, 4vw, 44px);
+}
+/* Same face/size/tracking as .footer-heading — the fonts differing between
+   footers is what the client flagged, so these share the heading treatment
+   rather than inventing a third label style. */
+.footer-initiative-lbl,
+.footer-designed span {
+  font-size: var(--cap-type-tag);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 231, 231, 0.75);
+}
+.footer-initiative-logos {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 28px);
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.footer-designed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(24px, 3vw, 36px);
+}
+
+/* Percentage-cropped sprites, same boxes the homepage footer uses. Copied from
+   components/fig-assets.css rather than linking it: the subpages load only
+   shell.css + their page sheet, and pulling the whole Figma stylesheet in for
+   four rules would drag the rest of the frame's assets with it. Paths are
+   rebased from components/ to shared/css/. */
+.fig-logo {
+  flex: none;
+  background-repeat: no-repeat;
+}
+.fig-logo--jv {
+  width: 92px;
+  height: 14px;
+  background: url(../../components/assets/d47008086841222d-min.png) 28.571% 6.767% / 110% 733.333% no-repeat;
+}
+.fig-logo--alta {
+  width: 68px;
+  height: 16px;
+  background: url(../../components/assets/d47008086841222d-min.png) 6.293% 80.651% / 156.597% 668.148% no-repeat;
+}
+.fig-logo--hillhouse {
+  width: 54px;
+  height: 18px;
+  background: url(../../components/assets/d47008086841222d-min.png) 5.887% 41.289% / 162.963% 488.889% no-repeat;
+}
+.fig-logo--limitless {
+  width: 81px;
+  height: 14px;
+  background: url(../../components/assets/ca0c02d662da06a8.png) 40% 47.143% / 106.369% 618.519% no-repeat;
 }
 
 @media (max-width: 899px) {

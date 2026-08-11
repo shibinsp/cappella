@@ -12,7 +12,21 @@ test.describe('contact-us.html', () => {
     const errors = attachErrorCapture(page);
     await page.goto('/contact-us.html');
 
-    await expect(page.locator('h1')).toHaveText('Registered Office');
+    // Client 2026-08-09 (p20): the h1 is the page name; "Registered Office"
+    // became the heading on the address block, and the map moved above it.
+    await expect(page.locator('h1')).toHaveText('Contact Us');
+    await expect(page.locator('#registered-office')).toHaveText('Registered Office');
+
+    const order = await page.evaluate(() => {
+      const map = document.querySelector('#cap-map');
+      const addr = document.querySelector('main address.address-block');
+      // compareDocumentPosition: 4 = addr follows map in document order
+      return Boolean(map.compareDocumentPosition(addr) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(order, 'map comes before the address block').toBe(true);
+    const mapTop = (await page.locator('#cap-map').boundingBox()).y;
+    const addrTop = (await page.locator('main address.address-block').boundingBox()).y;
+    expect(mapTop, 'map renders above the address').toBeLessThan(addrTop);
 
     // Exact docx address (deliberately different from the homepage footer
     // version — do not "harmonize")

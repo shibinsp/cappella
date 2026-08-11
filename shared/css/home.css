@@ -334,46 +334,62 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
 }
 .cap-menu-open #cap-menu-panel { transform: translateX(0); }
 
+/* flex-end, not space-between: the MENU tag that used to sit opposite the
+   close control is gone (client 2026-08-09 p23), so the button is now the only
+   child and would otherwise sit hard left. */
 .cap-menu-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 56px;
 }
-.cap-menu-tag {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: rgba(209, 32, 47, 0.75);
-}
+/* An X now, not the word CLOSE (p23). Square rather than a text pill, and 44px
+   so it keeps the touch target the wordy version had from its padding — the
+   AA floor this overlay already had to defend once (ISSUE-001). */
 #cap-menu-close {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   color: rgb(209, 32, 47);
   background: rgb(255, 255, 255);
   border: 1px solid rgba(209, 32, 47, 0.35);
-  padding: 12px 20px;
+  border-radius: 3px;
   cursor: pointer;
   transition: background 0.35s var(--cap-ease-power), color 0.35s var(--cap-ease-power);
 }
+#cap-menu-close svg { width: 16px; height: 16px; }
 #cap-menu-close:hover { background: rgb(209, 32, 47); color: rgb(255, 255, 255); }
 
 .cap-menu-links { display: flex; flex-direction: column; gap: 6px; margin-bottom: auto; }
 .cap-menu-links .cap-menu-mask { overflow: hidden; }
+/* Client 2026-08-09 (p23 "use the same menu everywhere", p30 "font style is
+   different"). The type was matched to the subpage menu first; this closes the
+   last difference, which was colour: these were all red, while the subpage
+   menu renders links in ink and reserves red for the current page. Nothing is
+   "current" in this overlay — it belongs to the homepage and none of the five
+   links point there — so all five are ink, and red keeps meaning "you are
+   here" rather than just meaning "menu link". */
 .cap-menu-links a {
   display: inline-block;
   font-family: Montserrat, sans-serif;
   font-weight: 600;
   font-size: 48px;
   line-height: 1.25;
-  color: rgb(209, 32, 47);
+  /* Literal, not var(--cap-black): that token is not defined on this page, so
+     the var would always fall through to its fallback anyway. #101014 is the
+     near-black the subpage menu reads as. */
+  color: #101014;
   cursor: pointer;
   transform: translateY(115%);
   transition: transform 0.8s var(--cap-ease-expo), padding-left 0.45s var(--cap-ease-power);
 }
 .cap-menu-open .cap-menu-links a { transform: translateY(0); }
-.cap-menu-links a:hover { padding-left: 18px; }
+/* Red on hover, matching .site-nav a:hover on the subpages — the ink default
+   above would otherwise leave this menu with no colour response at all. */
+.cap-menu-links a:hover { padding-left: 18px; color: var(--cap-red-hover, rgb(170, 20, 34)); }
 
 .cap-menu-row {
   display: flex;
@@ -434,6 +450,30 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   transition: transform 0.35s var(--cap-ease-power);
 }
 .cap-menu-email button:hover { transform: translateX(5px); }
+
+/* 48px is a desktop size. The panel is min(600px, 94vw) with 44px of padding a
+   side, so at 390px only ~278px of measure is left and "Contact Us" needs ~298px
+   — it wrapped to two lines and the stack crowded the panel. 30px is not a new
+   value: it is what the other four pages already give their own slide-out nav
+   links (.js .site-nav a, shell.css:332), so all five pages now match.
+   Must live AFTER the base .cap-menu-links a rule above — media queries add no
+   specificity, so the earlier max-width:900px block near the top of the menu
+   section cannot carry this; see the note there. 900px, not shell.css's 899px,
+   to stay with the #cap-menu-btn breakpoint in this file. */
+@media (max-width: 900px) {
+  .cap-menu-links a { font-size: 30px; }
+}
+
+/* The panel is only a close control and five links now (client 2026-08-09
+   p23), so the 320x568 fit that used to need real work is trivial: the EXPLORE
+   row, the STAY IN TOUCH row and the email field all went, taking ~300px with
+   them. What is left here is the padding trim, and the links go back to 30px —
+   they had been squeezed to 26px only to buy headroom for those blocks, which
+   also restores their parity with .js .site-nav a in shell.css. */
+@media (max-width: 599px) {
+  #cap-menu-panel { padding: 18px 24px 12px; }
+  .cap-menu-top { margin-bottom: 16px; }
+}
 
 /* ===== FOOTER PREMIUM ===== */
 .cap-ft-link { position: relative; }

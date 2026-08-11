@@ -87,7 +87,7 @@
 }
 
 .proj-card__head { position: absolute; left: 20px; right: 20px; bottom: 92px; }
-.proj-card__name { font-size: clamp(19px, 1.8vw, 25px); font-weight: 700; line-height: 1.14; margin: 0; }
+.proj-card__name { font-size: var(--cap-type-subhead); font-weight: 600; line-height: 1.14; margin: 0; }
 .proj-card__loc  { font-size: 14px; font-weight: 400; color: rgba(255,255,255,.82); margin: 6px 0 0; }
 
 .proj-card__stats { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; align-items: stretch; }
@@ -118,6 +118,83 @@
 .proj-grid.is-list .proj-stat span { color: rgba(0,0,0,.5); }
 
 /* ---------- Responsive ---------- */
+/* ---------- Card flip (phones) — client 2026-08-09 (p34) ----------
+   "Only the name of the school and location should be on the picture" and
+   "add a flip behind where the project details come": the four stats leave the
+   photo and become the card's back face.
+
+   No front/back wrappers were added. Every child of .proj-card rotates with it,
+   so giving the front children backface-visibility:hidden turns them off as the
+   card turns, and pre-rotating .proj-card__stats by 180deg makes it the face
+   that comes forward. That keeps the 15 cards' markup exactly as it ships.
+
+   Scoped under .js and to the grid view only:
+     - .js  — with JavaScript off nothing toggles, so the stats must stay on
+              the photo as they were; this page's whole premise is that the
+              cards are static HTML that works unenhanced.
+     - :not(.is-list) — list view lays the stats out in their own grid cell
+              beside the photo, where there is nothing to flip.
+   The stats stay in normal flow for assistive tech either way: backface
+   visibility is a paint concern, not display:none, so the figures are still
+   read out on the card whichever face is showing. */
+@media (max-width: 860px) {
+  .js .proj-grid:not(.is-list) .proj-card {
+    /* Both of these force transform-style back to `flat`, which flattens the
+       children into a single plane — the card then turns and renders MIRRORED
+       with no back face, because backface-visibility never gets to apply.
+       overflow:hidden and isolation:isolate are both "grouping" properties in
+       that sense; the card carries both, and clearing only one is not enough.
+       The radius they were providing moves onto the faces below. */
+    overflow: visible;
+    isolation: auto;
+    transform-style: preserve-3d;
+    transition: transform 0.6s var(--proj-ease);
+    cursor: pointer;
+  }
+  .js .proj-grid:not(.is-list) .proj-card__img,
+  .js .proj-grid:not(.is-list) .proj-card__scrim,
+  .js .proj-grid:not(.is-list) .proj-card__stats {
+    border-radius: 14px;
+  }
+  /* With the stats off the front, the title drops into the scrim's dark foot
+     instead of floating mid-photo where it had nothing behind it. */
+  .js .proj-grid:not(.is-list) .proj-card__head {
+    bottom: 20px;
+  }
+  .js .proj-grid:not(.is-list) .proj-card.is-flipped {
+    transform: rotateY(180deg);
+  }
+  .js .proj-grid:not(.is-list) .proj-card__media,
+  .js .proj-grid:not(.is-list) .proj-card__scrim,
+  .js .proj-grid:not(.is-list) .proj-card__head,
+  .js .proj-grid:not(.is-list) .proj-card__reptag {
+    backface-visibility: hidden;
+  }
+  .js .proj-grid:not(.is-list) .proj-card__stats {
+    position: absolute;
+    inset: 0;
+    /* was bottom-anchored on the photo; as a face it fills the card */
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 14px 0;
+    background: #2a2a30;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+  }
+  /* Two per row on the back, where there is room for them to breathe. */
+  .js .proj-grid:not(.is-list) .proj-stat {
+    flex: 0 0 50%;
+    padding: 0 10px;
+  }
+  .js .proj-grid:not(.is-list) .proj-stat:nth-child(odd) { padding-left: 0; }
+  .js .proj-grid:not(.is-list) .proj-stat + .proj-stat { border-left: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .js .proj-grid:not(.is-list) .proj-card { transition: none; }
+  }
+}
+
 @media (max-width: 860px) {
   .proj-grid { grid-template-columns: 1fr; }
   .proj-card__head { bottom: 84px; }

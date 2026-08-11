@@ -45,20 +45,21 @@ for (const pageDef of PAGES) {
         ).toHaveCount(1);
       }
 
-      // LinkedIn: team.html carries one real profile link per leader (added
-      // with the leadership card rebuild, 2026-07-22). Every other page still
-      // has none — the homepage reference is label-only.
-      const linkedin = page.locator('a[href*="linkedin"]');
-      if (pageDef.file === 'team.html') {
-        await expect(linkedin).toHaveCount(4);
-        // opened in a new tab, so each must be protected against window.opener
-        const rels = await linkedin.evaluateAll((as) =>
-          as.map((a) => a.getAttribute('rel') || '')
-        );
-        for (const rel of rels) expect(rel).toContain('noopener');
-      } else {
-        await expect(linkedin).toHaveCount(0);
-      }
+      // LinkedIn. Two distinct things, so they are asserted separately:
+      //  - the FOOTER carries the company page on every subpage, added with the
+      //    footer parity work (client 2026-08-09 p7/p33 — the homepage footer
+      //    always had it).
+      //  - team.html additionally carries one real profile link per leader in
+      //    main (leadership card rebuild, 2026-07-22).
+      await expect(page.locator('footer a[href*="linkedin"]')).toHaveCount(1);
+      const leaderLinks = page.locator('main a[href*="linkedin"]');
+      await expect(leaderLinks).toHaveCount(pageDef.file === 'team.html' ? 4 : 0);
+
+      // All of them open in a new tab, so all must be safe against window.opener
+      const rels = await page
+        .locator('a[href*="linkedin"]')
+        .evaluateAll((as) => as.map((a) => a.getAttribute('rel') || ''));
+      for (const rel of rels) expect(rel).toContain('noopener');
 
       // No dead-looking anchors (every href non-empty, not "#"). Excludes the
       // Leaflet map's own controls (contact page) — its zoom buttons use

@@ -46,5 +46,28 @@
     });
   });
 
+  /* Client 2026-08-09 (p34): tap a card to flip it and read the details.
+     Phones only — the CSS that builds the back face is inside the 860px query,
+     so above it a click must do nothing at all rather than rotate a card whose
+     stats are still painted on the front.
+     Matched with the same 860px breakpoint the CSS uses, read live rather than
+     captured, so rotating the device does not leave a card stuck mid-flip. */
+  var flipMQ = window.matchMedia('(max-width: 860px)');
+  cards.forEach(function (card) {
+    card.addEventListener('click', function () {
+      if (!flipMQ.matches || view === 'list') return;
+      card.classList.toggle('is-flipped');
+    });
+  });
+  // Leaving phone width or switching to list view: drop any flipped state, or
+  // a card stays mirrored in a layout that has no back face.
+  var unflip = function () {
+    cards.forEach(function (c) { c.classList.remove('is-flipped'); });
+  };
+  if (flipMQ.addEventListener) flipMQ.addEventListener('change', unflip);
+  document.querySelectorAll('.proj-view-btn').forEach(function (btn) {
+    btn.addEventListener('click', unflip);
+  });
+
   update();
 })();
