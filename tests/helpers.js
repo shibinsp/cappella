@@ -95,7 +95,9 @@ const PAGES = [
   { file: 'about-us.html', title: 'About Us', h1: 'India’s Leading Edu-Infra Asset Management Company' },
   { file: 'projects.html', title: 'Projects', h1: 'Our Portfolio' },
   { file: 'team.html', title: 'Team', h1: 'Leadership Collective' },
-  { file: 'contact-us.html', title: 'Contact Us', h1: 'Registered Office' }
+  // Client 2026-08-09 (p20): the h1 became the page name; "Registered Office"
+  // moved down to head the address block.
+  { file: 'contact-us.html', title: 'Contact Us', h1: 'Contact Us' }
 ];
 
 module.exports = {

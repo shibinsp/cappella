@@ -145,9 +145,9 @@
 }
 .section-eyebrow {
   display: block;
-  font-family: "Space Mono", ui-monospace, Menlo, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: var(--cap-type-tag);
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cap-red);
   margin: 0 0 12px;
@@ -231,7 +231,9 @@
   border-radius: 14px;
   background: linear-gradient(155deg, #ea3a4a, #b4121e);
   color: var(--cap-white);
-  font-family: 'Space Mono', monospace;
+  /* Montserrat, not Space Mono — client 2026-08-09 p13/p14: "Fonts for the
+     numbers are different". The badge numeral was the last mono face left in
+     these cards after p12 moved the tags across. */
   font-weight: 700;
   font-size: 20px;
   letter-spacing: 0;
@@ -239,7 +241,8 @@
   transform: translateZ(40px);
 }
 .section--edge .item h3 {
-  font-size: clamp(19px, 1.8vw, 24px);
+  font-size: var(--cap-type-subhead);
+  font-weight: 600;
   margin-bottom: 12px;
   transform: translateZ(24px);
 }
@@ -343,7 +346,9 @@
   border-radius: 14px;
   background: linear-gradient(155deg, #ea3a4a, #b4121e);
   color: var(--cap-white);
-  font-family: 'Space Mono', monospace;
+  /* Montserrat, not Space Mono — client 2026-08-09 p13/p14: "Fonts for the
+     numbers are different". The badge numeral was the last mono face left in
+     these cards after p12 moved the tags across. */
   font-weight: 700;
   font-size: 20px;
   letter-spacing: 0;
@@ -351,9 +356,23 @@
   transform: translateZ(40px);
 }
 .section--strategies .item h3 {
-  font-size: clamp(19px, 1.8vw, 24px);
+  font-size: var(--cap-type-subhead);
+  font-weight: 600;
+  line-height: 1.2;
   margin-bottom: 12px;
   transform: translateZ(24px);
+}
+/* Client 2026-08-09 p14 ("Alignment"): "Greenfield + School District" is the
+   only title that wraps, so its description started 31px below the other two
+   and the three card bodies read as staggered. Reserving two lines on the
+   title lands every body on the same baseline. 2.4em = 2 x the 1.2 line-height
+   above, so it tracks the subhead clamp instead of pinning a pixel height.
+   Only while the grid is multi-column — below 861px the cards are stacked and
+   the reserved line would just be a gap. */
+@media (min-width: 861px) {
+  .section--strategies .item h3 {
+    min-height: 2.4em;
+  }
 }
 .section--strategies .item:hover h3 {
   transform: translateZ(24px);
@@ -422,7 +441,7 @@
      only subtitle set in Space Mono; it now inherits Montserrat like every
      other section subtitle. */
   color: rgba(255, 255, 255, 0.85);
-  font-size: clamp(14px, 1.2vw, 17px);
+  font-size: var(--cap-type-desc);
   letter-spacing: 0.02em;
   margin-top: 14px;
 }
@@ -430,6 +449,39 @@
   color: rgba(255, 255, 255, 0.92);
   max-width: 70ch;
   margin-top: clamp(22px, 3vw, 32px);
+}
+/* Client 2026-08-09: "ADD A CTA – LEARN MORE – WHICH LEADS TO THE SKOLEN PAGE".
+   Deliberately the same outlined-on-red treatment as the homepage hero button
+   (#cap-mobile .cm-cta in home-mobile.css) rather than a new one — it is the
+   site's only established CTA on a crimson ground. Not shared with that rule
+   because it is scoped to #cap-mobile and home-mobile.css never loads here.
+   min-height 44px keeps the touch target at the size the menu work settled on. */
+.section--skolen .skolen-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  box-sizing: border-box;
+  margin-top: clamp(24px, 3vw, 34px);
+  padding: 13px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 3px;
+  color: #fff;
+  font-size: clamp(13px, 1vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.section--skolen .skolen-cta:hover,
+.section--skolen .skolen-cta:focus-visible {
+  background: #fff;
+  color: var(--cap-red);
+}
+.section--skolen .skolen-cta svg {
+  width: 15px;
+  height: 11px;
+  flex: none;
 }
 /* Client image batch 2026-07-23: the SKOLEN cutaway render sits beside the
    band copy at desktop, below it on mobile. */
@@ -460,7 +512,7 @@
 .section--skolen .skolen-modules-title {
   color: #1a1a1a;
   font-weight: 600;
-  font-size: clamp(18px, 1.9vw, 28px);
+  font-size: var(--cap-type-subhead);
   margin-bottom: clamp(20px, 2.6vw, 36px);
 }
 /* ---- Pinned mask-reveal (client 2026-07-24) ----
@@ -494,14 +546,14 @@
 .skolen-reveal__img[data-skolen-img="2"] { order: 5; }
 
 .skolen-module__name {
-  font-size: clamp(22px, 2.2vw, 34px);
-  font-weight: 700;
+  font-size: var(--cap-type-subhead);
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 .skolen-module__blurb {
   color: rgba(0, 0, 0, 0.72);
-  font-size: clamp(15px, 1.15vw, 18px);
-  line-height: 1.5;
+  font-size: var(--cap-type-desc);
+  line-height: 1.45;
   margin: 12px 0 clamp(18px, 2vw, 26px);
   max-width: 46ch;
 }
@@ -595,9 +647,14 @@
   color: var(--cap-black);
   padding-block: clamp(8px, 3vw, 40px) clamp(56px, 8vw, 104px);
 }
-.stats-band--flip .stat-flips {
-  perspective: 1400px;
-}
+/* Client 2026-08-09 (p12): "Remove the animation flip animation".
+   The card was a 3D hover flip — a white front (tag + figure) rotating to a
+   crimson back (caption). All of the 3D machinery is gone: no perspective, no
+   preserve-3d, no rotateY, no backface-visibility.
+   The <dt> caption is kept in the DOM but visually hidden rather than deleted,
+   because this is a <dl> and the caption is what makes each <dd> figure
+   meaningful to assistive tech. Nothing is lost visually: p10 moved the units
+   onto the face itself, so "16 Assets" already says what "16" alone did not. */
 .stats-band--flip .flip-card {
   position: relative;
   height: 210px;
@@ -605,89 +662,75 @@
   padding-left: 0;
   display: block;
   border-radius: 20px;
-  outline-offset: 4px;
-}
-.stats-band--flip .flip-card:focus-visible {
-  outline: 2px solid var(--cap-red);
 }
 .stats-band--flip .flip-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: transform;
-}
-.stats-band--flip .flip-card:hover .flip-inner,
-.stats-band--flip .flip-card:focus-within .flip-inner {
-  transform: rotateY(180deg);
 }
 .stats-band--flip .flip-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
   border-radius: 20px;
   padding: 30px 28px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 14px;
 }
 .stats-band--flip .flip-front {
+  height: 100%;
   background: var(--cap-white);
   border: 1px solid var(--cap-hairline);
   box-shadow: 0 16px 40px rgba(209, 32, 47, 0.10), 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 .stats-band--flip .flip-back {
-  transform: rotateY(180deg);
-  color: var(--cap-white);
-  background: linear-gradient(155deg, #ea3a4a, #b4121e);
-  box-shadow: 0 22px 50px rgba(209, 32, 47, 0.28);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
+/* Montserrat, not the Space Mono this used to share with .section-eyebrow —
+   client 2026-08-09 p10: "Fonts are different for the tags AUM, Portfolio etc".
+   Inside a card the mono tag read as a different typeface from the Montserrat
+   number sitting under it; the card now reads in one family. (The eyebrows
+   elsewhere are still Space Mono — that is a sitewide call, so it belongs with
+   p12's type-scale pass rather than being half-changed here.) */
 .stats-band--flip .flip-tag {
-  font-family: "Space Mono", ui-monospace, Menlo, monospace;
-  font-size: 11px;
+  font-family: Montserrat, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cap-red);
+}
+/* space-between, not the inherited centring: with the numbers now carrying
+   their units ("3.3 Mn SFT"), a centred stack put every card's number at a
+   different height as soon as one of them wrapped — which is the "Alignment of
+   the text" note, drawn as a line straight through the four numbers. Pinning
+   the tag to the top and the number to the bottom gives all four a shared
+   baseline whatever the string length. */
+.stats-band--flip .flip-front {
+  justify-content: space-between;
 }
 .stats-band--flip .flip-front .stat-number {
   order: 0;
   margin: 0;
   color: var(--cap-black);
   line-height: 0.95;
+  /* One line each, or the shared baseline is meaningless. The cap is well under
+     the global .stat-number 60px because the longest string here is now
+     "3.3 Mn SFT" in a ~228px card, not a bare "3.3 Mn". */
+  font-size: clamp(28px, 2.6vw, 38px);
+  white-space: nowrap;
 }
 .stats-band--flip .flip-back .stat-caption {
-  order: 0;
   margin: 0;
-  color: var(--cap-white);
-  font-weight: 500;
 }
 
-/* Reduced motion / no 3D support fallback: no flip. Both faces sit in normal
-   flow, stacked, so the figure AND its caption are visible without any hover.
-   Mirrors how the reveal engine shows counters statically under reduce. */
-@media (prefers-reduced-motion: reduce) {
-  .stats-band--flip .flip-card {
-    height: auto;
-  }
-  .stats-band--flip .flip-inner {
-    transform: none !important;
-    transition: none;
-  }
-  .stats-band--flip .flip-face {
-    position: static;
-    inset: auto;
-    backface-visibility: visible;
-    transform: none;
-    box-shadow: none;
-  }
-  .stats-band--flip .flip-front {
-    border-radius: 20px 20px 0 0;
-    border-bottom: 0;
-  }
-  .stats-band--flip .flip-back {
-    border-radius: 0 0 20px 20px;
-  }
-}
+/* The reduced-motion block that used to sit here unwound the flip (static
+   faces, both stacked and visible). With no flip left there is nothing to
+   unwind — the card renders identically under reduce. */
 

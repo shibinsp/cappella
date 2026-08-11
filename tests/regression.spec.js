@@ -133,7 +133,7 @@ test.describe('homepage regression', () => {
     }
   });
 
-  test('menu overlay: page links navigate, EXPLORE still scrolls in-page, Escape closes', async ({ page }, testInfo) => {
+  test('menu overlay: page links navigate, X and Escape close', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'overlay interaction covered at desktop scale');
     await gotoHome(page);
 
@@ -143,15 +143,14 @@ test.describe('homepage regression', () => {
     const panel = page.locator('#cap-menu-panel');
     await expect(panel).toBeVisible();
 
-    // EXPLORE row keeps data-target in-page scroll: URL unchanged, page
-    // scrolls. The Lenis glide takes ~1.2s and runs on rAF, which parallel-
-    // suite CPU contention can throttle — poll instead of a fixed wait.
-    const beforeUrl = page.url();
-    await panel.locator('a[data-target="3200"]').click(); // Our Journey
-    await expect
-      .poll(() => page.evaluate(() => window.scrollY), { timeout: 10000 })
-      .toBeGreaterThan(1000);
-    expect(page.url()).toBe(beforeUrl);
+    // Client 2026-08-09 (p23): the EXPLORE row and its data-target in-page
+    // glide were removed, so the assertion that used to live here is now that
+    // no such link exists — with its click handler deleted alongside it.
+    await expect(panel.locator('a[data-target]')).toHaveCount(0);
+
+    // The X closes it (this replaced a button labelled CLOSE)
+    await page.locator('#cap-menu-close').click();
+    await expect(panel).not.toBeInViewport();
 
     // Escape closes the overlay
     await page.locator('#cap-menu-btn').click();
@@ -165,7 +164,7 @@ test.describe('homepage regression', () => {
     await expect(page).toHaveURL(/projects\.html$/);
   });
 
-  test('footer spans navigate (PORTFOLIO → projects)', async ({ page }, testInfo) => {
+  test('footer spans navigate (PROJECTS → projects)', async ({ page }, testInfo) => {
     // Phones render the mobile footer instead of the baked frame's; its
     // equivalent link is asserted in home-mobile.spec.js.
     test.skip(isPhone(testInfo), 'baked footer spans are frame-bound; phones use #cap-mobile .cm-fnav');
@@ -188,7 +187,20 @@ test.describe('homepage regression', () => {
       .toBe(true);
     // …then let the staggered entrance finish so the click target is stable.
     await page.waitForTimeout(1800);
-    await page.locator('span[role="link"]', { hasText: 'PORTFOLIO' }).first().click();
+    // Until 2026-08-11 the footer span read PORTFOLIO while the header read
+    // PROJECTS, so `hasText: 'PORTFOLIO'` picked the footer one on its own.
+    // Both say PROJECTS now and THREE spans match — the header nav, its
+    // hover-roll clone, and the footer. .first() landed on the header, which is
+    // hidden below 900px, so this timed out instead of failing loudly.
+    // :not(.cap-nav) drops the header (that class is added by the nav
+    // scramble), and .last() takes the footer, which is later in the frame's
+    // DOM than the hero. Asserted visible first so a bad match reports as a
+    // clear failure rather than a 60s click timeout.
+    const footerLink = page
+      .locator('#cap-scaler span[role="link"]:not(.cap-nav)', { hasText: 'PROJECTS' })
+      .last();
+    await expect(footerLink).toBeVisible();
+    await footerLink.click();
     await expect(page).toHaveURL(/projects\.html$/);
   });
 

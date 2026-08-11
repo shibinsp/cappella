@@ -199,8 +199,8 @@
 .leader-card > .leader-social { position: relative; z-index: 2; }
 
 .leader-card h2 {
-  font-size: clamp(20px, 1.9vw, 26px);
-  font-weight: 700;
+  font-size: var(--cap-type-subhead);
+  font-weight: 600;
   letter-spacing: .02em;
   text-transform: uppercase;
   line-height: 1.15;
@@ -223,9 +223,18 @@
   margin: 0 0 26px;
 }
 
+/* The bio reads narrow since p12 took it from 15.5px to the shared 20px, but
+   +30 is very nearly the ceiling and NOT an arbitrary number: the portrait is
+   absolutely positioned against the card's right edge and the bio runs
+   alongside it vertically, so the measure can only reach the portrait's left
+   edge. Measured at 1440/1200/1024/900 that limit is +42 at every width (the
+   card and the portrait scale together), leaving +30 with 12px of clearance.
+   Tried +90 — it overlapped the portrait by 48px.
+   So a genuinely wider measure needs a NARROWER PORTRAIT, which is a design
+   decision, not a CSS tweak. Left at +30 pending that call. */
 .leader-bio {
-  font-size: 15.5px;
-  line-height: 1.66;
+  font-size: var(--cap-type-desc);
+  line-height: 1.55;
   color: var(--ink-dim);
   margin: 0 0 22px;
   max-width: calc(100% - var(--portrait-w) + 30px);
@@ -236,14 +245,16 @@
    height, portrait scale and type size instead.
    NB: must come AFTER the base rules — `.leader-card--lead h2` and
    `.leader-card h2` have equal specificity, so source order decides. */
+/* Client 2026-08-09: the senior row no longer scales up.
+   p18 ("Image size for all is to be the same") removed its --portrait-w
+   override, and p12's one-scale rule removed its larger heading and role. The
+   card keeps only its taller box, so the row still leads by presence rather
+   than by rendering the same components at a second set of sizes. */
 .leader-card--lead {
   min-height: 500px;
   padding: 42px 42px 150px 42px;
-  --portrait-w: clamp(200px, 22vw, 290px);
 }
-.leader-card--lead h2 { font-size: clamp(22px, 2.15vw, 30px); }
-.leader-card--lead .leader-role { font-size: clamp(16px, 1.4vw, 18px); }
-.leader-card--lead .leader-bio { font-size: 16.5px; line-height: 1.68; }
+.leader-card--lead .leader-bio { line-height: 1.55; }
 
 .leader-more {
   display: inline-flex; align-items: center; gap: 8px;
@@ -360,10 +371,17 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 899px) {
   .leader-grid { grid-template-columns: 1fr; }
+  /* Client 2026-08-09 (p35): "Too much space after the text".
+     The bottom padding reserves the room the absolutely-positioned portrait
+     needs. 1.55 assumed a taller crop than these images have — they render at
+     1:1.26, so at 160px wide the reserve was 248px for a 201px portrait and the
+     surplus showed as a dead 47px band between the LinkedIn badge and the
+     picture. 1.36 covers the portrait plus ~16px of separation, and being a
+     multiple of --portrait-w it stays correct across the clamp. */
   .leader-card {
     min-height: 0;
     --portrait-w: clamp(160px, 40vw, 220px);
-    padding-bottom: calc(var(--portrait-w) * 1.55);
+    padding-bottom: calc(var(--portrait-w) * 1.36);
   }
   .leader-card h2, .leader-bio { max-width: none; }
 }

@@ -22,15 +22,43 @@ test.describe('about-us.html', () => {
     // The four stats — exact number + caption pairs
     const stats = page.locator('.stats-band .stat');
     await expect(stats).toHaveCount(4);
+    // Client 2026-08-09 p10: the numbers carry their units on the face now
+    // ("16 Assets", not a bare "16"), and the tags were relabelled with them.
     const expected = [
       ['$500 Mn+', 'Assets Under Management'],
-      ['16', 'Assets across India & GCC'],
-      ['135', 'Acres of Land'],
-      ['3.3 Mn', 'SFT Total BUA']
+      ['16 Assets', 'Assets across India & GCC'],
+      ['135 Acres', 'Acres of Land'],
+      ['3.3 Mn SFT', 'SFT Total BUA']
     ];
     for (let i = 0; i < expected.length; i++) {
       await expect(stats.nth(i).locator('dd')).toHaveText(expected[i][0]);
       await expect(stats.nth(i).locator('dt')).toHaveText(expected[i][1]);
+    }
+
+    // The four tags, and the family they render in — p10 flagged the Space Mono
+    // tag as reading like a different font from the number beneath it.
+    const tags = page.locator('.flip-tag');
+    await expect(tags).toHaveCount(4);
+    for (const [i, label] of ['Total AUM', 'Portfolio', 'Land Area', 'Built-up Area'].entries()) {
+      await expect(tags.nth(i)).toHaveText(label);
+    }
+    const tagFont = await tags.first().evaluate((el) => getComputedStyle(el).fontFamily);
+    expect(tagFont).not.toMatch(/Space Mono/);
+
+    // "Alignment of the text": every number on one line, sharing a baseline.
+    // Asserted at desktop only — below 900px the grid stacks into 2 then 1
+    // column, so multiple rows are correct there, not a regression.
+    if (page.viewportSize().width >= 900) {
+      const rows = await page
+        .locator('.flip-front .stat-number')
+        .evaluateAll((els) =>
+          els.map((e) => ({
+            bottom: Math.round(e.getBoundingClientRect().bottom),
+            lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).fontSize))
+          }))
+        );
+      expect(new Set(rows.map((r) => r.bottom)).size, 'stat numbers share one baseline').toBe(1);
+      for (const r of rows) expect(r.lines, 'each stat number stays on one line').toBeLessThanOrEqual(1);
     }
 
     await assertNoHorizontalOverflow(page);
@@ -67,12 +95,38 @@ test.describe('about-us.html', () => {
     }
   });
 
-  test('What We Do — intro and three strategies', async ({ page }) => {
+  test('stat cards do not flip on hover', async ({ page }) => {
+    // Client 2026-08-09 (p12): "Remove the animation flip animation".
+    // The card used to rotateY(180deg) into a crimson caption face on hover
+    // and on focus-within, with the card itself made focusable to reach it.
+    await page.goto('/about-us.html');
+    const card = page.locator('.flip-card').first();
+    await card.scrollIntoViewIfNeeded();
+
+    const inner = card.locator('.flip-inner');
+    await expect(inner).toHaveCSS('transform', 'none');
+    await card.hover();
+    await page.waitForTimeout(800); // the old flip settled in 700ms
+    await expect(inner).toHaveCSS('transform', 'none');
+
+    // Nothing left to reach by keyboard, so the cards are no longer focusable.
+    await expect(page.locator('.flip-card[tabindex]')).toHaveCount(0);
+
+    // The caption stays in the DOM: this is a <dl> and the <dt> is what makes
+    // each figure meaningful to assistive tech. It is just not on screen.
+    const dt = page.locator('.flip-back .stat-caption').first();
+    await expect(dt).toHaveText('Assets Under Management');
+    const box = await dt.boundingBox();
+    expect(box.width, 'caption is clipped, not laid out').toBeLessThanOrEqual(2);
+  });
+
+  test('What We Do — three strategies, no intro paragraph', async ({ page }) => {
     await page.goto('/about-us.html');
     const section = page.locator('section', { has: page.locator('#what-we-do') });
-    await expect(section).toContainText(
-      'Cappella operates across three core strategies, each designed to expand access to quality education while building a resilient, income-generating real-estate portfolio.'
-    );
+    // Client 2026-08-09 (p11): the intro paragraph was removed. Asserted as an
+    // absence so it cannot drift back in unnoticed.
+    await expect(section).not.toContainText('Cappella operates across three core strategies');
+    await expect(section.locator('.strat-intro')).toHaveCount(0);
     const items = section.locator('.item');
     await expect(items).toHaveCount(3);
     const strategies = [
@@ -86,9 +140,10 @@ test.describe('about-us.html', () => {
     }
   });
 
-  test('SKOLEN — paragraph and module cards with exact Indian digit grouping', async ({ page }) => {
-    // Client 2026-07-23: the modules table became one card per module, and
-    // the tagline dropped its Space Mono face for the shared Montserrat.
+  test('SKOLEN band stays, with a Learn More CTA out to the SKOLEN page', async ({ page }) => {
+    // Client 2026-07-23: the tagline dropped its Space Mono face for Montserrat.
+    // Client 2026-08-09: the modules moved to skolen.html and the band gained a
+    // CTA out to it. The band copy itself is unchanged — only the cards left.
     await page.goto('/about-us.html');
     const section = page.locator('section', { has: page.locator('#skolen') });
 
@@ -102,63 +157,23 @@ test.describe('about-us.html', () => {
       'SKOLEN rethinks this approach with standardised, pre-designed campuses that meet the needs of the vast majority of K-12 operators and can be operational without the extended timelines of traditional builds.'
     );
 
-    await expect(section.locator('.skolen-modules-title')).toHaveText('SKOLEN Modules');
-    const cards = section.locator('.skolen-module');
-    await expect(cards).toHaveCount(3);
-
-    // Exact strings per card — tripwire against digit-grouping "fixes"
-    const MODULES = [
-      ['SKOLEN 1-Acre', '1 acre', '70,000–75,000 sq ft', '900–1,100'],
-      ['SKOLEN 2-Acre', '2 acres', '1,40,000–1,50,000 sq ft', '2,000–2,200'],
-      ['SKOLEN 3-Acre', '3 acres', '2,80,000–3,00,000 sq ft', '3,000–3,300']
-    ];
-    for (let i = 0; i < MODULES.length; i++) {
-      const [name, land, bua, capacity] = MODULES[i];
-      const card = cards.nth(i);
-      await expect(card.locator('.skolen-module__name')).toHaveText(name);
-      const labels = card.locator('dt');
-      await expect(labels.nth(0)).toHaveText('Land');
-      await expect(labels.nth(1)).toHaveText('Built-up Area');
-      await expect(labels.nth(2)).toHaveText('Capacity');
-      const values = card.locator('dd');
-      await expect(values.nth(0)).toHaveText(land);
-      await expect(values.nth(1)).toHaveText(bua);
-      await expect(values.nth(2)).toHaveText(capacity);
-    }
+    const cta = section.locator('.skolen-cta');
+    await expect(cta).toHaveCount(1);
+    await expect(cta).toHaveAttribute('href', 'skolen.html');
+    await expect(cta).toContainText('Learn More');
+    // Same 24px AA floor the menu overlay work settled on (ISSUE-001).
+    const box = await cta.boundingBox();
+    expect(box.height, 'Learn More tap target height').toBeGreaterThanOrEqual(24);
+    expect(box.width, 'Learn More tap target width').toBeGreaterThanOrEqual(24);
   });
 
-  test('SKOLEN — pinned mask-reveal on desktop, inline fallback on small screens', async ({ page }) => {
-    // Client 2026-07-24: the module cards became a sticky aerial that wipes
-    // between the three renders as the module blocks scroll (shared/js/about.js).
-    // Desktop upgrades to the pinned two-column wipe; mobile/tablet fall back to
-    // the single-column stack with each aerial inline.
+  test('SKOLEN modules no longer live on About Us', async ({ page }) => {
+    // The move IS the change (client 2026-08-09), so assert the absence — this
+    // is what catches a merge quietly restoring a second copy of the section.
     await page.goto('/about-us.html');
-    const reveal = page.locator('[data-skolen-reveal]');
-    await expect(reveal).toHaveCount(1);
-    await expect(reveal.locator('.skolen-reveal__img')).toHaveCount(3);
-    await reveal.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(300);
-
-    const width = page.viewportSize().width;
-    if (width >= 901) {
-      await expect(reveal).toHaveClass(/is-pinned/);
-      await expect(reveal.locator('.skolen-reveal__media')).toHaveCSS('position', 'sticky');
-      // scrolling to the end of the section wipes the first aerial away and
-      // leaves the last one shown (clip-path is driven from the scroll fraction)
-      await page.evaluate(() => {
-        const r = document.querySelector('[data-skolen-reveal]');
-        const rect = r.getBoundingClientRect();
-        window.scrollTo(0, rect.top + window.scrollY + r.offsetHeight - window.innerHeight);
-      });
-      await page.waitForTimeout(300);
-      const clips = await reveal
-        .locator('.skolen-reveal__img')
-        .evaluateAll((els) => els.map((e) => e.style.clipPath));
-      expect(clips[0]).toMatch(/100(\.0+)?%/); // first fully wiped
-      expect(clips[2] === '' || /\b0(\.0+)?%/.test(clips[2])).toBeTruthy(); // last shown
-    } else {
-      await expect(reveal).not.toHaveClass(/is-pinned/);
-    }
+    await expect(page.locator('[data-skolen-reveal]')).toHaveCount(0);
+    await expect(page.locator('.skolen-module')).toHaveCount(0);
+    await expect(page.locator('.skolen-modules-title')).toHaveCount(0);
   });
 
   test('full-page screenshot', async ({ page }, testInfo) => {

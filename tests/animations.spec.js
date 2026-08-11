@@ -8,7 +8,9 @@ test.describe('animation system', () => {
     await page.goto('/about-us.html');
     await page.locator('.stats-band').scrollIntoViewIfNeeded();
 
-    const expected = ['$500 Mn+', '16', '135', '3.3 Mn'];
+    // Client 2026-08-09 p10: the figures carry their units now. This list is a
+    // second copy of the one in about.spec.js — the two must move together.
+    const expected = ['$500 Mn+', '16 Assets', '135 Acres', '3.3 Mn SFT'];
     const dds = page.locator('.stats-band .stat dd');
     for (let i = 0; i < expected.length; i++) {
       // toHaveText auto-retries past the 1.5s count-up
@@ -419,13 +421,15 @@ test.describe('portfolio city filter', () => {
     await page.evaluate(() => {
       const scaler = document.getElementById('cap-scaler');
       const el = [...scaler.querySelectorAll('span')].find(
-        (e) => (e.textContent || '').trim() === 'Dubai' && e.style.cursor === 'pointer'
+        (e) => (e.textContent || '').trim() === 'Andhra Pradesh' && e.style.cursor === 'pointer'
       );
       el.scrollIntoView({ block: 'center' });
     });
     await page.waitForTimeout(1000);
 
-    for (const city of ['Dubai', 'Chennai', 'Pune', 'Hyderabad']) {
+    // Client 2026-08-09: the column groups by state now. Telangana is last so
+    // the run ends on the city whose tiles are the baked photo cards.
+    for (const city of ['Andhra Pradesh', 'Tamil Nadu', 'Dubai, UAE', 'Telangana']) {
       const target = await page.evaluate((name) => {
         const scaler = document.getElementById('cap-scaler');
         const el = [...scaler.querySelectorAll('span')].find(

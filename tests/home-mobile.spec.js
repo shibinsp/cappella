@@ -61,8 +61,11 @@ test.describe('mobile home', () => {
     expect(sizes.sub).toBeGreaterThanOrEqual(12);
     expect(sizes.body).toBeGreaterThanOrEqual(12);
 
-    // The CTA is new content from the mockup and must actually go somewhere.
-    await expect(page.locator('#cap-mobile .cm-cta')).toHaveAttribute('href', './projects.html');
+    // Client 2026-08-09 (p22): "REMOVE CTA". This used to assert the Explore
+    // Our Assets button pointed at projects.html; now it must not be here at
+    // all. Kept as an absence check rather than deleted so the button cannot
+    // reappear unnoticed.
+    await expect(page.locator('#cap-mobile .cm-cta')).toHaveCount(0);
   });
 
   test('the hero mark is the real wordmark asset, not text', async ({ page }) => {
@@ -98,10 +101,24 @@ test.describe('mobile home', () => {
   test('content is driven by the shared constants', async ({ page }) => {
     await gotoMobileHome(page);
 
-    // Frame 6 shows three stats (the desktop band's 75 Years+ is dropped).
-    await expect(page.locator('#cap-mobile .cm-stat')).toHaveCount(3);
-    await expect(page.locator('#cap-mobile .cm-stats')).toContainText('$500 Mn+');
-    await expect(page.locator('#cap-mobile .cm-stats')).toContainText('135 Acres');
+    // Client 2026-08-09 (p22): "THERE ARE SUPPOSED TO BE 4 STATS" — Frame 6 had
+    // dropped the desktop band's 75 Years+; it is back, so mobile matches
+    // desktop. All four are named, and none may be clipped by the band, which
+    // is overflow:hidden — that is how the first attempt failed silently.
+    const stats = page.locator('#cap-mobile .cm-stat');
+    await expect(stats).toHaveCount(4);
+    const band = page.locator('#cap-mobile .cm-stats');
+    for (const fig of ['$500 Mn+', '16 Assets', '135 Acres', '75 Years+']) {
+      await expect(band).toContainText(fig);
+    }
+    await band.scrollIntoViewIfNeeded();
+    const overflow = await page.evaluate(() => {
+      const b = document.querySelector('#cap-mobile .cm-stats').getBoundingClientRect();
+      return [...document.querySelectorAll('#cap-mobile .cm-stat')]
+        .filter((e) => e.getBoundingClientRect().bottom > b.bottom + 0.5)
+        .map((e) => e.textContent.trim().slice(0, 20));
+    });
+    expect(overflow, 'no stat may spill the band').toEqual([]);
 
     // CAP_EDGE — same four rows as the desktop accordion.
     const rows = page.locator('#cap-mobile .cm-acc-item');
@@ -187,70 +204,47 @@ test.describe('mobile home', () => {
     expect(cards.hasShadow, 'cards are separated by a shadow, not a border').toBe(true);
     expect(cards.minGap, 'cards must not touch').toBeGreaterThanOrEqual(6);
 
-    // The open row's photo sits INSIDE its card, not edge-to-edge. Scoped to
-    // the OPEN row: every row carries an image now, and the others sit in
-    // collapsed panels.
+    // The open row's copy sits INSIDE its card, not edge-to-edge. This used to
+    // measure the row's photo; client 2026-08-09 (p24) removed those, so the
+    // body copy is what carries the inset now — and it carries it as PADDING
+    // (0 14px 14px), where the image used margin. Its border box is therefore
+    // flush with the card by design, so measure the content edge.
     const inset = await page.evaluate(() => {
-      const img = document.querySelector('#cap-mobile .cm-acc-item.is-open .cm-acc-img');
-      const card = img.closest('.cm-acc-item').getBoundingClientRect();
-      const r = img.getBoundingClientRect();
-      return { left: r.left - card.left, right: card.right - r.right };
+      const body = document.querySelector('#cap-mobile .cm-acc-item.is-open .cm-acc-body');
+      const cs = getComputedStyle(body);
+      const card = body.closest('.cm-acc-item').getBoundingClientRect();
+      const r = body.getBoundingClientRect();
+      return {
+        left: r.left + parseFloat(cs.paddingLeft) - card.left,
+        right: card.right - (r.right - parseFloat(cs.paddingRight))
+      };
     });
     expect(inset.left).toBeGreaterThan(0);
     expect(inset.right).toBeGreaterThan(0);
   });
 
-  test('every dropdown carries a photo, and only the open one is fetched', async ({ page }) => {
+  test('dropdowns are text-only — no photos', async ({ page }) => {
+    // Client 2026-08-09 (p24): "REMOVE ALL IMAGES". This test previously
+    // asserted the opposite — that every row carried a photo and only the open
+    // one was fetched — so it is inverted rather than deleted. The deferred-
+    // loading machinery it guarded (~765KB held back from collapsed panels)
+    // went with the images, so there is nothing left to defer.
     await gotoMobileHome(page);
 
-    // The ask: all four rows have an image, not just the default-open one.
-    const shape = await page.evaluate(() =>
-      [...document.querySelectorAll('#cap-mobile .cm-acc-item')].map((it) => {
-        const img = it.querySelector('.cm-acc-img');
-        return {
-          open: it.classList.contains('is-open'),
-          hasImg: !!img,
-          src: img ? img.getAttribute('src') : null,
-          deferred: img ? img.hasAttribute('data-src') : null,
-          alt: img ? img.getAttribute('alt') : null
-        };
-      })
-    );
-    expect(shape).toHaveLength(4);
-    expect(shape.every((r) => r.hasImg), 'every dropdown should contain a photo').toBe(true);
-    expect(shape.every((r) => r.alt && r.alt.length > 3), 'photos should carry real alt text').toBe(true);
+    const rows = page.locator('#cap-mobile .cm-acc-item');
+    await expect(rows).toHaveCount(4);
+    await expect(page.locator('#cap-mobile .cm-acc-img')).toHaveCount(0);
+    await expect(page.locator('#cap-mobile .cm-acc-panel img')).toHaveCount(0);
 
-    // The open row renders immediately…
-    const openRow = shape.find((r) => r.open);
-    expect(openRow.src).toBeTruthy();
-    expect(openRow.deferred).toBe(false);
-    await expect
-      .poll(() => page.evaluate(() => {
-        const i = document.querySelector('#cap-mobile .cm-acc-item.is-open .cm-acc-img');
-        return i.complete && i.naturalWidth;
-      }))
-      .toBeGreaterThan(0);
-
-    // …and the closed rows are deferred. loading="lazy" would not hold these
-    // back (a collapsed panel is still in layout), so this guards ~765KB of
-    // photography from being fetched for panels nobody opened.
-    const closed = shape.filter((r) => !r.open);
-    expect(closed).toHaveLength(3);
-    expect(closed.every((r) => r.src === null && r.deferred), 'closed rows must not fetch').toBe(true);
-
-    // Opening one promotes it, and it actually loads.
-    await page.locator('#cap-mobile .cm-acc-item').first().locator('.cm-acc-btn').click();
-    await expect
-      .poll(() => page.evaluate(() => {
-        const i = document.querySelector('#cap-mobile .cm-acc-item .cm-acc-img');
-        return i.getAttribute('src') && i.complete && i.naturalWidth;
-      }))
-      .toBeGreaterThan(0);
-    // The two still-closed rows stay deferred.
-    const stillDeferred = await page.evaluate(
-      () => document.querySelectorAll('#cap-mobile .cm-acc-img[data-src]').length
-    );
-    expect(stillDeferred).toBe(2);
+    // Every row still has its copy, and toggling still works without the
+    // promote-on-open step that used to run alongside it.
+    for (let i = 0; i < 4; i++) {
+      await expect(rows.nth(i).locator('.cm-acc-body')).not.toBeEmpty();
+    }
+    const first = rows.first();
+    await first.locator('.cm-acc-btn').click();
+    await expect(first.locator('.cm-acc-btn')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#cap-mobile .cm-acc-img')).toHaveCount(0);
   });
 
   test('Our Journey carries its blue-grey ground', async ({ page }) => {
@@ -299,6 +293,62 @@ test.describe('mobile home', () => {
     // The rail is red, not the grey hairline it used to be.
     expect(geo.rail[0]).toBeGreaterThan(geo.rail[1] + 60);
     expect(geo.rail[0]).toBeGreaterThan(geo.rail[2] + 60);
+  });
+
+  test('Our Journey arrows step phases without replacing the scroll model', async ({ page }) => {
+    // Client 2026-08-09 (p25): "just add the arrows, keep the scroll". The
+    // arrows do not own the phase — they scroll to the middle of the target
+    // phase's band, and update() still derives the phase from track progress.
+    // So the check that matters is that tapping actually MOVES THE PAGE: if a
+    // future change made them set the phase directly, the two controls could
+    // disagree and this would catch it.
+    await gotoMobileHome(page);
+    await page.evaluate(() => {
+      const t = document.querySelector('#cap-mobile .cm-j-track');
+      window.scrollTo(0, window.scrollY + t.getBoundingClientRect().top + 10);
+    });
+    await page.waitForTimeout(600);
+
+    const phase = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('#cap-mobile .cm-j-phase')].findIndex((e) =>
+          e.classList.contains('is-on')
+        )
+      );
+    const scrollY = () => page.evaluate(() => Math.round(window.scrollY));
+
+    expect(await phase()).toBe(0);
+    await expect(page.locator('#cap-mobile .cm-j-arrow--prev')).toBeDisabled();
+    await expect(page.locator('#cap-mobile .cm-j-arrow--next')).toBeEnabled();
+
+    const y0 = await scrollY();
+    await page.locator('#cap-mobile .cm-j-arrow--next').click();
+    await expect.poll(phase, { timeout: 6000 }).toBe(1);
+    expect(await scrollY(), 'the arrow scrolls the page, it does not just set a class')
+      .toBeGreaterThan(y0);
+
+    await page.locator('#cap-mobile .cm-j-arrow--next').click();
+    await expect.poll(phase, { timeout: 6000 }).toBe(2);
+    // Chronology, not a carousel: it must not wrap back to Foundation.
+    await expect(page.locator('#cap-mobile .cm-j-arrow--next')).toBeDisabled();
+
+    await page.locator('#cap-mobile .cm-j-arrow--prev').click();
+    await expect.poll(phase, { timeout: 6000 }).toBe(1);
+
+    // They sit over the photo, so they need a real target and must not collide
+    // with the dots that already own the right edge.
+    const geo = await page.evaluate(() => {
+      const a = document.querySelector('#cap-mobile .cm-j-arrow--next').getBoundingClientRect();
+      const d = document.querySelector('#cap-mobile .cm-j-dots').getBoundingClientRect();
+      return {
+        w: a.width,
+        h: a.height,
+        overlaps: !(a.right < d.left || a.left > d.right || a.bottom < d.top || a.top > d.bottom)
+      };
+    });
+    expect(geo.w).toBeGreaterThanOrEqual(24);
+    expect(geo.h).toBeGreaterThanOrEqual(24);
+    expect(geo.overlaps, 'arrows must clear the phase dots').toBe(false);
   });
 
   test('Our Journey pins and advances one phase per scroll', async ({ page }) => {
@@ -451,22 +501,24 @@ test.describe('mobile home', () => {
   test('the city rail swaps the portfolio tiles', async ({ page }) => {
     await gotoMobileHome(page);
 
-    // Hyderabad is the default, matching the desktop frame.
-    await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Hyderabad');
+    // Client 2026-08-09: the rail groups by state; Telangana is the default,
+    // matching the desktop frame, and carries the four Hyderabad schools.
+    await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Telangana');
     await expect(page.locator('#cap-mobile .cm-tile')).toHaveCount(4);
     // Real school names and real localities — never the mockup's garbled
     // "Spruha Mata" / "Bowrampet" / "Sainikpuri".
     await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Sancta Maria International School');
-    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Serilingampally, Hyderabad');
-    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Suchitra, Hyderabad');
+    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('St. Andrews High School');
+    await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Hyderabad, Telangana');
     await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Spruha');
     await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Bowrampet');
 
     await page.locator('#cap-mobile .cm-city', { hasText: 'Dubai' }).click();
-    await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Dubai');
+    await expect(page.locator('#cap-mobile .cm-city.is-active')).toHaveText('Dubai, UAE');
     await expect(page.locator('#cap-mobile .cm-tile')).toHaveCount(2);
     await expect(page.locator('#cap-mobile .cm-tiles')).toContainText('Hartland International School');
-    // Single-campus cities: the locality IS the city, so it must not double up.
+    // The locality is subsumed by the group name here ("Dubai" inside "Dubai,
+    // UAE"), so it must not be printed twice.
     await expect(page.locator('#cap-mobile .cm-tiles')).not.toContainText('Dubai, Dubai');
 
     // Every tile resolves an image (the Shri Ram stand-in included).
@@ -509,7 +561,7 @@ test.describe('mobile home', () => {
       const pf = document.querySelector('#cap-mobile .cm-pf');
       window.scrollTo(0, window.scrollY + pf.getBoundingClientRect().top - 40);
     });
-    await page.locator('#cap-mobile .cm-city', { hasText: 'Bangalore' }).click();
+    await page.locator('#cap-mobile .cm-city', { hasText: 'Karnataka' }).click();
     const loadingAttrs = await page.evaluate(() =>
       [...document.querySelectorAll('#cap-mobile .cm-tile-img')].map((i) => i.getAttribute('loading')));
     expect(loadingAttrs.every((v) => v === 'eager'), 'switched-in tiles should not lazy-load').toBe(true);

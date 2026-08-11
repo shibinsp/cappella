@@ -134,10 +134,8 @@
     </div>
     <h1>India&rsquo;s Leading<br>Edu-Infra Asset<br>Management Company</h1>
     <p class="cm-hero-sub">Transforming, developing, and revamping K-12 education infrastructure across India and the GCC.</p>
-    <a class="cm-cta" href="./projects.html">
-      Explore Our Assets
-      <svg viewBox="0 0 15 11" fill="none" aria-hidden="true"><path d="M0 5.5h13M9 1l4 4.5-4 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </a>
+    <!-- Client 2026-08-09 (p22): "REMOVE CTA" — the Explore Our Assets button
+         is gone from the mobile hero. -->
   </section>
 
   <!-- ===== 2. STATS BAND ===== -->
@@ -187,7 +185,7 @@
 
     <nav class="cm-fnav">
       <a href="./about-us.html">About Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a href="./projects.html">Portfolio <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="./projects.html">Projects <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       <a href="./team.html">Team <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       <a href="./contact-us.html">Contact Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     </nav>
@@ -281,30 +279,41 @@ const CAP_MOBILE_MQ = window.matchMedia('(max-width: 767px)');
 // Real portfolio (source: Cappella_Website_Other Pages.docx — PROJECTS).
 // students = current enrolment, capacity = total capacity.
 // img: real campus photography (client batch 2026-07-23, shared with the
-// Projects page). Only The Shri Ram Universal School has no photo yet —
-// its tile falls back to the representative stand-in until one arrives.
+// Projects page). All fifteen have one now — The Shri Ram Universal School
+// was the last holdout and its photo arrived 2026-08-10, retiring the
+// representative stand-in and the REPRESENTATIVE tag that disclosed it.
 // The two ex-"Bengaluru" JPS entries are the Chintamani and Tumkur
 // campuses (6.3-acre / 3.5-acre), named to match the Projects rename.
+// Client 2026-08-09: the column groups by STATE, not city, and the list order
+// below is the deck's order verbatim — Andhra Pradesh, Karnataka, Chhattisgarh,
+// Tamil Nadu, Telangana, Maharashtra, Dubai. Karnataka's internal order changed
+// with it (JIRS, IFIM, JU-SET, Tumkur, Chintamani).
+// The three Telangana schools were also renamed: the locality suffixes went and
+// "St. Andrews, Suchitra"/"St. Andrews, Keesara" became "St. Andrews High
+// School"/"St. Andrews School" — mapped in the deck's listing order, which
+// matches the order these two records were already in.
 const CAP_PORTFOLIO = [
-  { name: 'Hartland International School',      city: 'Dubai', line1: 'Hartland International School', line2: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400', img: './components/assets/campus/hartland-dubai.jpg' },
-  { name: 'North London Collegiate School',     city: 'Dubai', line1: 'North London Collegiate School', line2: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100', img: './components/assets/campus/nlcs-dubai.jpg' },
-  { name: 'St. Andrews, Suchitra',              city: 'Hyderabad', line1: 'St. Andrews', line2: 'Suchitra',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
-  { name: 'St. Andrews, Keesara',               city: 'Hyderabad', line1: 'St. Andrews', line2: 'Keesara',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
-  { name: 'St. Michael’s',                 city: 'Hyderabad', line1: 'St. Michael’s', line2: 'Alwal',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
-  { name: 'Sancta Maria International School',  city: 'Hyderabad', line1: 'Sancta Maria International School', line2: 'Serilingampally',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
-  { name: 'The Shri Ram Universal School',      city: 'Chennai', line1: 'The Shri Ram Universal School', line2: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600' },
-  { name: 'Billabong High International School',city: 'Pune', line1: 'Billabong High International School', line2: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350', img: './components/assets/campus/billabong-pune.jpg' },
-  { name: 'Jain International Residential School', city: 'Bangalore', line1: 'Jain International Residential School', line2: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000', img: './components/assets/campus/jain-residential-bangalore.jpg' },
-  { name: 'Jain Public School, Chintamani',     city: 'Bangalore', line1: 'Jain Public School', line2: 'Chintamani',      est: 2013, land: '6.3',  bua: '66k',    students: '1,226', capacity: '1,575', img: './components/assets/campus/jps-chintamani.jpg' },
-  { name: 'Jain Public School, Tumkur',         city: 'Bangalore', line1: 'Jain Public School', line2: 'Tumkur',      est: 2012, land: '3.5',  bua: '70k',    students: '928',   capacity: '1,240', img: './components/assets/campus/jps-tumkur.jpg' },
-  { name: 'Jain Public School, Korba',          city: 'Chhattisgarh', line1: 'Jain Public School', line2: 'Korba',   est: 2012, land: '2.8',  bua: '55k',    students: '438',   capacity: '1,050', img: './components/assets/campus/jps-korba.jpg' },
   { name: 'Jain Public School, Kadiri',         city: 'Andhra Pradesh', line1: 'Jain Public School', line2: 'Kadiri', est: 2012, land: '3.5',  bua: '64k',    students: '795',   capacity: '1,050', img: './components/assets/campus/jps-kadiri.jpg' },
-  { name: 'IFIM – Student Housing',        city: 'Bangalore', line1: 'IFIM – Student Housing', line2: 'Bangalore',      est: 1995, land: '2.5',  bua: '73k',    students: '400',   capacity: '440', img: './components/assets/campus/ifim-hostel-bangalore.jpg' },
-  { name: 'JU-SET Hostel',                      city: 'Bangalore', line1: 'JU-SET Hostel', line2: 'Bangalore',      est: 1990, land: '10.8', bua: '271k',   students: '1,100', capacity: '1,100', img: './components/assets/campus/juset-hostel-bangalore.jpg' }
+  { name: 'Jain International Residential School', city: 'Karnataka', line1: 'Jain International Residential School', line2: 'Bangalore',   est: 1999, land: '58.4', bua: '1,200k', students: '690',   capacity: '1,000', img: './components/assets/campus/jain-residential-bangalore.jpg' },
+  { name: 'IFIM – Student Housing',        city: 'Karnataka', line1: 'IFIM – Student Housing', line2: 'Bangalore',      est: 1995, land: '2.5',  bua: '73k',    students: '400',   capacity: '440', img: './components/assets/campus/ifim-hostel-bangalore.jpg' },
+  { name: 'JU-SET Hostel',                      city: 'Karnataka', line1: 'JU-SET Hostel', line2: 'Bangalore',      est: 1990, land: '10.8', bua: '271k',   students: '1,100', capacity: '1,100', img: './components/assets/campus/juset-hostel-bangalore.jpg' },
+  { name: 'Jain Public School, Tumkur',         city: 'Karnataka', line1: 'Jain Public School', line2: 'Tumkur',      est: 2012, land: '3.5',  bua: '70k',    students: '928',   capacity: '1,240', img: './components/assets/campus/jps-tumkur.jpg' },
+  { name: 'Jain Public School, Chintamani',     city: 'Karnataka', line1: 'Jain Public School', line2: 'Chintamani',      est: 2013, land: '6.3',  bua: '66k',    students: '1,226', capacity: '1,575', img: './components/assets/campus/jps-chintamani.jpg' },
+  { name: 'Jain Public School, Korba',          city: 'Chhattisgarh', line1: 'Jain Public School', line2: 'Korba',   est: 2012, land: '2.8',  bua: '55k',    students: '438',   capacity: '1,050', img: './components/assets/campus/jps-korba.jpg' },
+  { name: 'The Shri Ram Universal School',      city: 'Tamil Nadu', line1: 'The Shri Ram Universal School', line2: 'Chennai',        est: 2020, land: '2.0',  bua: '183k',   students: '1,450', capacity: '2,600', img: './components/assets/campus/shri-ram-chennai.jpg' },
+  { name: 'St. Andrews High School',            city: 'Telangana', line1: 'St. Andrews High School', line2: 'Hyderabad',      est: 1987, land: '9.0',  bua: '208k',   students: '5,255', capacity: '5,300', img: './components/assets/campus/st-andrews-suchitra.jpg' },
+  { name: 'St. Andrews School',                 city: 'Telangana', line1: 'St. Andrews School', line2: 'Hyderabad',      est: 2012, land: '7.6',  bua: '88k',    students: '1,732', capacity: '2,300', img: './components/assets/campus/st-andrews-keesara.jpg' },
+  { name: 'St. Michael’s School',               city: 'Telangana', line1: 'St. Michael’s School', line2: 'Hyderabad',      est: 2004, land: '2.7',  bua: '132k',   students: '2,908', capacity: '3,600', img: './components/assets/campus/st-michaels.jpg' },
+  { name: 'Sancta Maria International School',  city: 'Telangana', line1: 'Sancta Maria International School', line2: 'Hyderabad',      est: 2010, land: '5.0',  bua: '193k',   students: '1,500', capacity: '1,500', img: './components/assets/3f58066ce9ef777c-min.jpg' },
+  { name: 'Billabong High International School',city: 'Maharashtra', line1: 'Billabong High International School', line2: 'Pune',           est: 2019, land: '2.1',  bua: '69k',    students: '773',   capacity: '1,350', img: './components/assets/campus/billabong-pune.jpg' },
+  { name: 'Hartland International School',      city: 'Dubai, UAE', line1: 'Hartland International School', line2: 'Dubai',          est: 2015, land: '9.03', bua: '278k',   students: '1,947', capacity: '2,400', img: './components/assets/campus/hartland-dubai.jpg' },
+  { name: 'North London Collegiate School',     city: 'Dubai, UAE', line1: 'North London Collegiate School', line2: 'Dubai',          est: 2017, land: '9.44', bua: '420k',   students: '1,820', capacity: '2,100', img: './components/assets/campus/nlcs-dubai.jpg' }
 ];
 
-// Order matches the baked frame's city column.
-const CAP_CITIES = ['Dubai', 'Andhra Pradesh', 'Bangalore', 'Chhattisgarh', 'Chennai', 'Hyderabad', 'Pune'];
+// Order matches the baked frame's city column, which was relabelled to these
+// states in Components.bundle.js — the desktop portfolio finds each label by
+// matching this text against the baked spans, so the two must stay in step.
+const CAP_CITIES = ['Andhra Pradesh', 'Karnataka', 'Chhattisgarh', 'Tamil Nadu', 'Telangana', 'Maharashtra', 'Dubai, UAE'];
 
 // The Cappella Edge accordion copy. The desktop setup merges its own frame
 // geometry (closedTop / figmaIconTop / closedDividerTop) onto these.
@@ -942,10 +951,18 @@ class Component extends DCLogic {
       'filter:brightness(0) invert(1);'; // Make it white on red
     centerWrap.appendChild(logoImg);
 
+    // Wordmark, cropped to the CAPPELLA band only. The PNG carries the
+    // "Insightful Edvesting" tagline underneath, which the brand lockup on the
+    // curtain must not show — object-fit:cover + the header's 16.729% y-offset
+    // crops it away exactly as .fig-asset-7cb777f5a65019d1-0d894d80 does, so
+    // the box the flight measures IS the CAPPELLA band and the landing lines
+    // up crop-to-crop. Height = width / 5.784, the authored 214x37 crop's
+    // aspect; break that ratio and the letterforms stretch.
     const nameImg = document.createElement('img');
     nameImg.src = './components/assets/7cb777f5a65019d1.png';
     nameImg.style.cssText =
-      'width:160px; height:auto; margin-top:18px; opacity:0;' +
+      'width:160px; height:27.66px; margin-top:18px; opacity:0;' +
+      'object-fit:cover; object-position:50% 16.729%;' +
       'transform:translateY(12px);' +
       'transition:transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease;' +
       'filter:brightness(0) invert(1);'; // White on red
@@ -1058,9 +1075,9 @@ class Component extends DCLogic {
           // computed from (tests validate the landing without racing the
           // animation timeline).
           window.__capPreFlight = { x: nameRect.left, y: nameRect.top, w: nameRect.width, h: nameRect.height };
-          // Width-matched scale + top-left alignment: the CAPPELLA row of the
-          // full PNG lands exactly over the header crop; the tagline below it
-          // dissolves in the crossfade.
+          // Width-matched scale + top-left alignment: both boxes are the same
+          // CAPPELLA-band crop, so matching width and corner lands one exactly
+          // over the other.
           const nameScale = wordmarkRect.width / nameRect.width;
           const nameTx = wordmarkRect.left - nameRect.left;
           const nameTy = wordmarkRect.top - nameRect.top;
@@ -2819,7 +2836,7 @@ class Component extends DCLogic {
     const scaler = document.getElementById('cap-scaler');
     if (!scaler) return;
 
-    let currentCityName = 'Hyderabad';
+    let currentCityName = 'Telangana';
 
     // Hoisted to CAP_PORTFOLIO (top of this script) so #cap-mobile's tile grid
     // renders the same records — see the SHARED CONTENT CONSTANTS section.
@@ -2871,10 +2888,14 @@ class Component extends DCLogic {
     // repeated here, so the desktop cards and the mobile tiles can never
     // disagree about a school's name.
     const cardData = [
-      { id: 1, imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725', labelKeywords: ['Sancta', 'Maria'], cities: ['Hyderabad'], assetName: 'Sancta Maria International School' },
-      { id: 2, imgCls: 'fig-asset-016a31a2601bd9e3',          labelKeywords: ['Michael'],         cities: ['Hyderabad'], assetName: 'St. Michael’s' },
-      { id: 3, imgCls: 'fig-asset-0f9374cd498a11f1-a670101d', labelKeywords: ['Keesara'],         cities: ['Hyderabad'], assetName: 'St. Andrews, Keesara' },
-      { id: 4, imgCls: 'fig-asset-76ba2d1ec2162f53',          labelKeywords: ['Suchitra'],        cities: ['Hyderabad'], assetName: 'St. Andrews, Suchitra' }
+      // All three fields moved together in the 2026-08-09 rename. labelKeywords
+      // match the BAKED caption text, which lost Suchitra/Keesara — the two
+      // St. Andrews cards are now told apart by "High": the plain school's
+      // caption does not contain the High School's name, and vice versa.
+      { id: 1, imgCls: 'fig-asset-3f58066ce9ef777c-b69ac725', labelKeywords: ['Sancta', 'Maria'],       cities: ['Telangana'], assetName: 'Sancta Maria International School' },
+      { id: 2, imgCls: 'fig-asset-016a31a2601bd9e3',          labelKeywords: ['Michael'],               cities: ['Telangana'], assetName: 'St. Michael’s School' },
+      { id: 3, imgCls: 'fig-asset-0f9374cd498a11f1-a670101d', labelKeywords: ['St. Andrews School'],    cities: ['Telangana'], assetName: 'St. Andrews School' },
+      { id: 4, imgCls: 'fig-asset-76ba2d1ec2162f53',          labelKeywords: ['St. Andrews High'],      cities: ['Telangana'], assetName: 'St. Andrews High School' }
     ].map(c => {
       const rec = CAP_PORTFOLIO.find(a => a.name === c.assetName) || {};
       return Object.assign({ line1: rec.line1 || rec.name, line2: rec.line2 || rec.city }, c);
@@ -3411,7 +3432,7 @@ class Component extends DCLogic {
       const wrap = ensureTilesWrap();
       if (!wrap) return;
       wrap.innerHTML = '';
-      if (cityName === 'Hyderabad') return; // photo cards own this city
+      if (cityName === 'Telangana') return; // photo cards own this city
       const assets = PORTFOLIO_DATA.filter(a => a.city === cityName);
       // Every card is the full Hyderabad height (~480px). A dense city whose
       // cards run past the base region SCROLLS inside the fixed region — the
@@ -3437,8 +3458,8 @@ class Component extends DCLogic {
         // crimson tint (#D1202F @ 65.9%) fades to the full-colour photo on
         // hover with a 1.05x zoom, and a corner arrow slides in — the whole
         // card links to the portfolio. Each asset carries its real campus
-        // photo (client batch 2026-07-23) in PORTFOLIO_DATA.img; only the
-        // Shri Ram tile still falls back to a representative stand-in.
+        // photo (client batch 2026-07-23) in PORTFOLIO_DATA.img. Every asset
+        // has one since 2026-08-10; the || fallback below is now just a guard.
         tile.innerHTML =
           '<div style="position:relative; height:' + phH + 'px; overflow:hidden;">' +
             '<img class="cap-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '" ' +
@@ -3572,7 +3593,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._alignLogo);
 
     // Default to Hyderabad on load
-    filterToCity('Hyderabad');
+    filterToCity('Telangana');
     
     // Re-run hide overlays after card DOM settles (belt and suspenders)
     setTimeout(hideRedOverlays, 800);
@@ -4271,7 +4292,7 @@ class Component extends DCLogic {
     const footerTopFrame = parseFloat(footer.style.top) || 7352;
 
     // Underline-wipe hover on footer links
-    const linkTexts = ['ABOUT US', 'PORTFOLIO', 'TEAM', 'CONTACT US', 'LINKEDIN', 'PARTNER@CAPPELLA.IN'];
+    const linkTexts = ['ABOUT US', 'PROJECTS', 'TEAM', 'CONTACT US', 'LINKEDIN', 'PARTNER@CAPPELLA.IN'];
     [...footer.querySelectorAll('span')].forEach(sp => {
       const t = (sp.textContent || '').trim().toUpperCase();
       if (linkTexts.includes(t)) {
@@ -4468,39 +4489,29 @@ class Component extends DCLogic {
     const overlay = document.createElement('div');
     overlay.id = 'cap-menu-overlay';
     overlay.innerHTML =
+      // Client 2026-08-09 (p23): stripped to the page links and a close control
+      // so this reads as the same menu the subpages use ("USE THE SAME MENU
+      // EVERYWHERE"). Removed: the MENU tag, the EXPLORE row (its three
+      // data-target in-page jumps), the STAY IN TOUCH row, and the email
+      // subscribe field — the same field p7 kept out of the subpage footers.
       '<div id="cap-menu-backdrop"></div>' +
       '<aside id="cap-menu-panel">' +
         '<div class="cap-menu-top">' +
-          '<span class="cap-menu-tag">MENU</span>' +
-          '<button id="cap-menu-close">CLOSE</button>' +
+          // "JUST PUT A X INSTEAD OF CLOSE". aria-label carries the word so the
+          // control still announces itself; the glyph is decorative.
+          '<button id="cap-menu-close" aria-label="Close menu">' +
+            '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true">' +
+              '<path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+            '</svg>' +
+          '</button>' +
         '</div>' +
-        // Main links are real page navigations; the EXPLORE row below keeps
-        // data-target in-page scrolling (its handler selects a[data-target]).
         '<nav class="cap-menu-links">' +
           '<div class="cap-menu-mask"><a href="about-us.html">About Us</a></div>' +
-          '<div class="cap-menu-mask"><a href="projects.html">Portfolio</a></div>' +
+          '<div class="cap-menu-mask"><a href="projects.html">Projects</a></div>' +
+          '<div class="cap-menu-mask"><a href="skolen.html">SKOLEN</a></div>' +
           '<div class="cap-menu-mask"><a href="team.html">Team</a></div>' +
           '<div class="cap-menu-mask"><a href="contact-us.html">Contact Us</a></div>' +
         '</nav>' +
-        '<div class="cap-menu-row">' +
-          '<span class="cap-menu-label">EXPLORE</span>' +
-          '<div class="cap-menu-info">' +
-            '<a data-target="2400">The Cappella Edge</a><br>' +
-            '<a data-target="3200">Our Journey</a><br>' +
-            '<a data-target="5460">Operators</a>' +
-          '</div>' +
-        '</div>' +
-        '<div class="cap-menu-row">' +
-          '<span class="cap-menu-label">STAY IN TOUCH</span>' +
-          '<div class="cap-menu-info">' +
-            '<a href="mailto:partner@cappella.in">partner@cappella.in</a><br>' +
-            'Suite 303, Niharika Jubilee One, Jubilee Hills,<br>Road No. 1, Hyderabad, Telangana 500033' +
-          '</div>' +
-        '</div>' +
-        '<div class="cap-menu-email">' +
-          '<input type="email" placeholder="Email address">' +
-          '<button aria-label="Subscribe">&#8594;</button>' +
-          '</div>' +
       '</aside>';
     document.body.appendChild(overlay);
 
@@ -4552,32 +4563,10 @@ class Component extends DCLogic {
     this._updateMenuBtnVisibility = updateMenuBtnVisibility; // Store reference for clean-up
     updateMenuBtnVisibility(); // Run initially
 
-    // Section links: close, then glide to the target (frame px -> page px)
-    [...overlay.querySelectorAll('a[data-target]')].forEach(a => {
-      a.addEventListener('click', () => {
-        let frameTop = parseFloat(a.dataset.target);
-        // Targets below the journey band gap shift with it
-        if (frameTop > 3889) frameTop += (this._jDelta || 0);
-        const vp = document.getElementById('cap-viewport');
-        const target = frameTop * ((vp ? vp.clientWidth : window.innerWidth) / 1440);
-        close();
-        setTimeout(() => {
-          if (this._lenis) this._lenis.scrollTo(target);
-          else window.scrollTo({ top: target, behavior: 'smooth' });
-        }, 250);
-      });
-    });
-
-    // Email subscribe — same behaviour as the footer input
-    const email = overlay.querySelector('.cap-menu-email input');
-    overlay.querySelector('.cap-menu-email button').addEventListener('click', () => {
-      if (email.value && email.value.includes('@')) {
-        alert('Thank you for subscribing, ' + email.value + '!');
-        email.value = '';
-      } else {
-        alert('Please enter a valid email address.');
-      }
-    });
+    // The EXPLORE data-target glide and the email-subscribe handler that used
+    // to live here went with their markup (client 2026-08-09 p23). The email
+    // one mattered: it did overlay.querySelector('.cap-menu-email button')
+    // unguarded, so leaving it would have thrown on every menu open.
   }
 
   _setupNavScramble() {
@@ -4832,7 +4821,7 @@ class Component extends DCLogic {
     const navItems = [
       { text: 'ABOUT US', href: 'about-us.html' },
       { text: 'PROJECTS', href: 'projects.html' },
-      { text: 'PORTFOLIO', href: 'projects.html' },
+      { text: 'SKOLEN', href: 'skolen.html' },
       { text: 'TEAM', href: 'team.html' },
       { text: 'CONTACT US', href: 'contact-us.html' }
     ];
@@ -4921,19 +4910,29 @@ class Component extends DCLogic {
     const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     // ===== STATS =====
-    // Frame 6 shows three figures staggered left / right / left inside a
-    // 390x413 crimson band (design y433-846). `top` is that band's percentage
-    // height, measured off the export at 1:1. The desktop band carries a
-    // fourth figure ("75 Years+", index.html #cap-75) which the mockup drops —
-    // omitted here to match, not removed from the desktop frame.
+    // Frame 6 staggers the figures left / right / left inside a 390x413
+    // crimson band (design y433-846). `top` is that band's percentage height,
+    // measured off the export at 1:1.
+    // Client 2026-08-09 (p22): "THERE ARE SUPPOSED TO BE 4 STATS". The export
+    // dropped the desktop band's fourth figure ("75 Years+", #cap-75); it is
+    // restored here so mobile carries the same four as desktop. It continues
+    // the l/r alternation and sits in the empty lower quarter the three left
+    // behind — the third figure ends near 78%, so 88.7% keeps it inside the
+    // band, which is overflow:hidden.
+    // A stat block measures ~62px (24px figure + 10px label + gap), which is
+    // 13.2% of the taller band — so the four are spaced 22% apart and the last
+    // one ends at 95%, clear of the bottom edge. Keeping the original 413px
+    // band and appending a fourth put it 16px past the edge, and the band is
+    // overflow:hidden, so it simply vanished.
     const STATS = [
-      { fig: '$500 Mn+',  lbl: 'AUM',                  side: 'l', top: 20.6 },
-      { fig: '16 Assets', lbl: 'Across India and GCC', side: 'r', top: 46.5 },
-      { fig: '135 Acres', lbl: 'Total Land Area',      side: 'l', top: 67.6 }
+      { fig: '$500 Mn+',  lbl: 'AUM',                   side: 'l', top: 16 },
+      { fig: '16 Assets', lbl: 'Across India and GCC',  side: 'r', top: 38 },
+      { fig: '135 Acres', lbl: 'Total Land Area',       side: 'l', top: 60 },
+      { fig: '75 Years+', lbl: 'Leadership Experience', side: 'r', top: 82 }
     ];
     // Rule segments: [left%, width%, top%] — they alternate sides and sit
     // between the figures rather than spanning the full width.
-    const STAT_RULES = [[8.5, 40.3, 33.9], [50.0, 39.7, 42.4], [8.5, 37.9, 62.9]];
+    const STAT_RULES = [[8.5, 40.3, 33.6], [50.0, 39.7, 55.6], [8.5, 37.9, 77.6]];
     const statsEl = root.querySelector('[data-cm-stats]');
     if (statsEl) {
       statsEl.innerHTML =
@@ -4948,14 +4947,16 @@ class Component extends DCLogic {
     }
 
     // ===== THE CAPPELLA EDGE ACCORDION =====
-    // Every row carries its own campus photo (CAP_EDGE.img). Row 2
-    // ("Future-ready campuses") starts open, matching the mockup.
+    // Row 2 ("Future-ready campuses") starts open, matching the mockup.
     //
-    // Only the open row gets a real `src`; the rest carry `data-src` and are
-    // promoted on first expand. loading="lazy" alone would NOT hold them back —
-    // a collapsed .cm-acc-panel is max-height:0 with overflow:hidden, so the
-    // images are still in layout and the browser fetches them as the section
-    // nears the viewport, spending ~765KB on panels the reader may never open.
+    // Client 2026-08-09 (p24): "REMOVE ALL IMAGES" — each row used to carry its
+    // campus photo from CAP_EDGE.img. The rows are text-only now, which also
+    // retires the lazy-promotion dance that went with them: only the open row
+    // got a real `src` and the rest were promoted on first expand, because a
+    // collapsed panel is max-height:0 with overflow:hidden and the browser
+    // would otherwise have fetched ~765KB of panels nobody opened.
+    // CAP_EDGE.img/.alt stay on the constant — the desktop accordion still
+    // uses them.
     const OPEN_INDEX = 1;
     const accEl = root.querySelector('[data-cm-acc]');
     if (accEl) {
@@ -4967,8 +4968,6 @@ class Component extends DCLogic {
           '</button>' +
           '<div class="cm-acc-panel">' +
             '<p class="cm-acc-body">' + esc(d.text) + '</p>' +
-            '<img class="cm-acc-img" ' + (open ? 'src' : 'data-src') + '="' + d.img + '"' +
-              ' alt="' + esc(d.alt) + '" loading="lazy" decoding="async">' +
           '</div>' +
         '</div>';
       }).join('');
@@ -4978,10 +4977,6 @@ class Component extends DCLogic {
           const item = btn.closest('.cm-acc-item');
           const open = item.classList.toggle('is-open');
           btn.setAttribute('aria-expanded', String(open));
-          if (open) {
-            const img = item.querySelector('.cm-acc-img[data-src]');
-            if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
-          }
         });
       });
     }
@@ -5003,10 +4998,17 @@ class Component extends DCLogic {
       // time their phase runs, which keeps ~500KB off the initial load.
       // REDUCED never builds a stage and so never promotes anything — its
       // photos must all be real src or two phases render broken images.
+      // Client 2026-08-09 (p25): "Image to be used is same as in the horizontal
+      // version" — each phase now shows the desktop scene's own illustration
+      // (CAP_JOURNEY.img, journey/foundation|growth|expansion.png) instead of
+      // the campus photograph in .photo. The .photo/.photoAlt fields stay on
+      // the constant; nothing else reads them, but they are the fallback if the
+      // client wants the photographs back.
+      const JIMG = './components/assets/journey/';
       const phases = CAP_JOURNEY.map((p, i) =>
         '<div class="cm-j-phase" data-i="' + i + '">' +
-          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.photo + '"' +
-            ' alt="' + esc(p.photoAlt) + '" loading="lazy" decoding="async">' +
+          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + JIMG + p.img + '"' +
+            ' alt="' + esc(p.word.join(' ')) + ' illustration" loading="lazy" decoding="async">' +
           '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
           '<ul class="cm-tl">' + p.markers.map(m =>
             '<li class="cm-tl-item">' +
@@ -5028,6 +5030,16 @@ class Component extends DCLogic {
                   '<span class="cm-j-dot" role="tab" aria-label="' + esc(p.word.join(' ')) + '"' +
                     (i === 0 ? ' aria-selected="true"' : '') + '></span>').join('') +
               '</div>' +
+              // Client 2026-08-09 (p25): prev/next arrows. They do NOT replace
+              // the scroll model — the phase is still derived from progress
+              // through the track; these just scroll to the middle of the
+              // target phase's band, so the two controls can never disagree.
+              '<button class="cm-j-arrow cm-j-arrow--prev" type="button" aria-label="Previous phase" disabled>' +
+                '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 2L4 8l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+              '</button>' +
+              '<button class="cm-j-arrow cm-j-arrow--next" type="button" aria-label="Next phase">' +
+                '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 2l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+              '</button>' +
               '<div class="cm-j-phases">' + phases + '</div>' +
             '</div>' +
           '</div>';
@@ -5051,19 +5063,22 @@ class Component extends DCLogic {
         const rows = CAP_PORTFOLIO.filter(a => a.city === city);
         tilesEl.innerHTML = rows.map((a, i) =>
           '<a class="cm-tile" href="./projects.html">' +
-            // Same stand-in rule as the desktop tiles: only The Shri Ram
-            // Universal School still lacks a real campus photo.
+            // Same rule as the desktop tiles. Every asset carries a real photo
+            // since 2026-08-10, so the || fallback is only a guard now.
             '<img class="cm-tile-img" src="' + (a.img || './components/assets/rep-campus-' + ((i % 4) + 1) + '.jpg') + '"' +
               ' alt="" loading="' + (tilesEager ? 'eager' : 'lazy') + '" decoding="async">' +
             '<div class="cm-tile-name">' + esc(a.line1 || a.name) + '</div>' +
-            // line2 is the locality; for the single-campus cities it IS the
-            // city, and "Dubai, Dubai" reads as a bug.
-            '<div class="cm-tile-loc">' + esc(a.line2 && a.line2 !== a.city ? a.line2 + ', ' + a.city : a.city) + '</div>' +
+            // line2 is the locality. Skip it when the group name already opens
+            // with it — an equality test was enough while the groups were
+            // cities, but since 2026-08-09 they are states and Dubai's group is
+            // "Dubai, UAE", which is not equal to "Dubai" yet still makes
+            // "Dubai, Dubai, UAE".
+            '<div class="cm-tile-loc">' + esc(a.line2 && a.city.indexOf(a.line2) !== 0 ? a.line2 + ', ' + a.city : a.city) + '</div>' +
           '</a>').join('');
       };
 
-      // Hyderabad first, matching the desktop default (currentCityName).
-      let active = 'Hyderabad';
+      // Telangana first, matching the desktop default (currentCityName).
+      let active = 'Telangana';
       citiesEl.innerHTML = CAP_CITIES.map(c =>
         '<button class="cm-city' + (c === active ? ' is-active' : '') + '" type="button" data-city="' + esc(c) + '">' +
           '<span>' + esc(c) + '</span>' +
@@ -5166,6 +5181,8 @@ class Component extends DCLogic {
     const stage = tlEl.querySelector('.cm-j-stage');
     const phases = Array.from(tlEl.querySelectorAll('.cm-j-phase'));
     const dots = Array.from(tlEl.querySelectorAll('.cm-j-dot'));
+    const prevBtn = tlEl.querySelector('.cm-j-arrow--prev');
+    const nextBtn = tlEl.querySelector('.cm-j-arrow--next');
     if (!track || !stage || phases.length < 2) return;
 
     let active = -1;
@@ -5182,8 +5199,38 @@ class Component extends DCLogic {
         if (n === i) el.setAttribute('aria-selected', 'true');
         else el.removeAttribute('aria-selected');
       });
+      // The arrows are driven BY the active phase, not the other way round, so
+      // they stay right whether you got here by scrolling or by tapping.
+      if (prevBtn) prevBtn.disabled = i <= 0;
+      if (nextBtn) nextBtn.disabled = i >= phases.length - 1;
     };
     setActive(0);
+
+    // Client 2026-08-09 (p25): prev/next arrows over the same scroll model.
+    // update() picks the phase from progress p across the track as
+    // floor(p * n), so phase i owns p in [i/n, (i+1)/n) — scrolling to the
+    // MIDDLE of that band (i + 0.5)/n lands on i with the most margin either
+    // side, which keeps a rounding error or a rubber-band settle from tipping
+    // into a neighbour.
+    const goToPhase = (i) => {
+      const n = phases.length;
+      const target = Math.min(Math.max(i, 0), n - 1);
+      const travel = track.offsetHeight - Math.min(stage.offsetHeight, capVH());
+      if (travel <= 0) return;
+      const trackTop = window.scrollY + track.getBoundingClientRect().top;
+      const y = trackTop + ((target + 0.5) / n) * travel;
+      // Same handoff the old menu section-links used: let Lenis drive if it is
+      // running, otherwise fall back to native smooth scroll.
+      // Read the motion preference here rather than reusing the build method's
+      // REDUCED — that is a const in a different scope, so referencing it threw.
+      // In practice this branch is unreachable under reduce (the stage is never
+      // built), but the setting can change after load.
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (this._lenis) this._lenis.scrollTo(y);
+      else window.scrollTo({ top: y, behavior: still ? 'auto' : 'smooth' });
+    };
+    if (prevBtn) prevBtn.addEventListener('click', () => goToPhase(active - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => goToPhase(active + 1));
 
     let raf = 0;
     const update = () => {

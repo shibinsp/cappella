@@ -49,8 +49,9 @@ test.describe('team.html', () => {
     // descriptive for assistive tech and search, and is visually hidden.
     await expect(page.locator('h1')).toHaveText('Leadership Collective');
     await expect(page.locator('.leader-watermark')).toHaveAttribute('aria-hidden', 'true');
+    // Client 2026-08-09 (p17): "A leadership team with" was struck out.
     await expect(page.locator('.leader-intro')).toHaveText(
-      'A leadership team with 75+ combined years across real estate, private equity and education infrastructure.'
+      '75+ combined years across real estate, private equity and education infrastructure.'
     );
 
     const cards = page.locator('.leader-card');
@@ -91,7 +92,11 @@ test.describe('team.html', () => {
     }
   });
 
-  test('the senior row renders larger than the rest', async ({ page }) => {
+  test('every card renders its portrait and type at the same size', async ({ page }) => {
+    // Client 2026-08-09: this used to assert the OPPOSITE — the senior row was
+    // deliberately scaled up. p18 ("Image size for all is to be the same") and
+    // p12 (one type scale sitewide) reversed that, so the assertion is inverted
+    // rather than deleted: the lead row keeps its taller box, nothing else.
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/team.html');
     const cards = page.locator('.leader-card');
@@ -101,12 +106,21 @@ test.describe('team.html', () => {
       expect(isLead, `${MEMBERS[i].name} lead flag`).toBe(MEMBERS[i].lead);
     }
 
-    const size = (i) =>
-      cards.nth(i).locator('h2').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    // Guards the cascade: .leader-card--lead h2 and .leader-card h2 have equal
-    // specificity, so the lead rules only win by source order. If the blocks are
-    // ever reordered this assertion is what catches it.
-    expect(await size(0)).toBeGreaterThan(await size(2));
+    const widths = await page
+      .locator('.leader-portrait')
+      .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+    expect(widths).toHaveLength(4);
+    expect(new Set(widths).size, `portrait widths differ: ${widths}`).toBe(1);
+
+    const sizes = await page
+      .locator('.leader-card h2')
+      .evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize));
+    expect(new Set(sizes).size, `heading sizes differ: ${sizes}`).toBe(1);
+
+    const roles = await page
+      .locator('.leader-role')
+      .evaluateAll((els) => els.map((e) => getComputedStyle(e).fontSize));
+    expect(new Set(roles).size, `role sizes differ: ${roles}`).toBe(1);
   });
 
   test('Read More opens a modal with that person’s bio, and closes', async ({ page }) => {

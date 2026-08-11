@@ -53,8 +53,9 @@ test.describe('menu overlay tap targets', () => {
 
     const targets = await measureTargets(page);
     // Guard the guard: if the overlay ever stops rendering, an empty list must
-    // not read as a pass.
-    expect(targets.length, 'overlay controls found').toBeGreaterThanOrEqual(8);
+    // not read as a pass. 6 = five page links + the close control; it was 8
+    // before p23 stripped the EXPLORE / STAY IN TOUCH / email blocks out.
+    expect(targets.length, 'overlay controls found').toBeGreaterThanOrEqual(6);
 
     const undersized = targets.filter((t) => t.height < 24 || t.width < 24);
     expect(
@@ -65,19 +66,36 @@ test.describe('menu overlay tap targets', () => {
     expectNoPageErrors(errors);
   });
 
-  test('the EXPLORE and STAY IN TOUCH links specifically clear 24px', async ({ page }) => {
+  test('the overlay is just the page links and a close control', async ({ page }) => {
+    // Client 2026-08-09 (p23). This test used to assert the four EXPLORE /
+    // STAY IN TOUCH links cleared 24px — ISSUE-001's original subject. Those
+    // blocks are gone, so the assertion becomes their absence; the tap-target
+    // guarantee itself is still enforced by the AA test above, which measures
+    // whatever controls remain.
     await openMenu(page);
 
-    // The exact four the squeeze regressed. Named rather than counted so a
-    // markup change that drops one is a failure, not a silently smaller set.
-    const links = page.locator('.cap-menu-info a');
-    await expect(links).toHaveCount(4);
+    await expect(page.locator('.cap-menu-tag')).toHaveCount(0);
+    await expect(page.locator('.cap-menu-row')).toHaveCount(0);
+    await expect(page.locator('.cap-menu-info')).toHaveCount(0);
+    await expect(page.locator('.cap-menu-email')).toHaveCount(0);
+    await expect(page.locator('#cap-menu-overlay a[data-target]')).toHaveCount(0);
 
-    for (const label of ['The Cappella Edge', 'Our Journey', 'Operators', 'partner@cappella.in']) {
-      const box = await page.locator('.cap-menu-info a', { hasText: label }).first().boundingBox();
-      expect(box.height, `"${label}" tap target height`).toBeGreaterThanOrEqual(24);
-      expect(box.width, `"${label}" tap target width`).toBeGreaterThanOrEqual(24);
+    const links = page.locator('.cap-menu-links a');
+    await expect(links).toHaveCount(5);
+    // "Projects", not "Portfolio": the two surfaces that still said Portfolio
+    // (this overlay and the baked homepage footer) were unified 2026-08-11 —
+    // same destination, one label.
+    for (const label of ['About Us', 'Projects', 'SKOLEN', 'Team', 'Contact Us']) {
+      await expect(page.locator('.cap-menu-links a', { hasText: label })).toHaveCount(1);
     }
+
+    // The close control is an X now, so its accessible name has to carry the
+    // meaning the word CLOSE used to.
+    const close = page.locator('#cap-menu-close');
+    await expect(close).toHaveAttribute('aria-label', /close/i);
+    const box = await close.boundingBox();
+    expect(box.width, 'close target width').toBeGreaterThanOrEqual(44);
+    expect(box.height, 'close target height').toBeGreaterThanOrEqual(44);
   });
 
   test('the panel still fits a 320x568 phone without scrolling', async ({ page }) => {

@@ -557,6 +557,20 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 755,
       top: 121,
+      width: 144,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(255,231,231)"
+    }
+  }, "SKOLEN"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 755,
+      top: 159,
       width: 154,
       height: 28,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
@@ -570,7 +584,7 @@ function Frame4(_p = {}) {
     style: {
       position: "absolute",
       left: 755,
-      top: 159,
+      top: 198,
       width: 160,
       height: 29,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
@@ -1040,7 +1054,7 @@ function Frame4(_p = {}) {
       width: 670,
       height: 63,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 400,
+      fontWeight: 600,
       fontSize: 30,
       lineHeight: 2.109999895095825,
       color: "rgb(209,32,47)"
@@ -1077,11 +1091,11 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 806,
       top: 2389,
-      width: 359,
+      width: 384,
       height: 63,
       opacity: 0.75,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 400,
+      fontWeight: 600,
       fontSize: 30,
       whiteSpace: "nowrap",
       lineHeight: 2.109999895095825,
@@ -1092,11 +1106,11 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 806,
       top: 2455,
-      width: 410,
+      width: 420,
       height: 63,
       opacity: 0.75,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 400,
+      fontWeight: 600,
       fontSize: 30,
       whiteSpace: "nowrap",
       lineHeight: 2.109999895095825,
@@ -1107,11 +1121,11 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 806,
       top: 2795,
-      width: 487,
+      width: 520,
       height: 63,
       opacity: 0.75,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 400,
+      fontWeight: 600,
       fontSize: 30,
       whiteSpace: "normal",
       lineHeight: 2.109999895095825,
@@ -1262,76 +1276,6 @@ function Frame4(_p = {}) {
       position: "absolute",
       left: 219,
       top: 4289,
-      width: 155,
-      height: 28,
-      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 500,
-      fontSize: 24,
-      whiteSpace: "nowrap",
-      lineHeight: "100%",
-      color: "rgb(186,186,186)"
-    }
-  }, "Dubai"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      left: 219,
-      top: 4459,
-      width: 155,
-      height: 28,
-      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 500,
-      fontSize: 24,
-      whiteSpace: "nowrap",
-      lineHeight: "100%",
-      color: "rgb(0,0,0)"
-    }
-  }, "Hyderabad "), /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      left: 219,
-      top: 4357,
-      width: 155,
-      height: 28,
-      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 500,
-      fontSize: 24,
-      whiteSpace: "nowrap",
-      lineHeight: "100%",
-      color: "rgb(186,186,186)"
-    }
-  }, "Bangalore"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      left: 219,
-      top: 4391,
-      width: 184,
-      height: 28,
-      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 500,
-      fontSize: 24,
-      whiteSpace: "nowrap",
-      lineHeight: "100%",
-      color: "rgb(186,186,186)"
-    }
-  }, "Chhattisgarh"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      left: 219,
-      top: 4425,
-      width: 184,
-      height: 28,
-      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
-      fontWeight: 500,
-      fontSize: 24,
-      whiteSpace: "nowrap",
-      lineHeight: "100%",
-      color: "rgb(186,186,186)"
-    }
-  }, "Chennai "), /*#__PURE__*/React.createElement("span", {
-    style: {
-      position: "absolute",
-      left: 219,
-      top: 4323,
       width: 209,
       height: 28,
       fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
@@ -1345,6 +1289,76 @@ function Frame4(_p = {}) {
     style: {
       position: "absolute",
       left: 219,
+      top: 4459,
+      width: 155,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(0,0,0)"
+    }
+  }, "Maharashtra"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 219,
+      top: 4357,
+      width: 184,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(186,186,186)"
+    }
+  }, "Chhattisgarh"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 219,
+      top: 4391,
+      width: 184,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(186,186,186)"
+    }
+  }, "Tamil Nadu"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 219,
+      top: 4425,
+      width: 184,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(186,186,186)"
+    }
+  }, "Telangana"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 219,
+      top: 4323,
+      width: 209,
+      height: 28,
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      fontWeight: 500,
+      fontSize: 24,
+      whiteSpace: "nowrap",
+      lineHeight: "100%",
+      color: "rgb(186,186,186)"
+    }
+  }, "Karnataka"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      left: 219,
       top: 4493,
       width: 179,
       height: 32,
@@ -1355,7 +1369,7 @@ function Frame4(_p = {}) {
       lineHeight: "100%",
       color: "rgb(186,186,186)"
     }
-  }, "Pune \u2028\u2028"), /*#__PURE__*/React.createElement("span", {
+  }, "Dubai, UAE"), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 697,
@@ -1370,7 +1384,7 @@ function Frame4(_p = {}) {
       color: "rgb(0,0,0)",
       display: "inline-block"
     }
-  }, "Sancta Maria International School, ", "Serilingampally", " "), /*#__PURE__*/React.createElement("span", {
+  }, "Sancta Maria International School, ", "Hyderabad", " "), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 1104,
@@ -1385,7 +1399,7 @@ function Frame4(_p = {}) {
       color: "rgb(0,0,0)",
       display: "inline-block"
     }
-  }, "St. Michael’s  ", "Alwal"), /*#__PURE__*/React.createElement("svg", {
+  }, "St. Michael’s School  ", "Hyderabad"), /*#__PURE__*/React.createElement("svg", {
     width: 1028,
     height: 1,
     viewBox: "0 -0.500 1028 1",
@@ -1419,7 +1433,7 @@ function Frame4(_p = {}) {
       color: "rgb(0,0,0)",
       display: "inline-block"
     }
-  }, "St. Andrews ", "Keesara"), /*#__PURE__*/React.createElement("span", {
+  }, "St. Andrews School ", "Hyderabad"), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 1104,
@@ -1434,7 +1448,7 @@ function Frame4(_p = {}) {
       color: "rgb(0,0,0)",
       display: "inline-block"
     }
-  }, "St. Andrews ", "Suchitra"), /*#__PURE__*/React.createElement("svg", {
+  }, "St. Andrews High School ", "Hyderabad"), /*#__PURE__*/React.createElement("svg", {
     width: 485,
     height: 1,
     viewBox: "0 -0.500 485 1",
@@ -1473,7 +1487,15 @@ function Frame4(_p = {}) {
       fontWeight: 300,
       fontSize: 24,
       whiteSpace: "normal",
-      lineHeight: "100%",
+      // 135%, not the exported 100% (client 2026-08-09: "G in housing is
+      // getting cut"). _setupSplitText wraps each line of this span in an
+      // overflow:hidden mask, and Montserrat's content box is ~1.22em, so a
+      // 1em line box clips the descenders — the mask turns that into a
+      // visibly sliced "g". Padding the mask can't fix it: the reveal
+      // animates the line from yPercent 100, so any slack shows the line
+      // before it rises. Two lines at 135% measure 64.8px, inside the baked
+      // 80px box, so nothing below moves.
+      lineHeight: "135%",
       color: "rgb(0,0,0)"
     }
   }, "Partnering with established operators across K-12 schools and student housing"), /*#__PURE__*/React.createElement("span", {
@@ -1975,7 +1997,7 @@ function Frame4(_p = {}) {
       lineHeight: "100%",
       color: "rgb(255,231,231)"
     }
-  }, "PORTFOLIO"), /*#__PURE__*/React.createElement("span", {
+  }, "PROJECTS"), /*#__PURE__*/React.createElement("span", {
     style: {
       position: "absolute",
       left: 720,
