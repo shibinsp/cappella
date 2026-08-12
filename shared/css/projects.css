@@ -39,8 +39,15 @@
   transition: color .3s var(--proj-ease);
 }
 .proj-filter .count { color: rgba(0, 0, 0, 0.32); font-weight: 500; }
+/* bottom: 0, not the -19px this carried while the bar was three filters on a
+   single line. That offset dropped the rule into the controls' bottom hairline,
+   which only worked because nothing sat below it. p19 made this eight state
+   filters, so it wraps — 2 rows at 1440 through 5 rows at 360 — and a rule
+   19px under the active button lands INSIDE the next row, striking through the
+   labels there (Karnataka on a 390px phone). Sitting it on the button's own
+   bottom edge, inside its 6px padding, means it can never reach another row. */
 .proj-filter::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: -19px; height: 2px;
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
   background: var(--cap-red); transform: scaleX(0); transform-origin: left;
   transition: transform .35s var(--proj-ease);
 }

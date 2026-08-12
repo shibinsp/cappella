@@ -335,20 +335,52 @@ test.describe('mobile home', () => {
     await page.locator('#cap-mobile .cm-j-arrow--prev').click();
     await expect.poll(phase, { timeout: 6000 }).toBe(1);
 
-    // They sit over the photo, so they need a real target and must not collide
+    // They sit over the artwork, so they need a real target and must not collide
     // with the dots that already own the right edge.
     const geo = await page.evaluate(() => {
-      const a = document.querySelector('#cap-mobile .cm-j-arrow--next').getBoundingClientRect();
+      const n = document.querySelector('#cap-mobile .cm-j-arrow--next').getBoundingClientRect();
+      const p = document.querySelector('#cap-mobile .cm-j-arrow--prev').getBoundingClientRect();
       const d = document.querySelector('#cap-mobile .cm-j-dots').getBoundingClientRect();
+      const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
+      // Every phase's artwork, not just the one showing: the arrows are pinned
+      // to the stage, the images are not the same height, and the shortest one
+      // is what decides whether the band is safe.
+      const imgs = [...document.querySelectorAll('#cap-mobile .cm-j-phase .cm-journey-img')]
+        .map((e) => e.getBoundingClientRect());
+      // The dots, unlike the arrows, are placed off the SHOWING phase's artwork
+      // via --cm-j-art-h, and the three are not the same height — so they are
+      // measured against that one.
+      const live = document
+        .querySelector('#cap-mobile .cm-j-phase.is-on .cm-journey-img')
+        .getBoundingClientRect();
       return {
-        w: a.width,
-        h: a.height,
-        overlaps: !(a.right < d.left || a.left > d.right || a.bottom < d.top || a.top > d.bottom)
+        w: n.width,
+        h: n.height,
+        // Symmetric insets, as in the client's reference layout (p25).
+        leftInset: Math.round(p.left - s.left),
+        rightInset: Math.round(s.right - n.right),
+        overlaps: !(n.right < d.left || n.left > d.right || n.bottom < d.top || n.top > d.bottom),
+        offImage: imgs.filter((i) => n.bottom > i.bottom || n.top < i.top).length,
+        dotsAboveFoot: Math.round(live.bottom - d.bottom),
+        dotsCentred: Math.abs((d.left + d.right) / 2 - (live.left + live.right) / 2) < 2
       };
     });
     expect(geo.w).toBeGreaterThanOrEqual(24);
     expect(geo.h).toBeGreaterThanOrEqual(24);
     expect(geo.overlaps, 'arrows must clear the phase dots').toBe(false);
+    expect(geo.leftInset, 'prev/next sit at matching insets').toBe(geo.rightInset);
+    // The artwork's foot moves with the list length below it (45.5% of the
+    // stage at 320x568 up to 79.4% at 430x932), which is why the band is at
+    // 30% and not the reference's 50% — at 50% these fall onto white.
+    expect(geo.offImage, 'arrows stay on the artwork for every phase').toBe(0);
+    // The dots sit ON the foot of the showing phase's artwork (p25's reference
+    // puts pagination at the bottom of the panel). This is the assertion that
+    // fails if --cm-j-art-h ever stops being published or stops being refreshed
+    // — the dots then drift into open sky, which is what the client caught on
+    // 2026-08-12.
+    expect(geo.dotsAboveFoot, 'dots sit on the foot of the artwork').toBeGreaterThan(0);
+    expect(geo.dotsAboveFoot, 'dots sit on the foot of the artwork').toBeLessThan(28);
+    expect(geo.dotsCentred, 'dots are centred on the artwork').toBe(true);
   });
 
   test('Our Journey pins and advances one phase per scroll', async ({ page }) => {
@@ -581,7 +613,19 @@ test.describe('mobile home', () => {
       };
     });
     await page.evaluate((y) => window.scrollTo(0, y), g.top + g.travel + 160);
-    await page.waitForTimeout(600);
+    // Wait for the phase to finish arriving, rather than sleeping at it. The
+    // incoming phase runs a 0.34s transition on a 0.18s delay, so a fixed 600ms
+    // clears it by 80ms on an idle machine and does not clear it under a full
+    // parallel suite — sampling mid-transform read .cm-tl-item's bottom while it
+    // was still travelling its last 10px, which failed this join by 0.66 and
+    // 1.74px on two runs while passing in isolation.
+    await page.waitForFunction(() => {
+      const on = document.querySelector('#cap-mobile .cm-j-phase.is-on');
+      if (!on) return false;
+      const c = getComputedStyle(on);
+      return c.transform === 'none' && c.opacity === '1';
+    }, null, { timeout: 5000 });
+    await page.waitForTimeout(100);
 
     const joint = await page.evaluate(() => {
       const j = document.querySelector('#cap-mobile .cm-journey');

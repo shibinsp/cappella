@@ -395,12 +395,24 @@
    photograph (client 2026-08-09 p25). journey/*.png are transparent cutouts
    that the desktop scene composes ON TOP of journey/sky.png — cover cropped the
    building out of frame, and on its own a cutout would float on white. This
-   reproduces the desktop composition: same sky, same artwork, uncropped. */
+   reproduces the desktop composition: same sky, same artwork, uncropped.
+   Both anchored to `bottom`, which is the whole composition: the desktop scene
+   plants each building on a horizon (see NAT[] in index.html — it carries every
+   PNG's visual base row precisely so the bottom offset keeps it planted).
+   Centred, a 2.28:1 cutout in a 0.59:1 box floated as a 145px strip in the
+   middle of the sky, detached from the sea below it — which is what the client
+   photographed on 2026-08-12.
+   The box still takes the stage's slack, as sky above the building, rather than
+   being sized to the artwork. Capping it (tried at 46svh) hands that slack to
+   the records instead, and the records cannot absorb it: the artwork then lands
+   anywhere between 27% and 49% of the stage depending on phase and width, which
+   walks the arrows off the picture at 320 and 360, and leaves 180-320px of bare
+   rail under the last record. */
 #cap-mobile .cm-j-phase .cm-journey-img {
   flex: 1 1 auto; min-height: 130px; aspect-ratio: auto;
   margin: 0 0 20px; width: 100%;
-  object-fit: contain;
-  background: url(../../components/assets/journey/sky.png) center / cover no-repeat;
+  object-fit: contain; object-position: center bottom;
+  background: url(../../components/assets/journey/sky.png) center bottom / cover no-repeat;
 }
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible
@@ -420,10 +432,14 @@
 }
 #cap-mobile .cm-j-phase .cm-tl-phase { margin-top: 0; }
 
-/* Client 2026-08-09 (p25): prev/next arrows, sitting on the photo at its
-   vertical middle. Inset 6px/34px rather than symmetric: .cm-j-dots already
-   own the right edge at right:6px, so the next arrow is pushed inboard to
-   clear them instead of moving an existing control.
+/* Client 2026-08-09 (p25): prev/next arrows on the artwork, symmetric at both
+   outer edges as in the reference layout on that page.
+   top:30%, not the reference's 50%: the artwork is `flex: 1 1 auto`, so its
+   foot lands anywhere from 45.5% of the stage (320x568, Expansion — the
+   longest list) to 79.4% (430x932, Growth). 30% is the only band that stays on
+   the image at every phase and width; 50% would drop the arrows onto white at
+   320. They still clear .cm-j-dots at 50% by 50px at the tightest viewport,
+   which is why both can sit at 6px.
    44px, not the 24px AA floor: this page holds every tappable element to 44
    (the ISSUE-001 assertion in home-mobile.spec.js measures ALL of them, which
    is what caught these at 38). They sit on a photo, so they also carry a solid
@@ -445,7 +461,7 @@
 }
 #cap-mobile .cm-j-arrow svg { width: 16px; height: 16px; }
 #cap-mobile .cm-j-arrow--prev { left: 6px; }
-#cap-mobile .cm-j-arrow--next { right: 34px; }
+#cap-mobile .cm-j-arrow--next { right: 6px; }
 /* Disabled at the ends rather than wrapping — the phases are a chronology
    (2016 -> 2025), so looping back to Foundation from Expansion would misread. */
 #cap-mobile .cm-j-arrow:disabled { opacity: 0.35; pointer-events: none; }
@@ -453,10 +469,20 @@
   #cap-mobile .cm-j-arrow { transition: none; }
 }
 
-/* Which phase you are on, and how many are left. */
+/* Which phase you are on, and how many are left — a centred row on the FOOT of
+   the artwork, as in the p25 reference, rather than the column this was on the
+   right edge.
+   --cm-j-art-h is the artwork's measured height, published by
+   _setupMobileJourney: the flex layout decides it per phase and per viewport
+   (the picture ends between 45.5% and 79.4% of the stage), so a percentage put
+   these in open sky instead. 18px is the stage's padding-top, i.e. where the
+   artwork starts, so the foot is 18px + the height; 19px back off that clears
+   the 7px row plus a 12px margin. */
 #cap-mobile .cm-j-dots {
-  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  display: flex; flex-direction: column; gap: 10px; z-index: 2;
+  position: absolute;
+  top: calc(18px + var(--cm-j-art-h, 40%) - 19px);
+  left: 0; right: 0;
+  display: flex; justify-content: center; gap: 10px; z-index: 2;
 }
 /* The dots sit over the photo now that it fills the stage, so they carry a
    white ring — red on grass or sky is otherwise unreadable. */

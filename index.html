@@ -5210,7 +5210,25 @@ class Component extends DCLogic {
       // they stay right whether you got here by scrolling or by tapping.
       if (prevBtn) prevBtn.disabled = i <= 0;
       if (nextBtn) nextBtn.disabled = i >= phases.length - 1;
+      syncArt();
     };
+
+    // The dots sit on the foot of the artwork, and the flex layout decides that
+    // height per phase and per viewport — the picture ends anywhere from 45.5%
+    // of the stage (320x568, Expansion) to 79.4% (430x932, Growth), so no CSS
+    // length or percentage can find it. Publish the measured height instead and
+    // let home-mobile.css place them off it. Written only when it changes, so
+    // the scroll loop that calls this every frame does not restyle every frame.
+    let artH = -1;
+    const syncArt = () => {
+      const el = phases[active] && phases[active].querySelector('.cm-journey-img');
+      if (!el) return;
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (h === artH) return;
+      artH = h;
+      stage.style.setProperty('--cm-j-art-h', h + 'px');
+    };
+
     setActive(0);
 
     // Client 2026-08-09 (p25): prev/next arrows over the same scroll model.
@@ -5251,6 +5269,10 @@ class Component extends DCLogic {
       // The last phase gets the tail of the track rather than a 1/n slice that
       // only lands exactly at p === 1.
       setActive(Math.min(phases.length - 1, Math.floor(p * phases.length)));
+      // Also here, not just in setActive: a resize routes through this and
+      // leaves the phase index unchanged, so setActive early-returns and the
+      // artwork's new height would never reach CSS.
+      syncArt();
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
 
