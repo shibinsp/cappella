@@ -62,6 +62,41 @@ test.describe('skolen.html', () => {
     }
   });
 
+  test('the SKOLEN wordmark is artwork, and still reads as text', async ({ page }) => {
+    // Client 2026-08-12 (p15 desktop, p31 mobile): "USE THE LOGO OF SKOLEN
+    // SHARED". Both headings are the supplied wordmark, applied as an alpha
+    // mask so one asset serves white-on-crimson (About Us band) and
+    // ink-on-white (this page's hero).
+    const check = async (sel, expectColour) => {
+      const el = page.locator(sel);
+      // The text must survive: on About Us this h2 is the section's accessible
+      // name via aria-labelledby, so it cannot become an empty element.
+      await expect(el).toHaveText('SKOLEN');
+      const got = await el.evaluate((e) => {
+        const c = getComputedStyle(e);
+        const r = e.getBoundingClientRect();
+        return {
+          mask: (c.webkitMaskImage || c.maskImage || ''),
+          colour: c.backgroundColor,
+          aspect: +(r.width / r.height).toFixed(2),
+          w: r.width
+        };
+      });
+      expect(got.mask, `${sel} uses the wordmark asset`).toContain('skolen-wordmark');
+      expect(got.colour).toBe(expectColour);
+      expect(got.w).toBeGreaterThan(80);
+      // 1884x355 authored; off-ratio would stretch the letterforms.
+      expect(Math.abs(got.aspect - 5.31), `${sel} aspect ${got.aspect}`).toBeLessThan(0.15);
+    };
+
+    await page.goto(SKOLEN);
+    await check('h1.skolen-logo', 'rgb(0, 0, 0)');
+
+    await page.goto('/about-us.html');
+    await page.locator('#skolen').scrollIntoViewIfNeeded();
+    await check('#skolen', 'rgb(255, 255, 255)');
+  });
+
   test('module cards with exact Indian digit grouping', async ({ page }) => {
     await page.goto(SKOLEN);
     await expect(page.locator('.skolen-modules-title')).toHaveText('SKOLEN Modules');

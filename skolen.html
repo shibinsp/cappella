@@ -48,7 +48,11 @@
 
   <section class="page-hero">
     <div class="container">
-      <h1 class="hero-title" data-reveal="chars">SKOLEN</h1>
+      <!-- data-reveal, not data-reveal="chars": the char reveal splits the
+           heading into per-letter spans, and this one is artwork — the letters
+           are pushed off-screen by text-indent, so there is nothing to animate.
+           The text itself stays for assistive tech and search. -->
+      <h1 class="hero-title skolen-logo" data-reveal>SKOLEN</h1>
       <p class="hero-intro body-copy" data-reveal="lines">Greenfield, modular school infrastructure.</p>
     </div>
   </section>

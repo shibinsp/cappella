@@ -439,6 +439,39 @@
 .section--skolen .skolen-band .section-title {
   color: var(--cap-white);
 }
+/* Client 2026-08-12: "USE THE LOGO OF SKOLEN SHARED" (p15 desktop, p31 mobile).
+   The heading is the supplied wordmark now, not type. Same technique as
+   .site-logo-word in shell.css: the artwork is an alpha mask and the colour
+   comes from background-color, so one asset serves the white-on-crimson band
+   here and the ink-on-white heading on skolen.html.
+   The text stays in the DOM — this h2 is the accessible name for the section
+   via aria-labelledby, so it cannot become an empty element.
+   aspect-ratio matches the trimmed artwork (1884x355); breaking it would
+   stretch the letterforms. */
+.section--skolen .skolen-band .section-title.skolen-logo {
+  display: block;
+  width: clamp(190px, 22vw, 330px);
+  aspect-ratio: 1884 / 355;
+  background-color: var(--cap-white);
+  -webkit-mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
+          mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* Same wordmark heading the SKOLEN page's own hero, where the ground is white
+   so the mask is inked instead. Larger than the band's, being an h1. */
+.hero-title.skolen-logo {
+  display: block;
+  width: clamp(240px, 34vw, 460px);
+  aspect-ratio: 1884 / 355;
+  background-color: var(--cap-black);
+  -webkit-mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
+          mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+  white-space: nowrap;
+}
 .section--skolen .skolen-tagline {
   /* Client 2026-07-23: "Greenfield font is different" — the tagline was the
      only subtitle set in Space Mono; it now inherits Montserrat like every
