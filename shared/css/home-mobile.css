@@ -420,10 +420,14 @@
 }
 #cap-mobile .cm-j-phase .cm-tl-phase { margin-top: 0; }
 
-/* Client 2026-08-09 (p25): prev/next arrows, sitting on the photo at its
-   vertical middle. Inset 6px/34px rather than symmetric: .cm-j-dots already
-   own the right edge at right:6px, so the next arrow is pushed inboard to
-   clear them instead of moving an existing control.
+/* Client 2026-08-09 (p25): prev/next arrows on the artwork, symmetric at both
+   outer edges as in the reference layout on that page.
+   top:30%, not the reference's 50%: the artwork is `flex: 1 1 auto`, so its
+   foot lands anywhere from 45.5% of the stage (320x568, Expansion — the
+   longest list) to 79.4% (430x932, Growth). 30% is the only band that stays on
+   the image at every phase and width; 50% would drop the arrows onto white at
+   320. They still clear .cm-j-dots at 50% by 50px at the tightest viewport,
+   which is why both can sit at 6px.
    44px, not the 24px AA floor: this page holds every tappable element to 44
    (the ISSUE-001 assertion in home-mobile.spec.js measures ALL of them, which
    is what caught these at 38). They sit on a photo, so they also carry a solid
@@ -445,7 +449,7 @@
 }
 #cap-mobile .cm-j-arrow svg { width: 16px; height: 16px; }
 #cap-mobile .cm-j-arrow--prev { left: 6px; }
-#cap-mobile .cm-j-arrow--next { right: 34px; }
+#cap-mobile .cm-j-arrow--next { right: 6px; }
 /* Disabled at the ends rather than wrapping — the phases are a chronology
    (2016 -> 2025), so looping back to Foundation from Expansion would misread. */
 #cap-mobile .cm-j-arrow:disabled { opacity: 0.35; pointer-events: none; }

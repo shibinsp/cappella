@@ -335,20 +335,36 @@ test.describe('mobile home', () => {
     await page.locator('#cap-mobile .cm-j-arrow--prev').click();
     await expect.poll(phase, { timeout: 6000 }).toBe(1);
 
-    // They sit over the photo, so they need a real target and must not collide
+    // They sit over the artwork, so they need a real target and must not collide
     // with the dots that already own the right edge.
     const geo = await page.evaluate(() => {
-      const a = document.querySelector('#cap-mobile .cm-j-arrow--next').getBoundingClientRect();
+      const n = document.querySelector('#cap-mobile .cm-j-arrow--next').getBoundingClientRect();
+      const p = document.querySelector('#cap-mobile .cm-j-arrow--prev').getBoundingClientRect();
       const d = document.querySelector('#cap-mobile .cm-j-dots').getBoundingClientRect();
+      const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
+      // Every phase's artwork, not just the one showing: the arrows are pinned
+      // to the stage, the images are not the same height, and the shortest one
+      // is what decides whether the band is safe.
+      const imgs = [...document.querySelectorAll('#cap-mobile .cm-j-phase .cm-journey-img')]
+        .map((e) => e.getBoundingClientRect());
       return {
-        w: a.width,
-        h: a.height,
-        overlaps: !(a.right < d.left || a.left > d.right || a.bottom < d.top || a.top > d.bottom)
+        w: n.width,
+        h: n.height,
+        // Symmetric insets, as in the client's reference layout (p25).
+        leftInset: Math.round(p.left - s.left),
+        rightInset: Math.round(s.right - n.right),
+        overlaps: !(n.right < d.left || n.left > d.right || n.bottom < d.top || n.top > d.bottom),
+        offImage: imgs.filter((i) => n.bottom > i.bottom || n.top < i.top).length
       };
     });
     expect(geo.w).toBeGreaterThanOrEqual(24);
     expect(geo.h).toBeGreaterThanOrEqual(24);
     expect(geo.overlaps, 'arrows must clear the phase dots').toBe(false);
+    expect(geo.leftInset, 'prev/next sit at matching insets').toBe(geo.rightInset);
+    // The artwork's foot moves with the list length below it (45.5% of the
+    // stage at 320x568 up to 79.4% at 430x932), which is why the band is at
+    // 30% and not the reference's 50% — at 50% these fall onto white.
+    expect(geo.offImage, 'arrows stay on the artwork for every phase').toBe(0);
   });
 
   test('Our Journey pins and advances one phase per scroll', async ({ page }) => {
