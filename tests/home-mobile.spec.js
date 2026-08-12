@@ -613,7 +613,19 @@ test.describe('mobile home', () => {
       };
     });
     await page.evaluate((y) => window.scrollTo(0, y), g.top + g.travel + 160);
-    await page.waitForTimeout(600);
+    // Wait for the phase to finish arriving, rather than sleeping at it. The
+    // incoming phase runs a 0.34s transition on a 0.18s delay, so a fixed 600ms
+    // clears it by 80ms on an idle machine and does not clear it under a full
+    // parallel suite — sampling mid-transform read .cm-tl-item's bottom while it
+    // was still travelling its last 10px, which failed this join by 0.66 and
+    // 1.74px on two runs while passing in isolation.
+    await page.waitForFunction(() => {
+      const on = document.querySelector('#cap-mobile .cm-j-phase.is-on');
+      if (!on) return false;
+      const c = getComputedStyle(on);
+      return c.transform === 'none' && c.opacity === '1';
+    }, null, { timeout: 5000 });
+    await page.waitForTimeout(100);
 
     const joint = await page.evaluate(() => {
       const j = document.querySelector('#cap-mobile .cm-journey');
