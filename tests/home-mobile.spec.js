@@ -347,6 +347,12 @@ test.describe('mobile home', () => {
       // is what decides whether the band is safe.
       const imgs = [...document.querySelectorAll('#cap-mobile .cm-j-phase .cm-journey-img')]
         .map((e) => e.getBoundingClientRect());
+      // The dots, unlike the arrows, are placed off the SHOWING phase's artwork
+      // via --cm-j-art-h, and the three are not the same height — so they are
+      // measured against that one.
+      const live = document
+        .querySelector('#cap-mobile .cm-j-phase.is-on .cm-journey-img')
+        .getBoundingClientRect();
       return {
         w: n.width,
         h: n.height,
@@ -355,7 +361,8 @@ test.describe('mobile home', () => {
         rightInset: Math.round(s.right - n.right),
         overlaps: !(n.right < d.left || n.left > d.right || n.bottom < d.top || n.top > d.bottom),
         offImage: imgs.filter((i) => n.bottom > i.bottom || n.top < i.top).length,
-        dotsOffImage: imgs.filter((i) => d.bottom > i.bottom || d.top < i.top).length
+        dotsAboveFoot: Math.round(live.bottom - d.bottom),
+        dotsCentred: Math.abs((d.left + d.right) / 2 - (live.left + live.right) / 2) < 2
       };
     });
     expect(geo.w).toBeGreaterThanOrEqual(24);
@@ -366,10 +373,14 @@ test.describe('mobile home', () => {
     // stage at 320x568 up to 79.4% at 430x932), which is why the band is at
     // 30% and not the reference's 50% — at 50% these fall onto white.
     expect(geo.offImage, 'arrows stay on the artwork for every phase').toBe(0);
-    // Same for the dots, which is what forced them from a column on the right
-    // edge to a row: 320x568 Expansion leaves them only 8% of the stage to sit
-    // in, between the arrows' foot and the picture's.
-    expect(geo.dotsOffImage, 'dots stay on the artwork for every phase').toBe(0);
+    // The dots sit ON the foot of the showing phase's artwork (p25's reference
+    // puts pagination at the bottom of the panel). This is the assertion that
+    // fails if --cm-j-art-h ever stops being published or stops being refreshed
+    // — the dots then drift into open sky, which is what the client caught on
+    // 2026-08-12.
+    expect(geo.dotsAboveFoot, 'dots sit on the foot of the artwork').toBeGreaterThan(0);
+    expect(geo.dotsAboveFoot, 'dots sit on the foot of the artwork').toBeLessThan(28);
+    expect(geo.dotsCentred, 'dots are centred on the artwork').toBe(true);
   });
 
   test('Our Journey pins and advances one phase per scroll', async ({ page }) => {

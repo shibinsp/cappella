@@ -469,16 +469,19 @@
   #cap-mobile .cm-j-arrow { transition: none; }
 }
 
-/* Which phase you are on, and how many are left — a centred row, as in the p25
-   reference, rather than the column this was on the right edge.
-   Anchored off the arrows' own band so it can never collide with them, and the
-   row is 7px tall instead of the column's 41px, which is what lets it clear
-   both them and the foot of the artwork at 320x568 — the tightest case, where
-   the Expansion phase's picture ends at 45.5% of the stage and the arrows end
-   at 37.7%. The column could not fit that 8% gap and dropped onto the white
-   below the picture. */
+/* Which phase you are on, and how many are left — a centred row on the FOOT of
+   the artwork, as in the p25 reference, rather than the column this was on the
+   right edge.
+   --cm-j-art-h is the artwork's measured height, published by
+   _setupMobileJourney: the flex layout decides it per phase and per viewport
+   (the picture ends between 45.5% and 79.4% of the stage), so a percentage put
+   these in open sky instead. 18px is the stage's padding-top, i.e. where the
+   artwork starts, so the foot is 18px + the height; 19px back off that clears
+   the 7px row plus a 12px margin. */
 #cap-mobile .cm-j-dots {
-  position: absolute; top: calc(30% + 54px); left: 0; right: 0;
+  position: absolute;
+  top: calc(18px + var(--cm-j-art-h, 40%) - 19px);
+  left: 0; right: 0;
   display: flex; justify-content: center; gap: 10px; z-index: 2;
 }
 /* The dots sit over the photo now that it fills the stage, so they carry a
