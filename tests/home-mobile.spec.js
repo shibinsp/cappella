@@ -709,6 +709,39 @@ test.describe('mobile home', () => {
     await expect(page).toHaveURL(/projects\.html$/);
   });
 
+  test('the footer menu is set at the same size as every other footer', async ({ page }) => {
+    // Client 2026-08-09, on the mobile footer page: "Font size of menu etc is
+    // different … please follow the design and text in the desktop version".
+    // 16/500/1px is what .footer-link carries on the five subpages and what the
+    // baked desktop footer nav carries at top 7160-7261.
+    await gotoMobileHome(page);
+    const links = page.locator('#cap-mobile .cm-fnav a');
+    await expect(links).toHaveCount(5);
+    for (let i = 0; i < 5; i++) {
+      await expect(links.nth(i)).toHaveCSS('font-size', '16px');
+      await expect(links.nth(i)).toHaveCSS('font-weight', '500');
+      await expect(links.nth(i)).toHaveCSS('letter-spacing', '1px');
+      await expect(links.nth(i)).toHaveCSS('text-transform', 'uppercase');
+    }
+  });
+
+  test('the homepage sets every word in one family — no stray from the export', async ({ page }) => {
+    // The baked footer carried one span ("Designed by") on Plus Jakarta Sans,
+    // which the page actually loaded, so it rendered in a second typeface next
+    // to Montserrat. Footers and type are the two things the client has raised
+    // most often, and the frame is otherwise a clean 588-for-588 Montserrat, so
+    // this guards the whole homepage rather than that one span.
+    await gotoMobileHome(page);
+    const strays = await page.evaluate(() =>
+      ['#cap-mobile .cm-footer', '#cap-scaler']
+        .flatMap((root) => [...document.querySelectorAll(root + ' *')])
+        .filter((e) => !e.children.length && (e.textContent || '').trim())
+        .map((e) => ({ text: (e.textContent || '').trim().slice(0, 30),
+                       family: getComputedStyle(e).fontFamily.split(',')[0].replace(/"/g, '') }))
+        .filter((r) => r.family && r.family !== 'Montserrat'));
+    expect(strays, `non-Montserrat footer text: ${JSON.stringify(strays)}`).toEqual([]);
+  });
+
   test('widening past the breakpoint hands back to the scaled frame', async ({ page }) => {
     const errors = attachErrorCapture(page);
     await gotoMobileHome(page);

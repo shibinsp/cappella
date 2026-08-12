@@ -1729,7 +1729,13 @@ function Frame4(_p = {}) {
       top: 7723,
       width: 106,
       height: 20,
-      fontFamily: "\"Plus Jakarta Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      // Montserrat, not the "Plus Jakarta Sans" the export baked in here. This
+      // was the only span in the whole footer on a different family, and it did
+      // render as one — the page loads Plus Jakarta Sans from Google Fonts, so
+      // it resolved rather than falling back ("Designed by" measured 95.6px
+      // against Montserrat's 100.76px). Footers and type are the two things the
+      // client has raised most often.
+      fontFamily: "Montserrat, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
       fontWeight: 400,
       fontSize: 16,
       textTransform: "uppercase",
