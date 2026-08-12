@@ -354,7 +354,8 @@ test.describe('mobile home', () => {
         leftInset: Math.round(p.left - s.left),
         rightInset: Math.round(s.right - n.right),
         overlaps: !(n.right < d.left || n.left > d.right || n.bottom < d.top || n.top > d.bottom),
-        offImage: imgs.filter((i) => n.bottom > i.bottom || n.top < i.top).length
+        offImage: imgs.filter((i) => n.bottom > i.bottom || n.top < i.top).length,
+        dotsOffImage: imgs.filter((i) => d.bottom > i.bottom || d.top < i.top).length
       };
     });
     expect(geo.w).toBeGreaterThanOrEqual(24);
@@ -365,6 +366,10 @@ test.describe('mobile home', () => {
     // stage at 320x568 up to 79.4% at 430x932), which is why the band is at
     // 30% and not the reference's 50% — at 50% these fall onto white.
     expect(geo.offImage, 'arrows stay on the artwork for every phase').toBe(0);
+    // Same for the dots, which is what forced them from a column on the right
+    // edge to a row: 320x568 Expansion leaves them only 8% of the stage to sit
+    // in, between the arrows' foot and the picture's.
+    expect(geo.dotsOffImage, 'dots stay on the artwork for every phase').toBe(0);
   });
 
   test('Our Journey pins and advances one phase per scroll', async ({ page }) => {
