@@ -28,7 +28,11 @@
 <helmet>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Plus+Jakarta+Sans:wght@400&amp;family=Over+the+Rainbow&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <!-- Plus+Jakarta+Sans dropped: the footer's "Designed by" was the only thing
+       on the page using it, and that is Montserrat now. It was a real download,
+       not an unresolved declaration, so this is one fewer webfont on the
+       homepage's critical path. -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Over+the+Rainbow&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="components/fig-assets.css">
   <link rel="stylesheet" href="shared/css/home.css">
   <!-- Phones (<=767px) hide #cap-viewport entirely and render #cap-mobile
