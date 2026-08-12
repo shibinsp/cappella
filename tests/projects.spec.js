@@ -183,6 +183,38 @@ test.describe('projects.html', () => {
     await expect(card).not.toHaveClass(/is-flipped/);
   });
 
+  test('the active-filter rule never reaches another filter', async ({ page }) => {
+    // Regression: the rule sat at bottom:-19px, which was fine while the bar
+    // was three filters on one line. p19 made it eight state filters, so it
+    // wraps (2 rows at 1440, 5 at 360) and the rule landed INSIDE the next row,
+    // striking through the labels there — reported from a real phone showing it
+    // drawn across KARNATAKA.
+    // Measured off the painted ::after box rather than an assumed offset, and
+    // on BOTH axes: the rule spans its own button's width, so a vertical-only
+    // check reports every same-row sibling as a false positive.
+    for (const w of [1440, 1024, 768, 412, 390, 360]) {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.goto('/projects.html');
+      const hit = await page.evaluate(() => {
+        const btns = [...document.querySelectorAll('.proj-filter')];
+        const act = document.querySelector('.proj-filter[aria-pressed="true"]');
+        const cs = getComputedStyle(act, '::after');
+        const ar = act.getBoundingClientRect();
+        const bottom = ar.bottom - (parseFloat(cs.bottom) || 0);
+        const top = bottom - (parseFloat(cs.height) || 0);
+        return btns
+          .filter((x) => {
+            const r = x.getBoundingClientRect();
+            return x !== act &&
+              r.top < bottom - 0.5 && r.bottom > top + 0.5 &&
+              r.left < ar.right - 0.5 && r.right > ar.left + 0.5;
+          })
+          .map((x) => x.textContent.trim());
+      });
+      expect(hit, `active-filter rule overlaps another filter at ${w}px`).toEqual([]);
+    }
+  });
+
   test('grid / list toggle switches layout', async ({ page }) => {
     await page.goto('/projects.html');
     const grid = page.locator('.proj-grid');
