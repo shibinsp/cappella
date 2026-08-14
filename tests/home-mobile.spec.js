@@ -703,19 +703,26 @@ test.describe('mobile home', () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  // #cap-mobile no longer carries a footer of its own: the shared
+  // <footer class="site-footer"> sits outside it and serves both breakpoints
+  // (2026-08-14). These two now assert that shared footer on a phone.
   test('footer links navigate', async ({ page }) => {
     await gotoMobileHome(page);
-    await page.locator('#cap-mobile .cm-fnav a[href="./projects.html"]').click();
+    const link = page.locator('.site-footer a[href="projects.html"]');
+    await link.scrollIntoViewIfNeeded();
+    await link.click();
     await expect(page).toHaveURL(/projects\.html$/);
   });
 
   test('the footer menu is set at the same size as every other footer', async ({ page }) => {
     // Client 2026-08-09, on the mobile footer page: "Font size of menu etc is
     // different … please follow the design and text in the desktop version".
-    // 16/500/1px is what .footer-link carries on the five subpages and what the
-    // baked desktop footer nav carries at top 7160-7261.
+    // 16/500/1px is what .footer-link carries. This used to be a real risk —
+    // three separate footers to keep in step — and is now structurally true:
+    // one stylesheet, one markup block, every page. Kept as the guard that it
+    // stays that way.
     await gotoMobileHome(page);
-    const links = page.locator('#cap-mobile .cm-fnav a');
+    const links = page.locator('.site-footer .footer-nav a');
     await expect(links).toHaveCount(5);
     for (let i = 0; i < 5; i++) {
       await expect(links.nth(i)).toHaveCSS('font-size', '16px');
@@ -733,7 +740,7 @@ test.describe('mobile home', () => {
     // this guards the whole homepage rather than that one span.
     await gotoMobileHome(page);
     const strays = await page.evaluate(() =>
-      ['#cap-mobile .cm-footer', '#cap-scaler']
+      ['.site-footer', '#cap-mobile', '#cap-scaler']
         .flatMap((root) => [...document.querySelectorAll(root + ' *')])
         .filter((e) => !e.children.length && (e.textContent || '').trim())
         .map((e) => ({ text: (e.textContent || '').trim().slice(0, 30),

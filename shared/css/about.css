@@ -86,9 +86,14 @@
   padding-block: clamp(44px, 6vw, 80px);
 }
 
+/* minmax(0, 1fr), not 1fr: a bare 1fr is minmax(AUTO, 1fr), so each track
+   refuses to shrink below its content's intrinsic width. At 900px — just above
+   the 899px two-column breakpoint — the four tracks resolved to 896px inside an
+   828px container and "3.3 Mn SFT" pushed the last stat 32px past the viewport,
+   giving the whole page a horizontal scrollbar. */
 .stats-band dl {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(24px, 4vw, 48px);
 }
 
@@ -117,7 +122,7 @@
 
 @media (max-width: 899px) {
   .stats-band dl {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 36px;
   }
 }
@@ -446,12 +451,14 @@
    here and the ink-on-white heading on skolen.html.
    The text stays in the DOM — this h2 is the accessible name for the section
    via aria-labelledby, so it cannot become an empty element.
-   aspect-ratio matches the trimmed artwork (1884x355); breaking it would
-   stretch the letterforms. */
+   aspect-ratio matches the trimmed artwork (2608x372); breaking it would
+   stretch the letterforms. Client 2026-08-14 supplied the real mark — the asset
+   that was here had a line cut through every stroke, so the letters rendered as
+   two parallel strokes with the ground showing between them. */
 .section--skolen .skolen-band .section-title.skolen-logo {
   display: block;
   width: clamp(190px, 22vw, 330px);
-  aspect-ratio: 1884 / 355;
+  aspect-ratio: 2608 / 372;
   background-color: var(--cap-white);
   -webkit-mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
           mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
@@ -464,7 +471,7 @@
 .hero-title.skolen-logo {
   display: block;
   width: clamp(240px, 34vw, 460px);
-  aspect-ratio: 1884 / 355;
+  aspect-ratio: 2608 / 372;
   background-color: var(--cap-black);
   -webkit-mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
           mask: url(../../components/assets/skolen/skolen-wordmark.png) 0 0 / 100% 100% no-repeat;
@@ -544,13 +551,8 @@
   padding-bottom: clamp(72px, 10vw, 128px);
   position: relative;
 }
-/* Sits on the pale ground now, so the heading is dark (was white on the band). */
-.section--skolen .skolen-modules-title {
-  color: #1a1a1a;
-  font-weight: 600;
-  font-size: var(--cap-type-subhead);
-  margin-bottom: clamp(20px, 2.6vw, 36px);
-}
+/* The .skolen-modules-title rule that lived here went with the "SKOLEN Modules"
+   heading itself (removed 2026-08-14) — the module cards now open the section. */
 /* ---- Pinned mask-reveal (client 2026-07-24) ----
    Base/fallback layout: a single column where each module's aerial sits inline
    beneath it. __text (articles) and __media/__pin (images) are hoisted with

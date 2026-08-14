@@ -19,8 +19,14 @@ async function gotoHome(page, testInfo) {
   // Nav spans get role="link" when the binding timer has run — wait on that,
   // not on a fixed sleep. (Attached, not visible: below 900px they are hidden
   // and below 768px the whole frame is.)
+  // PROJECTS, not ABOUT US: the export splits two-word labels into separate
+  // child spans, so the top nav's textContent is "ABOUTUS" and never matched
+  // "ABOUT US". This used to pass only because the baked FOOTER carried a
+  // second, properly spaced copy — and that footer is gone (2026-08-14, one
+  // shared <footer class="site-footer"> for every page). A single-word label
+  // matches the real top nav on its own.
   await page
-    .locator('span[role="link"]', { hasText: 'ABOUT US' })
+    .locator('span[role="link"]', { hasText: 'PROJECTS' })
     .first()
     .waitFor({ state: 'attached', timeout: 15000 });
   if (testInfo && isPhone(testInfo)) {
@@ -80,7 +86,12 @@ test.describe('homepage regression', () => {
     test.skip(testInfo.project.name !== 'desktop', 'hero nav spans are desktop-only; mobile/tablet navigate via the hamburger overlay');
     await gotoHome(page);
 
-    await page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first().click();
+    // Regexes tolerant of the missing space: the export splits two-word labels
+    // into separate child spans, so the hero nav's textContent is "ABOUTUS".
+    // The literal 'ABOUT US' these used to pass with was matching the baked
+    // FOOTER's spaced copy, not the hero nav this test is named for — so it
+    // only started failing when that footer was retired (2026-08-14).
+    await page.locator('span[role="link"]', { hasText: /ABOUT\s*US/ }).first().click();
     await expect(page).toHaveURL(/about-us\.html$/);
 
     await gotoHome(page);
@@ -92,7 +103,7 @@ test.describe('homepage regression', () => {
     await expect(page).toHaveURL(/team\.html$/);
 
     await gotoHome(page);
-    await page.locator('span[role="link"]', { hasText: 'CONTACT US' }).first().click();
+    await page.locator('span[role="link"]', { hasText: /CONTACT\s*US/ }).first().click();
     await expect(page).toHaveURL(/contact-us\.html$/);
   });
 
@@ -102,7 +113,8 @@ test.describe('homepage regression', () => {
     test.skip(testInfo.project.name !== 'desktop', 'hero nav spans are desktop-only');
     await gotoHome(page);
 
-    const about = page.locator('span[role="link"]', { hasText: 'ABOUT US' }).first();
+    // See the note above on why this is a regex and not 'ABOUT US'.
+    const about = page.locator('span[role="link"]', { hasText: /ABOUT\s*US/ }).first();
     await expect(about).toHaveAttribute('tabindex', '0');
     await about.focus();
     await page.keyboard.press('Enter');
@@ -164,41 +176,17 @@ test.describe('homepage regression', () => {
     await expect(page).toHaveURL(/projects\.html$/);
   });
 
-  test('footer spans navigate (PROJECTS → projects)', async ({ page }, testInfo) => {
-    // Phones render the mobile footer instead of the baked frame's; its
-    // equivalent link is asserted in home-mobile.spec.js.
-    test.skip(isPhone(testInfo), 'baked footer spans are frame-bound; phones use #cap-mobile .cm-fnav');
-    // The page is much taller with the pinned journey gap — scrolling to the
-    // footer and binding retries need headroom under parallel load.
+  test('footer links navigate (PROJECTS → projects)', async ({ page }, testInfo) => {
+    // Runs on every project now, phones included. The homepage used to carry
+    // two bespoke footers — the baked frame's role="link" spans on desktop and
+    // #cap-mobile .cm-fnav on phones — so this test had to skip phones and dig
+    // the right span out of three PROJECTS matches. Since 2026-08-14 all six
+    // pages share one <footer class="site-footer"> of real anchors, at every
+    // breakpoint, so the assertion is just the anchor.
     testInfo.setTimeout(60000);
     await gotoHome(page, testInfo);
-    // Wait for the footer reveal flip, re-nudging the scroll each poll (the
-    // flip listens to scroll; under heavy CPU contention a single programmatic
-    // jump can land before the listener registers).
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() => {
-            window.scrollTo(0, document.body.scrollHeight);
-            return document.getElementById('cap-scaler').classList.contains('cap-footer-in');
-          }),
-        { timeout: 25000 }
-      )
-      .toBe(true);
-    // …then let the staggered entrance finish so the click target is stable.
-    await page.waitForTimeout(1800);
-    // Until 2026-08-11 the footer span read PORTFOLIO while the header read
-    // PROJECTS, so `hasText: 'PORTFOLIO'` picked the footer one on its own.
-    // Both say PROJECTS now and THREE spans match — the header nav, its
-    // hover-roll clone, and the footer. .first() landed on the header, which is
-    // hidden below 900px, so this timed out instead of failing loudly.
-    // :not(.cap-nav) drops the header (that class is added by the nav
-    // scramble), and .last() takes the footer, which is later in the frame's
-    // DOM than the hero. Asserted visible first so a bad match reports as a
-    // clear failure rather than a 60s click timeout.
-    const footerLink = page
-      .locator('#cap-scaler span[role="link"]:not(.cap-nav)', { hasText: 'PROJECTS' })
-      .last();
+    const footerLink = page.locator('.site-footer a[href="projects.html"]');
+    await footerLink.scrollIntoViewIfNeeded();
     await expect(footerLink).toBeVisible();
     await footerLink.click();
     await expect(page).toHaveURL(/projects\.html$/);

@@ -620,12 +620,9 @@
 
 /* The footer sits on a wider inset than the rest of the page — measured at
    ~30px against ~24px elsewhere on the Frame 6 export. */
-#cap-mobile .cm-footer {
-  background: var(--cap-red); color: #fff;
-  padding: 44px 30px 30px;
-}
-#cap-mobile .cm-footer-mark { width: 90px; height: auto; margin: 0 0 34px; }
-#cap-mobile .cm-fnav { border-top: 1px solid rgba(255, 255, 255, 0.28); }
+/* #cap-mobile's own footer styles were removed with its footer markup
+   (2026-08-14): the shared <footer class="site-footer"> sits outside
+   #cap-mobile and serves phones too. See shared/css/footer.css. */
 /* Client 2026-08-09 (mobile footer page): "Font size of menu etc is different …
    please follow the design and text in the desktop version". 16px/500/1px is
    exactly what .footer-link carries on the five subpages and what the baked
@@ -633,74 +630,6 @@
    size across every footer on the site. Tracking is 1px rather than the 0.1em
    this had, because 0.1em rescales with the type (it would land at 1.6px here)
    and the desktop value is a flat 1px. */
-#cap-mobile .cm-fnav a {
-  display: flex; align-items: center; justify-content: space-between;
-  min-height: 48px; padding: 13px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-  font-size: 16px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: #fff;
-}
-#cap-mobile .cm-fnav a:hover { color: #fff; }
-#cap-mobile .cm-fnav svg { width: 7px; height: 11px; flex: none; opacity: 0.85; }
-
-/* Contact rows put the icon in a hairline circle in the design, and the copy
-   sits clear of it at ~x70 (i.e. a 32px badge + ~10px gap from the 30px inset). */
-#cap-mobile .cm-frow {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 16px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-  font-size: 12px; line-height: 1.55;
-}
-#cap-mobile .cm-frow svg {
-  width: 32px; height: 32px; flex: none; padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%;
-  box-sizing: border-box;
-}
-/* The mailto sits at the row's text height — 19px, under the 24px minimum a
-   touch target needs. Padding grows the hit area and the matching negative
-   margin gives the space back, so it becomes tappable without moving anything. */
-#cap-mobile .cm-frow a {
-  color: #fff;
-  display: inline-block; padding: 13px 0; margin: -13px 0;
-}
-#cap-mobile .cm-frow address { font-style: normal; white-space: pre-line; }
-
-#cap-mobile .cm-flabel {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85); margin: 26px 0 12px;
-}
-/* 44px so the only social link on the page is a full-size touch target; the
-   glyph stays 15px, only the tappable badge grows. */
-#cap-mobile .cm-social {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; background: #fff; color: var(--cap-red); border-radius: 2px;
-}
-#cap-mobile .cm-social svg { width: 15px; height: 15px; }
-
-#cap-mobile .cm-email {
-  display: flex; align-items: center; gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55); border-radius: 3px; padding: 0 12px;
-}
-#cap-mobile .cm-email input {
-  flex: 1 1 auto; min-width: 0; height: 44px;
-  background: none; border: 0; outline: none; color: #fff;
-  font-family: inherit; font-size: 12.5px;
-}
-#cap-mobile .cm-email input::placeholder { color: rgba(255, 255, 255, 0.7); }
-#cap-mobile .cm-email button {
-  flex: none; width: 32px; height: 44px; display: flex; align-items: center; justify-content: center;
-}
-#cap-mobile .cm-email svg { width: 17px; height: 12px; }
-
-#cap-mobile .cm-initiative {
-  margin-top: 30px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.28);
-}
-#cap-mobile .cm-initiative-lbl {
-  font-size: 10px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.85); margin-bottom: 12px;
-}
-#cap-mobile .cm-initiative-logos { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-#cap-mobile .cm-designed {
-  display: flex; align-items: center; gap: 10px; margin-top: 26px;
-  font-size: 10px; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.85);
-}
 
 /* ===== REVEALS =====
    Deliberately light: the phone layout is a long scroll and the desktop
