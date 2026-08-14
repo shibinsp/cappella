@@ -3,13 +3,17 @@
 // - Serves the repo root.
 // - `/` maps to the homepage (index.html).
 // - Path-traversal guarded (resolved path must stay inside the root).
+// - Port resolution: argv > $PORT > 8788. argv stays first so `npm run serve`
+//   and the Playwright webServer, which both pass 8788 explicitly, are
+//   unaffected; $PORT is what lets a harness assign a free port when 8788 is
+//   already taken by another copy of this server.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, resolve, sep, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const port = Number(process.argv[2] || 8788);
+const port = Number(process.argv[2] || process.env.PORT || 8788);
 
 const mime = {
   '.html': 'text/html; charset=utf-8',

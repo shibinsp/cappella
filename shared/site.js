@@ -625,6 +625,28 @@
     window.addEventListener('load', function () { map.invalidateSize(); });
   }
 
+  /* =====================================================================
+     FOOTER EMAIL
+     Same behaviour as the homepage's two copies of this field (the baked
+     desktop footer and #cap-mobile's .cm-email): validate loosely, alert,
+     clear. There is no backend to post to — when one exists it replaces the
+     alert here and in index.html together.
+     ===================================================================== */
+  function initFooterEmail() {
+    var form = document.querySelector('[data-footer-email]');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var input = form.querySelector('input');
+      if (input.value && input.value.indexOf('@') !== -1) {
+        alert('Thank you for subscribing, ' + input.value + '!');
+        input.value = '';
+      } else {
+        alert('Please enter a valid email address.');
+      }
+    });
+  }
+
   /* ===================================================================== */
   initLenis();
   initMenu();
@@ -635,4 +657,5 @@
   initScramble();
   initTilt();
   initContactMap();
+  initFooterEmail();
 })();

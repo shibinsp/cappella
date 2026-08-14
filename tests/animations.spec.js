@@ -553,41 +553,50 @@ test.describe('portfolio counter-scroll columns', () => {
 test.describe('footer reveal replays', () => {
   const HOME = '/index.html';
 
-  test('choreography retracts off-screen and replays on the next visit', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'mobile', 'frame-bound footer reveal; phones render the #cap-mobile footer');
+  // The two-way retract/replay this file used to assert belonged to the baked
+  // frame footer, which no longer exists: since 2026-08-14 the homepage shares
+  // the same <footer class="site-footer"> as every other page, and the shared
+  // reveal is one-way (shared/site.js initReveals adds .is-in and unobserves).
+  // So the assertion is now the shared behaviour — it arms hidden, reveals on
+  // approach, and staggers its items — which is what the subpages do too.
+  test('footer arms hidden, reveals on scroll, and staggers its items', async ({ page }, testInfo) => {
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
     await page.goto(HOME, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#cap-journey', { timeout: 20000 });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(2500);
 
-    const state = () =>
-      page.evaluate(() => ({
-        cls: document.getElementById('cap-scaler').classList.contains('cap-footer-in'),
-        logoClip: (document.querySelector('.fig-asset-c9d8f12cf6e90c99') || {}).style?.clipPath || ''
-      }));
-    const scrollBottom = () =>
-      page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const reveal = page.locator('.site-footer [data-reveal="footer"]');
+    await expect(reveal).toHaveCount(1);
 
-    // Visit 1: revealed
+    // Armed: the wiring script has run and set per-item delays, but the footer
+    // is still far below the fold so .is-in has not landed.
     await expect
-      .poll(async () => { await scrollBottom(); return (await state()).cls; }, { timeout: 15000 })
-      .toBe(true);
+      .poll(
+        () => page.evaluate(() => {
+          const el = document.querySelector('.site-footer .cap-footer-item');
+          return el ? el.style.transitionDelay : '';
+        }),
+        { timeout: 20000 }
+      )
+      .not.toBe('');
+    await expect(reveal).not.toHaveClass(/is-in/);
 
-    // Leave: retracted (class dropped, big C re-clipped) once fully off-screen
-    await page.evaluate(() => window.scrollTo(0, 0));
+    // Reveals once scrolled to. Lenis hijacks scrollTo on the homepage, so
+    // drive it with the wheel the way a visitor would.
     await expect
       .poll(async () => {
-        await page.evaluate(() => window.scrollTo(0, 0));
-        const s = await state();
-        return !s.cls && s.logoClip.includes('100%');
-      }, { timeout: 15000 })
+        await page.mouse.wheel(0, 4000);
+        return reveal.evaluate((el) => el.classList.contains('is-in'));
+      }, { timeout: 30000 })
       .toBe(true);
 
-    // Visit 2: replays
-    await expect
-      .poll(async () => { await scrollBottom(); return (await state()).cls; }, { timeout: 15000 })
-      .toBe(true);
+    // Delays sweep left→right / top→down rather than all firing together.
+    const delays = await page.evaluate(() =>
+      [...document.querySelectorAll('.site-footer .cap-footer-item')]
+        .map((el) => parseFloat(el.style.transitionDelay)));
+    expect(delays.length).toBeGreaterThan(3);
+    expect(Math.max(...delays)).toBeGreaterThan(Math.min(...delays));
+
     expectNoPageErrors(errors);
   });
 });

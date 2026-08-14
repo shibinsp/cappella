@@ -519,84 +519,10 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
     clip-path: inset(0 -2% 0 0); /* -2% guard for glyph overhang */
   }
 
-  /* ===== Footer sibling reveal (re-hydration-proof, premium) =====
-     Keyed by the data-original-top tags adjustFooter maintains (re-
-     applied on every frame re-hydration) and gated by the one-way
-     .cap-footer-in scaler class — a re-created element automatically
-     re-acquires the correct state and can never be stranded invisible.
-     clip-path is defined in ELEMENT space (it travels with the span),
-     so clipped + translated hidden states read as true masked rises
-     with zero wrapper DOM. transition-property never includes
-     top/left, so adjustFooter's positioning writes don't animate.
-     !important on hidden props: some siblings carry inline opacity
-     from other reveal systems; the gate must win until it releases. */
-
-  /* Nav — masked line rise, cascading */
-  #cap-scaler [data-original-top="7420"] { transition: opacity 0.9s var(--cap-ease-expo) 0.10s, transform 0.9s var(--cap-ease-expo) 0.10s, clip-path 0.9s var(--cap-ease-expo) 0.10s; }
-  #cap-scaler [data-original-top="7445"] { transition: opacity 0.9s var(--cap-ease-expo) 0.18s, transform 0.9s var(--cap-ease-expo) 0.18s, clip-path 0.9s var(--cap-ease-expo) 0.18s; }
-  #cap-scaler [data-original-top="7471"] { transition: opacity 0.9s var(--cap-ease-expo) 0.26s, transform 0.9s var(--cap-ease-expo) 0.26s, clip-path 0.9s var(--cap-ease-expo) 0.26s; }
-  #cap-scaler [data-original-top="7496"] { transition: opacity 0.9s var(--cap-ease-expo) 0.34s, transform 0.9s var(--cap-ease-expo) 0.34s, clip-path 0.9s var(--cap-ease-expo) 0.34s; }
-  #cap-scaler.cap-footer-in [data-original-top="7420"],
-  #cap-scaler.cap-footer-in [data-original-top="7445"],
-  #cap-scaler.cap-footer-in [data-original-top="7471"],
-  #cap-scaler.cap-footer-in [data-original-top="7496"] { clip-path: inset(-8% 0 -8% 0); }
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7420"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7445"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7471"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7496"] {
-    opacity: 0 !important;
-    transform: translateY(16px) !important;
-    clip-path: inset(100% 0 0 0) !important;
-  }
-
-  /* Email — left→right text wipe */
-  #cap-scaler [data-original-top="7416"] { transition: opacity 0.9s var(--cap-ease-expo) 0.15s, clip-path 0.9s var(--cap-ease-expo) 0.15s; }
-  #cap-scaler.cap-footer-in [data-original-top="7416"] { clip-path: inset(-6% -2% -6% 0); }
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7416"] {
-    opacity: 0 !important;
-    clip-path: inset(-6% 100% -6% 0) !important;
-  }
-
-  /* Address — multi-line top-down unveil */
-  #cap-scaler [data-original-top="7458"] { transition: opacity 1.05s var(--cap-ease-expo) 0.25s, transform 1.05s var(--cap-ease-expo) 0.25s, clip-path 1.05s var(--cap-ease-expo) 0.25s; }
-  #cap-scaler.cap-footer-in [data-original-top="7458"] { clip-path: inset(-4% 0 -4% 0); }
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7458"] {
-    opacity: 0 !important;
-    transform: translateY(10px) !important;
-    clip-path: inset(0 0 100% 0) !important;
-  }
-
-  /* Credit labels — left→right text wipe (a letter-spacing settle was
-     tried first, but the wider tracking overflowed the spans' fixed
-     boxes and the global wrap rule broke them onto two lines mid-
-     animation; a clip wipe never changes layout) */
-  #cap-scaler [data-original-top="7948"] { transition: opacity 0.9s var(--cap-ease-expo) 0.35s, clip-path 0.9s var(--cap-ease-expo) 0.35s; }
-  #cap-scaler [data-original-top="7983"] { transition: opacity 0.9s var(--cap-ease-expo) 0.45s, clip-path 0.9s var(--cap-ease-expo) 0.45s; }
-  #cap-scaler.cap-footer-in [data-original-top="7948"],
-  #cap-scaler.cap-footer-in [data-original-top="7983"] { clip-path: inset(-6% -2% -6% 0); }
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7948"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7983"] {
-    opacity: 0 !important;
-    clip-path: inset(-6% 100% -6% 0) !important;
-  }
-
-  /* Partner + Limitless logos — draw in left→right, rising slightly */
-  #cap-scaler [data-original-top="7994"] { transition: opacity 0.9s var(--cap-ease-expo) 0.42s, transform 0.9s var(--cap-ease-expo) 0.42s, clip-path 0.9s var(--cap-ease-expo) 0.42s; }
-  #cap-scaler [data-original-top="7992"] { transition: opacity 0.9s var(--cap-ease-expo) 0.50s, transform 0.9s var(--cap-ease-expo) 0.50s, clip-path 0.9s var(--cap-ease-expo) 0.50s; }
-  #cap-scaler [data-original-top="7988"] { transition: opacity 0.9s var(--cap-ease-expo) 0.58s, transform 0.9s var(--cap-ease-expo) 0.58s, clip-path 0.9s var(--cap-ease-expo) 0.58s; }
-  #cap-scaler [data-original-top="8010"] { transition: opacity 0.9s var(--cap-ease-expo) 0.55s, transform 0.9s var(--cap-ease-expo) 0.55s, clip-path 0.9s var(--cap-ease-expo) 0.55s; }
-  #cap-scaler.cap-footer-in [data-original-top="7994"],
-  #cap-scaler.cap-footer-in [data-original-top="7992"],
-  #cap-scaler.cap-footer-in [data-original-top="7988"],
-  #cap-scaler.cap-footer-in [data-original-top="8010"] { clip-path: inset(-6% -3% -6% 0); }
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7994"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7992"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="7988"],
-  #cap-scaler:not(.cap-footer-in) [data-original-top="8010"] {
-    opacity: 0 !important;
-    transform: translateY(10px) !important;
-    clip-path: inset(-6% 100% -6% 0) !important;
-  }
+  /* The footer sibling reveal that lived here was keyed to the baked
+     footer band's data-original-top tags and the .cap-footer-in gate.
+     Both went with that band (2026-08-14): every page now shares
+     <footer class="site-footer">, whose reveal lives in footer.css. */
 }
 
 /* Magnetic menu button: translate comes from CSS vars set by JS; the

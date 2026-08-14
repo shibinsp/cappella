@@ -1,0 +1,412 @@
+/* ==========================================================================
+   Cappella site footer — the ONE footer, shared by all six pages.
+
+   History worth keeping: this used to be three separate implementations — the
+   homepage's baked Figma band (absolutely positioned inside #cap-scaler, tuned
+   by ~200 lines of adjustFooter), the homepage's own #cap-mobile .cm-footer,
+   and a flow rebuild on the five subpages. They drifted every time one was
+   touched, and "make all footers same" came back from the client in round after
+   round (p7, p33, and again 2026-08-14). They are now one file and one markup
+   block; there is nothing left to keep in sync.
+
+   Self-contained on purpose. index.html does NOT load shell.css — it has its
+   own home.css — so this sheet cannot lean on shell.css's :root tokens, reset,
+   or .container. Everything it needs is defined here and scoped to
+   .site-footer, so loading it into the homepage cannot leak styles into the
+   scaled frame.
+   ========================================================================== */
+
+.site-footer {
+  --cap-red: rgb(209, 32, 47);
+  --cap-white: rgb(255, 255, 255);
+  --cap-footer-ink: rgb(255, 231, 231);
+  --cap-hairline-inverse: rgba(255, 255, 255, 0.28);
+  --cap-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --cap-ease-power: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Positioned so the footer paints above the homepage's #cap-viewport, which
+     is position:relative and would otherwise cover it: the homepage pulls this
+     footer up over the frame's empty tail with a negative margin, and in paint
+     order a positioned ancestor beats a static sibling's background AND its
+     text. z-index 1 clears the frame while staying under the menu button (94),
+     the menu overlay (93) and the pinned journey host (40). No-op elsewhere. */
+  position: relative;
+  z-index: 1;
+  background: var(--cap-red);
+  color: var(--cap-footer-ink);
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin-top: clamp(56px, 8vw, 104px);
+}
+
+/* Scoped reset. The subpages get this from shell.css, the homepage gets no
+   reset at all for flow content, so the footer carries its own — otherwise the
+   same markup renders with UA list bullets and heading margins on one page and
+   not the other, which is the exact class of drift this file exists to end. */
+.site-footer *,
+.site-footer *::before,
+.site-footer *::after {
+  box-sizing: border-box;
+}
+.site-footer p,
+.site-footer ul,
+.site-footer address {
+  margin: 0;
+  padding: 0;
+}
+.site-footer ul {
+  list-style: none;
+}
+.site-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+.site-footer img {
+  display: block;
+  max-width: 100%;
+}
+.site-footer button {
+  font: inherit;
+}
+.site-footer :focus-visible {
+  outline: 2px solid var(--cap-white);
+  outline-offset: 2px;
+}
+
+/* .container is shell.css's on the subpages; defined here too so the homepage,
+   which has no such class, lays the footer out identically. */
+.site-footer .container {
+  width: min(1216px, 92vw);
+  margin-inline: auto;
+}
+
+/* 6:3:4 tracks the design's column split (brand 0–720, nav 720–1105, contact
+   1105–1440). A narrower brand column cannot seat the three partner logos on
+   one row; a narrower contact column breaks the address line "SUITE 303,
+   NIHARIKA JUBILEE ONE," onto two. */
+.site-footer .container {
+  /* Named so .footer-col::before can negate it and run the rail edge-to-edge. */
+  --cap-footer-pad: clamp(48px, 6vw, 88px);
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 3fr) minmax(0, 4fr);
+  gap: clamp(28px, 4vw, 56px);
+  padding-block: var(--cap-footer-pad);
+}
+
+/* 387px is the mark's size in the 1440 design. Full opacity — at 0.95 the
+   white goes visibly pink against the red. */
+.footer-brand img.footer-mark {
+  width: clamp(150px, 27vw, 387px);
+  height: auto;
+}
+
+/* Columns hang their second block off the bottom (CONNECT WITH US under the
+   nav, STAY IN TOUCH under the address) with the first block flush to the top;
+   margin-top:auto on the second does that without pinning any heights.
+   No padding-left: the design sets column text FLUSH on its rail. */
+.footer-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-left: 0;
+}
+
+/* The rail is drawn behind the column and masked by each .footer-block, so it
+   survives only in the gaps — the design's rails are three short segments, not
+   one unbroken line. Blocks (not individual lines) do the masking, so the 12px
+   gaps inside the nav list don't punch the rail into a dotted line.
+   Negating the container's block padding runs it the full height of the red
+   band, top edge to bottom edge; stopping at the grid row left dead red space
+   above and below. */
+.footer-col::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(-1 * var(--cap-footer-pad));
+  bottom: calc(-1 * var(--cap-footer-pad));
+  width: 1px;
+  background: var(--cap-hairline-inverse);
+}
+.footer-block {
+  position: relative;
+  width: 100%;
+  background: var(--cap-red);
+}
+/* Top stub and bottom segment are the container's block padding, now that the
+   rail runs past it; the middle gap is this auto margin. */
+.footer-block + .footer-block {
+  margin-top: auto;
+}
+
+/* "CONNECT WITH US" is a label, not a small-caps tag — same 16/500 as the
+   LINKEDIN link beneath it. */
+/* .site-footer-prefixed on purpose: the scoped reset above matches these as
+   `.site-footer p` / `.site-footer address` (0,1,1), which would otherwise
+   outrank a bare class (0,1,0) and zero the margins set here. */
+.site-footer .footer-heading {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cap-footer-ink);
+  margin: 0 0 10px;
+}
+
+.footer-nav ul {
+  display: grid;
+  gap: 12px;
+}
+
+.footer-link {
+  position: relative;
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cap-white);
+}
+
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: var(--cap-white);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.footer-link:hover::after,
+.footer-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .footer-link::after {
+    transition: transform 0.45s var(--cap-ease-power);
+  }
+}
+
+.site-footer .footer-address {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 25px;
+  text-transform: uppercase;
+  color: var(--cap-white);
+  margin-top: 18px;
+  /* <address> is italic by UA default; the design sets it roman. */
+  font-style: normal;
+}
+
+/* Nav column reads in the footer ink; the contact column (mailto + address)
+   stays pure white. */
+.footer-nav .footer-link,
+.footer-linkedin {
+  color: var(--cap-footer-ink);
+}
+
+/* LINKEDIN is spelled out as a link rather than an icon badge; inline-flex +
+   min-height keeps the 24px AA tap target the badge gave for free
+   (ISSUE-001). */
+.footer-linkedin {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.footer-initiative {
+  margin-top: clamp(28px, 4vw, 44px);
+}
+/* 16/400 title case, centred under the C mark — hence the box capped to the
+   mark's own width. */
+.footer-initiative-lbl {
+  width: clamp(150px, 27vw, 387px);
+  max-width: 100%;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--cap-footer-ink);
+}
+/* :not(.fig-logo) so this misses the Limitless sprite beside it. nowrap because
+   "DESIGNED BY" breaking after "DESIGNED" and dropping BY onto the logo is a
+   bug this caption has hit before. */
+.footer-designed span:not(.fig-logo) {
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  color: var(--cap-white);
+  white-space: nowrap;
+}
+.site-footer .footer-designed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: clamp(24px, 3vw, 36px);
+}
+
+/* STAY IN TOUCH is the one label set larger than 16 (20/500). */
+.site-footer .footer-subscribe-lbl {
+  font-size: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--cap-footer-ink);
+  margin: 0;
+}
+.footer-email {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 272px;
+  margin-top: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--cap-hairline-inverse);
+}
+.footer-email input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 0 6px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  color: var(--cap-white);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+.footer-email input::placeholder {
+  color: rgba(255, 231, 231, 0.7);
+}
+.footer-email input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.95);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .footer-email input { transition: border-color 0.4s ease; }
+}
+/* 24px box around a 17px glyph — the AA floor the menu work settled on. */
+.footer-email button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--cap-white);
+  cursor: pointer;
+}
+.footer-email button svg {
+  width: 17px;
+  height: 12px;
+}
+
+/* One row. At full size the three logos outrun the brand column at some
+   widths, so rather than wrapping they shrink together — aspect-ratio carries
+   the height down with the width, keeping each percentage-cropped sprite
+   registered in its box. */
+.footer-initiative-logos {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 1.6vw, 24px);
+  flex-wrap: nowrap;
+  width: 100%;
+  margin-top: 14px;
+}
+.footer-initiative-logos .fig-logo {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Percentage-cropped sprites at the design's own widths (198/149/126/157).
+   The crop is expressed in percentages so it rides the box at any width —
+   hence aspect-ratio rather than a second hard-coded height. */
+.site-footer .fig-logo {
+  flex: none;
+  background-repeat: no-repeat;
+}
+.fig-logo--jv {
+  width: clamp(92px, 13.75vw, 198px);
+  aspect-ratio: 198 / 30;
+  background: url(../../components/assets/d47008086841222d-min.png) 28.571% 6.767% / 110% 733.333% no-repeat;
+}
+.fig-logo--alta {
+  width: clamp(68px, 10.4vw, 149px);
+  aspect-ratio: 149 / 35;
+  background: url(../../components/assets/d47008086841222d-min.png) 6.293% 80.651% / 156.597% 668.148% no-repeat;
+}
+.fig-logo--hillhouse {
+  width: clamp(54px, 8.75vw, 126px);
+  aspect-ratio: 126 / 42;
+  background: url(../../components/assets/d47008086841222d-min.png) 5.887% 41.289% / 162.963% 488.889% no-repeat;
+}
+.fig-logo--limitless {
+  width: clamp(81px, 10.9vw, 157px);
+  aspect-ratio: 157 / 27;
+  background: url(../../components/assets/ca0c02d662da06a8.png) 40% 47.143% / 106.369% 618.519% no-repeat;
+}
+
+@media (max-width: 899px) {
+  .site-footer .container {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stacked, the rail becomes a horizontal divider between sections, so the
+     masking blocks have nothing to mask — drop the vertical rail. */
+  .footer-col {
+    border-top: 1px solid var(--cap-hairline-inverse);
+    padding-top: 24px;
+  }
+  .footer-col::before {
+    display: none;
+  }
+  .footer-block:first-child {
+    margin-top: 0;
+  }
+  .footer-block + .footer-block {
+    margin-top: clamp(28px, 6vw, 40px);
+    margin-bottom: 0;
+  }
+
+  /* No neighbouring column to steal width from, so the partner logos wrap at
+     natural size rather than shrinking to one unreadable row on a phone. */
+  .footer-initiative-logos {
+    flex-wrap: wrap;
+  }
+  .footer-initiative-logos .fig-logo {
+    flex: none;
+  }
+}
+
+/* ---------- Reveal choreography ----------
+   Triple-gated the same way shell.css's motion system is: only under .js, only
+   with motion allowed, so no-JS and reduced-motion never hide anything.
+   Big-C mark clip-wipes 1.1s expo (+0.1s); every .cap-footer-item fades with a
+   positional delay set inline by the page's reveal script before .is-in lands. */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal='footer'] .footer-mark {
+    transition: clip-path 1.1s var(--cap-ease-expo) 0.1s;
+  }
+
+  .js [data-reveal='footer']:not(.is-in) .footer-mark {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .js [data-reveal='footer'] .cap-footer-item {
+    opacity: 1;
+    transition: opacity 0.7s var(--cap-ease-expo);
+  }
+
+  .js [data-reveal='footer']:not(.is-in) .cap-footer-item {
+    opacity: 0;
+  }
+}

@@ -33,6 +33,7 @@
        not an unresolved declaration, so this is one fewer webfont on the
        homepage's critical path. -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500&amp;family=Inter:wght@400&amp;family=Over+the+Rainbow&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+  <script>document.documentElement.className += ' js';</script>
   <link rel="stylesheet" href="components/fig-assets.css">
   <link rel="stylesheet" href="shared/css/home.css">
   <!-- Phones (<=767px) hide #cap-viewport entirely and render #cap-mobile
@@ -40,6 +41,9 @@
        frame cannot be made responsive. Loaded last so its breakpoint switch
        wins over home.css. -->
   <link rel="stylesheet" href="shared/css/home-mobile.css">
+  <!-- The one shared footer, identical on all six pages. Self-contained and
+       scoped to .site-footer so it cannot leak into the scaled frame. -->
+  <link rel="stylesheet" href="shared/css/footer.css">
 </helmet>
 <div id="cap-viewport" style="position: relative; width: 100%; overflow: hidden; background: rgb(255,255,255);">
   <div id="cap-scaler" style="width: 1440px; height: 7882px; overflow: hidden; transform-origin: top left; background: rgb(255,255,255);">
@@ -182,60 +186,141 @@
     <div class="cm-ops-grid" data-cm-ops></div>
   </section>
 
-  <!-- ===== 7. FOOTER ===== -->
-  <footer class="cm-footer">
-    <!-- Same white interlocking-C asset the hero mark uses (_setupMenuOverlay) -->
-    <img class="cm-footer-mark" src="./components/assets/c9d8f12cf6e90c99.png" alt="Cappella">
-
-    <nav class="cm-fnav">
-      <a href="./about-us.html">About Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a href="./projects.html">Projects <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a href="./skolen.html">SKOLEN <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a href="./team.html">Team <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-      <a href="./contact-us.html">Contact Us <svg viewBox="0 0 7 11" fill="none" aria-hidden="true"><path d="M1 1l4.5 4.5L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-    </nav>
-
-    <div class="cm-frow">
-      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.8 4l6.2 4.6L14.2 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <a href="mailto:partner@cappella.in">partner@cappella.in</a>
-    </div>
-    <div class="cm-frow">
-      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.6c2.6 0 4.7 2.1 4.7 4.7 0 3.3-4.7 8.1-4.7 8.1S3.3 9.6 3.3 6.3C3.3 3.7 5.4 1.6 8 1.6z" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="6.3" r="1.7" stroke="currentColor" stroke-width="1.3"/></svg>
-      <address>Suite 303, Niharika Jubilee One,
-Jubilee Hills, Road No. 1,
-Hyderabad, Telangana 500033</address>
-    </div>
-
-    <p class="cm-flabel">Connect with us</p>
-    <a class="cm-social" href="https://www.linkedin.com/company/cappella-edu-infra/" target="_blank" rel="noopener noreferrer" aria-label="Cappella on LinkedIn">
-      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.4 5.9h2.2V13H3.4V5.9zm1.1-3.4a1.3 1.3 0 110 2.6 1.3 1.3 0 010-2.6zM7.1 5.9h2.1v1h0c.3-.6 1-1.2 2.1-1.2 2.3 0 2.7 1.5 2.7 3.4V13h-2.2V9.5c0-.8 0-1.9-1.2-1.9s-1.3.9-1.3 1.8V13H7.1V5.9z"/></svg>
-    </a>
-
-    <p class="cm-flabel">Stay in touch</p>
-    <form class="cm-email" data-cm-email>
-      <input type="email" name="email" placeholder="Your Email Id" aria-label="Your email address" required>
-      <button type="submit" aria-label="Submit email">
-        <svg viewBox="0 0 17 12" fill="none" aria-hidden="true"><path d="M0 6h15M11 1l4 5-4 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </form>
-
-    <div class="cm-initiative">
-      <p class="cm-initiative-lbl">An Initiative by</p>
-      <!-- Percentage-cropped sprites from components/fig-assets.css — the boxes
-           keep each logo's authored aspect ratio so the crop still lands. -->
-      <div class="cm-initiative-logos">
-        <div class="fig-asset-d47008086841222d-3f7e74ec" style="width:92px;height:14px;" role="img" aria-label="JV Ventures"></div>
-        <div class="fig-asset-d47008086841222d-6bf12bb9" style="width:68px;height:16px;" role="img" aria-label="Alta Capital"></div>
-        <div class="fig-asset-d47008086841222d-d3c9b6d5" style="width:54px;height:18px;" role="img" aria-label="Hillhouse Capital"></div>
-      </div>
-      <div class="cm-designed">
-        <span>Designed by</span>
-        <div class="fig-asset-ca0c02d662da06a8-15b772ae" style="width:81px;height:14px;" role="img" aria-label="Limitless"></div>
-      </div>
-    </div>
-  </footer>
+  <!-- ===== 7. FOOTER =====
+       Removed: the phone footer was a third implementation of the same
+       block. #cap-mobile now ends here and the shared <footer> below
+       serves both breakpoints. -->
 </div>
+
+<!-- ============================ THE FOOTER ============================
+     One block, one stylesheet (shared/css/footer.css), byte-identical to the
+     one on the five subpages. Sits outside #cap-viewport so it is ordinary
+     responsive document content rather than part of the scaled 1440 frame,
+     which is what lets it be shared at all. Must stay INSIDE <x-dc>: that
+     subtree is re-parented into #dc-root, and a footer after </x-dc> ends up
+     outside the scroll flow entirely.
+     ==================================================================== -->
+<footer class="site-footer">
+  <div class="container" data-reveal="footer">
+    <div class="footer-brand">
+      <img class="footer-mark" src="components/assets/c9d8f12cf6e90c99.png" alt="Cappella" width="387" height="356">
+      <div class="footer-initiative">
+        <p class="footer-initiative-lbl cap-footer-item">An Initiative by</p>
+        <div class="footer-initiative-logos cap-footer-item">
+          <div class="fig-logo fig-logo--jv" role="img" aria-label="JV Ventures"></div>
+          <div class="fig-logo fig-logo--alta" role="img" aria-label="Alta Capital"></div>
+          <div class="fig-logo fig-logo--hillhouse" role="img" aria-label="Hillhouse Capital"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="footer-block">
+        <nav class="footer-nav" aria-label="Footer">
+          <ul>
+            <li class="cap-footer-item"><a class="footer-link" href="about-us.html">About Us</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="projects.html">Projects</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="skolen.html">SKOLEN</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="team.html">Team</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="contact-us.html">Contact Us</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-block">
+        <p class="footer-heading cap-footer-item">Connect With Us</p>
+        <a class="footer-link footer-linkedin cap-footer-item" href="https://www.linkedin.com/company/cappella-edu-infra/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="footer-block">
+        <a class="footer-link cap-footer-item" href="mailto:partner@cappella.in">partner@cappella.in</a>
+        <address class="footer-address cap-footer-item">
+          Suite 303, Niharika Jubilee One,<br>
+          Jubilee Hills, Road No. 1,<br>
+          Hyderabad, Telangana 500033
+        </address>
+      </div>
+      <div class="footer-block">
+        <p class="footer-subscribe-lbl cap-footer-item">Stay in Touch</p>
+        <form class="footer-email cap-footer-item" data-footer-email>
+          <input type="email" name="email" placeholder="Your Email Id" aria-label="Your email address" required>
+          <button type="submit" aria-label="Submit email">
+            <svg viewBox="0 0 17 12" fill="none" aria-hidden="true"><path d="M0 6h15M11 1l4 5-4 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <p class="footer-designed cap-footer-item">
+          <span>Designed by</span>
+          <span class="fig-logo fig-logo--limitless" role="img" aria-label="Limitless"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
 </x-dc>
+<script>
+// Footer reveal + subscribe, mirroring shared/site.js so the shared footer
+// behaves the same here as on the five subpages. index.html does not load
+// site.js (it has its own frame runtime), so this is the smallest possible
+// restatement rather than a second implementation of anything.
+(function () {
+  // The <x-dc> subtree is re-parented into #dc-root by the bundler AFTER this
+  // script runs, so querying once here finds nothing (and anything bound to a
+  // pre-move node is lost when it is re-created). Poll until the footer is
+  // actually in the document, the same retry shape the frame code uses
+  // elsewhere, then wire it exactly once.
+  // Tracked by node IDENTITY, not by a marker attribute: the bundler re-creates
+  // this subtree, and a data-* flag would be copied onto the new node, so the
+  // clone would look "already wired" while the observer sat on the discarded
+  // original. Re-wire whenever the element in the document changes.
+  var wired = null;
+  var ticks = 0;
+  var wire = function () {
+    var f = document.querySelector('[data-reveal="footer"]');
+    if (f && f !== wired) { wired = f; setup(f); }
+    if (++ticks < 60) setTimeout(wire, 300);
+  };
+  var setup = function (f) {
+    // Same positional formula as staggerFooter() in shared/site.js — sweeps
+    // left→right across the three columns and top→down when stacked. Kept
+    // identical on purpose: same footer, same choreography.
+    var cr = f.getBoundingClientRect();
+    var items = f.querySelectorAll('.cap-footer-item');
+    for (var i = 0; i < items.length; i++) {
+      var r = items[i].getBoundingClientRect();
+      var delay = 0.15 +
+        ((r.left - cr.left) / Math.max(cr.width, 1)) * 0.4 +
+        ((r.top - cr.top) / Math.max(cr.height, 1)) * 0.15;
+      items[i].style.transitionDelay = delay.toFixed(2) + 's';
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        !('IntersectionObserver' in window)) {
+      f.classList.add('is-in');
+    } else {
+      new IntersectionObserver(function (entries, obs) {
+        for (var j = 0; j < entries.length; j++) {
+          if (entries[j].isIntersecting) { f.classList.add('is-in'); obs.unobserve(f); }
+        }
+      }, { threshold: 0.08 }).observe(f);
+    }
+
+    var form = f.parentNode.querySelector('[data-footer-email]');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var input = form.querySelector('input');
+        if (input.value && input.value.indexOf('@') !== -1) {
+          alert('Thank you for subscribing, ' + input.value + '!');
+          input.value = '';
+        } else {
+          alert('Please enter a valid email address.');
+        }
+      });
+    }
+  };
+  wire();
+})();
+</script>
+
 <template id="__bundler_thumbnail" data-bg-color="#D1202F">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
     <rect width="1200" height="800" fill="#D1202F"/>
@@ -498,7 +583,13 @@ class Component extends DCLogic {
           
           if (originalTop) {
             const orig = parseFloat(originalTop);
-            if (orig === 7352) {
+            // The baked footer band is retired: all six pages now share the
+            // <footer class="site-footer"> below the frame (shared/css/
+            // footer.css). Drop the band and every element inside it. Removal
+            // rather than display:none is deliberate — _setupFooterAnimations
+            // keys off this element and no-ops cleanly once it is absent.
+            if (orig >= 7352) { el.remove(); continue; }
+            if (false) {
               el.style.top = (7352 - footerShiftTop + jd()) + 'px';
               el.style.height = footerHeight + 'px';
               el.style.zIndex = '2';
@@ -569,13 +660,9 @@ class Component extends DCLogic {
                       // MutationObserver fire and drifted the stub 79px high.
                       // Same reason the other segments clamp to absolutes, and
                       // why each branch must re-match its own clamped value.
-                      else if (ty < 150) { newTy = 0; newW = 64; }
-                      // Middle seg: baked at ty 166 len 197, tuned pre-nudge —
-                      // it cut through PORTFOLIO/TEAM/CONTACT US once the nav
-                      // moved down 28. Start below CONTACT US (row bottom
-                      // ≈ 200), end above CONNECT WITH US (measured top ≈ 366
-                      // — its shift path lands lower than the nudged nav).
-                      else { newTy = 180 + FOOTER_CONTENT_NUDGE; newW = 150; }
+                      else if (ty < 150) { newTy = 0; newW = 72; }
+                      // Middle seg: start below CONTACT US to leave an equal gap below matching the top gap
+                      else { newTy = 213 + FOOTER_CONTENT_NUDGE; newW = 117; }
                     } else if (Math.abs(tx - 1097) < 3 || Math.abs(tx - 1094) < 3) {  // middle rail
                       newTx = 1125;
                       // Bottom seg: below the email box (bottom ≈ 421) → footer bottom (530)
@@ -592,6 +679,16 @@ class Component extends DCLogic {
                   }
                 }
               });
+
+              // CONNECT WITH US / LINKEDIN are baked at footer-local 731, 6px
+              // left of this column's rail (737) — the same offset the nav
+              // block above them carried. The rail itself can't move (see the
+              // "KEEP the baked x" note above: pulling it left jogs the join
+              // with the section rail), so the text comes right to meet it,
+              // flush the way the right column's 1124-against-1125 already is.
+              [...el.querySelectorAll('span')]
+                .filter((s) => /^(connect with us|linkedin)$/i.test((s.textContent || '').trim()))
+                .forEach((s) => { s.style.left = '737px'; });
 
               // STAY IN TOUCH column — one left rail (abs 1113 = rel 1124):
               // heading flush with the box edge, input padded 14px inside the
@@ -657,6 +754,12 @@ class Component extends DCLogic {
                 // above the Limitless logo
                 el.style.left = '1121px'; // column rail + 8px left padding
                 el.style.top = (7769 + jd() + FOOTER_CONTENT_NUDGE) + 'px';
+                // Baked box is 106px but uppercase "DESIGNED BY" measures 114px,
+                // so the global white-space:normal!important rule wrapped BY onto
+                // a second line, on top of the Limitless logo 22px below. Inline
+                // important beats the stylesheet (same trick as the address span).
+                el.style.setProperty('white-space', 'nowrap', 'important');
+                el.style.width = '120px';
               } else if (orig === 7948) {
                 // "An Initiative by" span
                 el.style.left = '265px'; // Centered horizontally under the white logo
@@ -667,10 +770,24 @@ class Component extends DCLogic {
                 // column (STAY IN TOUCH / DESIGNED BY / LIMITLESS at 1113). Align
                 // them to the column rail so the block hugs the divider, per Figma.
                 el.style.left = '1113px';
+              } else if (orig === 7420 || orig === 7445 || orig === 7471 ||
+                         orig === 7496 || orig === 7521) {
+                // Footer nav (ABOUT US → CONTACT US). Baked at 720, which renders
+                // 5px LEFT of the column rail, so the rail's visible segments above
+                // and below this block sat just off the text edge. The right column
+                // is the reference for what "aligned" means here: its text sits at
+                // footer-local 1124 against a rail at 1125, i.e. flush. Footer-local
+                // x runs 11 ahead of scaler x, so the rail at footer-local 737 is
+                // scaler 726 — listed value by value rather than as a range because
+                // 7458 (the address) falls between these tops and belongs to the
+                // other column.
+                el.style.left = '726px';
               }
             }
           }
         }
+        // Frame ends where the footer band used to start; the shared footer
+        // flows below #cap-viewport as normal document content.
         scaler.style.height = (7352 - footerShiftTop + footerHeight + jd()) + 'px';
       };
 
@@ -688,6 +805,13 @@ class Component extends DCLogic {
         observer.disconnect();
         adjustFooter();
         if (this._fit) this._fit();
+        // The portfolio's red C is positioned in ABSOLUTE canvas coordinates
+        // (left/top pinned to 0, placed purely by transform) and is exempt from
+        // every shifter, so any pass that moves the journey-shifted content
+        // strands it on the row it was last aligned to. Re-pin it here, after
+        // the reflow this function just caused, rather than leaving it to the
+        // resize listener — which a reflow does not fire.
+        if (this._alignLogo) this._alignLogo();
         observer.observe(scaler, OBS_CFG);
       };
       this._runAdjust = runAdjust; // journey band re-runs this after delta changes
@@ -707,7 +831,12 @@ class Component extends DCLogic {
       // Phones render #cap-mobile instead; #cap-viewport is display:none, so
       // clientWidth is 0 and scaling it is both pointless and would write a
       // scale(0) that has to be undone when the window grows back.
-      if (CAP_MOBILE_MQ.matches) return;
+      if (CAP_MOBILE_MQ.matches) {
+        // Frame hidden: the shared footer flows normally, so drop the pull-up.
+        const ftr = document.querySelector('.site-footer');
+        if (ftr) ftr.style.marginTop = '';
+        return;
+      }
       const scalerEl = document.getElementById('cap-scaler');
       const vp = document.getElementById('cap-viewport');
       if (!scalerEl || !vp) return;
@@ -715,6 +844,17 @@ class Component extends DCLogic {
       scalerEl.style.transform = 'scale(' + s + ')';
       const currentH = parseFloat(scalerEl.style.height) || FRAME_H;
       vp.style.height = (currentH * s) + 'px';
+
+      // The frame KEEPS its full height even though the baked footer band that
+      // used to fill the last 530px is gone. That is deliberate: the pinned
+      // journey's scroll track and the portfolio's position are calibrated
+      // against this length, and shortening it slid the portfolio up into the
+      // pin's stuck range — the city rows ended up underneath the pin and
+      // unclickable. So the tail stays and the shared footer is pulled up over
+      // it instead. Computed from the live scale rather than a vw guess: `s`
+      // divides by vp.clientWidth (scrollbar excluded), which 100vw is not.
+      const ftr = document.querySelector('.site-footer');
+      if (ftr) ftr.style.marginTop = -(530 * s) + 'px';
     };
     this._fit();
     // re-fit after fonts/images settle and on resize
@@ -3672,7 +3812,9 @@ class Component extends DCLogic {
       const sc2 = mSc ? parseFloat(mSc[1]) : 1;
       const cvTop = (el) => (el.getBoundingClientRect().top - srect.top) / sc2;
       const cvBottom = (el) => (el.getBoundingClientRect().bottom - srect.top) / sc2;
-      const band = scaler.querySelector('[data-original-top="7352"]');
+      // The band element is gone (see adjustFooter), so the lower terminus is
+      // its coordinate: 7352 plus whatever the journey shift added.
+      const bandTop = 7352 + (this._jDelta || 0);
       const jd = this._jDelta || 0;
       const mkSeg = (topY, bottomY) => {
         const len = bottomY - topY;
@@ -3685,10 +3827,8 @@ class Component extends DCLogic {
         el.style.transform = 'matrix(0, -1, 1, 0, 726, ' + bottomY.toFixed(1) + ') scaleX(' + (len / 1581).toFixed(5) + ')';
         donor.parentElement.appendChild(el);
       };
-      if (band) {
-        mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
-        mkSeg(cvBottom(lh) + 18, cvTop(band));
-      }
+      mkSeg(cvBottom(isp) + 18, cvTop(lh) - 18);
+      mkSeg(cvBottom(lh) + 18, bandTop);
     }
     if (this._runAdjust) this._runAdjust();
   }

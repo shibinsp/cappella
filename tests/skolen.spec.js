@@ -85,8 +85,10 @@ test.describe('skolen.html', () => {
       expect(got.mask, `${sel} uses the wordmark asset`).toContain('skolen-wordmark');
       expect(got.colour).toBe(expectColour);
       expect(got.w).toBeGreaterThan(80);
-      // 1884x355 authored; off-ratio would stretch the letterforms.
-      expect(Math.abs(got.aspect - 5.31), `${sel} aspect ${got.aspect}`).toBeLessThan(0.15);
+      // 2608x372 authored (client supplied the real solid mark 2026-08-14 — the
+      // asset before it had a line cut through every stroke and a 5.31 ratio).
+      // Off-ratio would stretch the letterforms.
+      expect(Math.abs(got.aspect - 7.01), `${sel} aspect ${got.aspect}`).toBeLessThan(0.15);
     };
 
     await page.goto(SKOLEN);
@@ -99,7 +101,11 @@ test.describe('skolen.html', () => {
 
   test('module cards with exact Indian digit grouping', async ({ page }) => {
     await page.goto(SKOLEN);
-    await expect(page.locator('.skolen-modules-title')).toHaveText('SKOLEN Modules');
+    // The "SKOLEN Modules" heading above these cards was removed 2026-08-14, so
+    // there is nothing left to assert here — about.spec.js already guards that
+    // the title does not reappear on About Us, and it must not reappear here
+    // either now that the module names carry the section on their own.
+    await expect(page.locator('.skolen-modules-title')).toHaveCount(0);
     const cards = page.locator('.skolen-module');
     await expect(cards).toHaveCount(3);
 

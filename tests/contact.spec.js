@@ -47,9 +47,16 @@ test.describe('contact-us.html', () => {
 
   test('nothing invented: no form, no tel links; the map is the vendored Leaflet map', async ({ page }) => {
     await page.goto('/contact-us.html');
-    await expect(page.locator('form')).toHaveCount(0);
-    await expect(page.locator('input, textarea, select')).toHaveCount(0);
+    // Scoped to main: the guard is that this PAGE invents no contact form, not
+    // that the document holds no input anywhere. Since 2026-08-13 the shared
+    // footer carries the homepage's "Stay in Touch" subscribe field on every
+    // page ("make the homepage footer in every other page"), so a document-wide
+    // count would fail here for site furniture rather than for an invented form.
+    await expect(page.locator('main form')).toHaveCount(0);
+    await expect(page.locator('main input, main textarea, main select')).toHaveCount(0);
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
+    // The subscribe field belongs to the footer and nowhere else.
+    await expect(page.locator('footer.site-footer form')).toHaveCount(1);
 
     // The flaky Google Maps embed was replaced with a locally-vendored Leaflet
     // map over OpenStreetMap tiles — so no third-party iframe.
