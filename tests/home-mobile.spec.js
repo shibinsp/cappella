@@ -126,10 +126,10 @@ test.describe('mobile home', () => {
     await expect(rows.first()).toContainText('Operator-aligned structures');
     await expect(rows.last()).toContainText('Proven, long-term investor value');
 
-    // CAP_JOURNEY — real 2016-2025 records, all three phases.
-    await expect(page.locator('#cap-mobile .cm-tl-phase')).toHaveCount(3);
-    await expect(page.locator('#cap-mobile .cm-tl-item')).toHaveCount(8);
-    await expect(page.locator('#cap-mobile .cm-tl').first()).toContainText('2016');
+    // CAP_JOURNEY — the three folds from Cappella_Website_Journey_Folds.pptx.
+    await expect(page.locator('#cap-mobile .cm-jf-phase')).toHaveCount(3);
+    await expect(page.locator('#cap-mobile .cm-jf-card')).toHaveCount(3);
+    await expect(page.locator('#cap-mobile .cm-j-phase').first()).toContainText('2016\u20132018');
 
     // CAP_CITIES / CAP_OPERATORS.
     await expect(page.locator('#cap-mobile .cm-city')).toHaveCount(7);
@@ -247,52 +247,42 @@ test.describe('mobile home', () => {
     await expect(page.locator('#cap-mobile .cm-acc-img')).toHaveCount(0);
   });
 
-  test('Our Journey carries its blue-grey ground', async ({ page }) => {
+  test('Our Journey sits on the folds deck\'s warm ground', async ({ page }) => {
     await gotoMobileHome(page);
-    // The export washes the top of this section in rgb(214,227,239) and fades
-    // it out; flat white means the gradient was lost.
-    const cast = await page.evaluate(() => {
-      const s = getComputedStyle(document.querySelector('#cap-mobile .cm-journey'));
-      const m = s.backgroundImage.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-      return m ? { r: +m[1], g: +m[2], b: +m[3] } : null;
-    });
-    expect(cast, 'journey section should have a gradient background').not.toBeNull();
-    expect(cast.b - cast.r, 'the wash should read blue, not neutral grey').toBeGreaterThanOrEqual(15);
+    // Client 2026-09-25 (Cappella_Website_Journey_Folds.pptx): the section is
+    // the deck's #f1eeea, same as the desktop pin — not the old sky wash.
+    const bg = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('#cap-mobile .cm-journey')).backgroundColor);
+    expect(bg).toBe('rgb(241, 238, 234)');
   });
 
-  test('Our Journey photo and timeline markers match the export', async ({ page }) => {
+  test('each Journey fold carries the deck\'s photo, figures and highlight card', async ({ page }) => {
     await gotoMobileHome(page);
 
-    const geo = await page.evaluate(() => {
-      const img = document.querySelector('#cap-mobile .cm-journey-img');
-      const r = img.getBoundingClientRect();
-      const rgb = (s) => (s.match(/\d+/g) || []).map(Number);
-      return {
-        height: r.height,
-        radius: parseFloat(getComputedStyle(img).borderRadius),
-        marker: (() => {
-          const cs = getComputedStyle(document.querySelector('#cap-mobile .cm-tl-item'), '::before');
-          return { w: parseFloat(cs.width), bg: rgb(cs.backgroundColor), shadow: cs.boxShadow };
-        })(),
-        rail: rgb(getComputedStyle(document.querySelector('#cap-mobile .cm-tl'), '::before').backgroundColor)
-      };
+    const folds = await page.evaluate(() =>
+      [...document.querySelectorAll('#cap-mobile .cm-j-phase')].map((ph) => ({
+        phase: ph.querySelector('.cm-jf-phase').textContent,
+        years: ph.querySelector('.cm-jf-years').textContent,
+        title: ph.querySelector('.cm-jf-title').textContent,
+        stats: ph.querySelectorAll('.cm-jf-stat').length,
+        lead: ph.querySelectorAll('.cm-jf-stat--lead').length,
+        eyebrowColor: getComputedStyle(ph.querySelector('.cm-jf-eyebrow')).color,
+        card: ph.querySelector('.cm-jf-card-title').textContent
+      })));
+    expect(folds.map((f) => f.phase)).toEqual(['Foundation Phase', 'Growth Phase', 'Expansion Phase']);
+    expect(folds.map((f) => f.years)).toEqual(['2016\u20132018', '2019\u20132023', '2023\u20132026']);
+    expect(folds.map((f) => f.title)).toEqual(['The Foundation', 'Building the Ecosystem', 'Scaling the Asset Class']);
+    expect(folds.map((f) => f.stats)).toEqual([4, 5, 5]);
+    expect(folds.every((f) => f.lead === 2), 'Assets + Geographies lead every fold').toBe(true);
+    expect(folds.every((f) => f.eyebrowColor === 'rgb(209, 32, 47)')).toBe(true);
+    expect(folds.map((f) => f.card)).toEqual(['Pioneered Sale & Leaseback', 'Institutional capital', 'SKOLEN']);
+
+    const img = await page.evaluate(() => {
+      const i = document.querySelector('#cap-mobile .cm-journey-img');
+      return { h: i.getBoundingClientRect().height, radius: parseFloat(getComputedStyle(i).borderRadius) };
     });
-
-    // The photo no longer holds the export's 2.73:1 band inside the pin — it
-    // flexes to fill the stage, because a fixed ratio left dead space above
-    // and below a 100svh pin. It keeps its rounded corners and a sane floor.
-    expect(geo.radius, 'the photo has rounded corners in the export').toBeGreaterThan(0);
-    expect(geo.height, 'the photo must not collapse to a sliver').toBeGreaterThanOrEqual(130);
-
-    // A target, not a hollow ring — the centre must be filled red. This is the
-    // one that would regress silently back to a white-centred circle.
-    expect(geo.marker.w).toBeGreaterThanOrEqual(16);
-    expect(geo.marker.bg.slice(0, 3)).toEqual([209, 32, 47]);
-    expect(geo.marker.shadow, 'the white gap between rim and centre').toContain('inset');
-
-    // The rail is red, not the grey hairline it used to be.
-    expect(geo.rail[0]).toBeGreaterThan(geo.rail[1] + 60);
-    expect(geo.rail[0]).toBeGreaterThan(geo.rail[2] + 60);
+    expect(img.radius, 'the photo keeps rounded corners').toBeGreaterThan(0);
+    expect(img.h, 'the photo must not collapse to a sliver').toBeGreaterThanOrEqual(110);
   });
 
   test('Our Journey arrows step phases without replacing the scroll model', async ({ page }) => {
@@ -447,12 +437,12 @@ test.describe('mobile home', () => {
     const slack = await page.evaluate(() => {
       const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
       const ph = document.querySelector('#cap-mobile .cm-j-phase.is-on').getBoundingClientRect();
-      const last = [...document.querySelectorAll('#cap-mobile .cm-j-phase.is-on .cm-tl-item')].pop()
+      const last = document.querySelector('#cap-mobile .cm-j-phase.is-on .cm-jf-card')
         .getBoundingClientRect();
       return { above: ph.top - s.top, below: s.bottom - last.bottom };
     });
     expect(slack.above, 'dead space above the phase').toBeLessThanOrEqual(30);
-    expect(slack.below, 'dead space below the last record').toBeLessThanOrEqual(40);
+    expect(slack.below, 'dead space below the highlight card').toBeLessThanOrEqual(40);
   });
 
   test('each Journey phase carries its own photo, fetched on arrival', async ({ page }) => {
@@ -513,7 +503,7 @@ test.describe('mobile home', () => {
       stage: document.querySelectorAll('#cap-mobile .cm-j-stage').length,
       visiblePhases: [...document.querySelectorAll('#cap-mobile .cm-j-phase')]
         .filter((e) => parseFloat(getComputedStyle(e).opacity) > 0.99).length,
-      items: document.querySelectorAll('#cap-mobile .cm-tl-item').length,
+      cards: document.querySelectorAll('#cap-mobile .cm-jf-card').length,
       // Nothing promotes data-src on this branch — there is no stage and no
       // scroll driver — so every photo must ship a real src or two phases
       // render broken images.
@@ -524,7 +514,7 @@ test.describe('mobile home', () => {
     expect(r.track, 'no scroll track under reduced motion').toBe(0);
     expect(r.stage).toBe(0);
     expect(r.visiblePhases, 'all three phases readable at once').toBe(3);
-    expect(r.items).toBe(8);
+    expect(r.cards).toBe(3);
     expect(r.deferredPhotos, 'nothing would ever promote these').toBe(0);
     expect(r.realPhotos).toBe(3);
     await ctx.close();
@@ -599,69 +589,10 @@ test.describe('mobile home', () => {
     expect(loadingAttrs.every((v) => v === 'eager'), 'switched-in tiles should not lazy-load').toBe(true);
   });
 
-  test('the journey rail runs unbroken into Our Portfolio\'s rule', async ({ page }) => {
-    await gotoMobileHome(page);
-
-    // Park past the pin so the stage has released and the two sections are
-    // adjacent — that is the only point where the join is visible.
-    const g = await page.evaluate(() => {
-      const t = document.querySelector('#cap-mobile .cm-j-track');
-      const s = document.querySelector('#cap-mobile .cm-j-stage');
-      return {
-        top: window.scrollY + t.getBoundingClientRect().top,
-        travel: t.offsetHeight - Math.min(s.offsetHeight, window.innerHeight)
-      };
-    });
-    await page.evaluate((y) => window.scrollTo(0, y), g.top + g.travel + 160);
-    // Wait for the phase to finish arriving, rather than sleeping at it. The
-    // incoming phase runs a 0.34s transition on a 0.18s delay, so a fixed 600ms
-    // clears it by 80ms on an idle machine and does not clear it under a full
-    // parallel suite — sampling mid-transform read .cm-tl-item's bottom while it
-    // was still travelling its last 10px, which failed this join by 0.66 and
-    // 1.74px on two runs while passing in isolation.
-    await page.waitForFunction(() => {
-      const on = document.querySelector('#cap-mobile .cm-j-phase.is-on');
-      if (!on) return false;
-      const c = getComputedStyle(on);
-      return c.transform === 'none' && c.opacity === '1';
-    }, null, { timeout: 5000 });
-    await page.waitForTimeout(100);
-
-    const joint = await page.evaluate(() => {
-      const j = document.querySelector('#cap-mobile .cm-journey');
-      const pf = document.querySelector('#cap-mobile .cm-pf');
-      const on = document.querySelector('#cap-mobile .cm-j-phase.is-on')
-        || document.querySelector('#cap-mobile .cm-j-phase');
-      const last = [...on.querySelectorAll('.cm-tl-item')].pop();
-      const rule = pf.querySelector('.cm-rule');
-      const R = (n) => n.getBoundingClientRect();
-      return {
-        lastBottom: R(last).bottom,
-        journeyBottom: R(j).bottom,
-        pfTop: R(pf).top,
-        ruleTop: R(rule).top,
-        jPad: parseFloat(getComputedStyle(j).paddingBottom),
-        pfPad: parseFloat(getComputedStyle(pf).paddingTop),
-        jStub: parseFloat(getComputedStyle(j, '::after').height),
-        pfStub: parseFloat(getComputedStyle(pf, '::before').height)
-      };
-    });
-
-    // The stubs must equal the padding they sit in. If padding grows past the
-    // stub the line stops short of the rule; if it shrinks the line overshoots
-    // past it. Both are driven by --cm-joint precisely so this cannot drift.
-    expect(joint.jStub).toBeCloseTo(joint.jPad, 0);
-    expect(joint.pfStub).toBeCloseTo(joint.pfPad, 0);
-
-    // …and the run is continuous: last record → journey edge → portfolio edge → rule.
-    expect(joint.journeyBottom).toBeCloseTo(joint.lastBottom + joint.jPad, 0);
-    expect(joint.pfTop).toBeCloseTo(joint.journeyBottom, 0);
-    expect(joint.ruleTop).toBeCloseTo(joint.pfTop + joint.pfPad, 0);
-
-    // Tighter than a normal 44+44 section break — the rail makes these read as
-    // one run, so a full break either side left ~88px of bare white.
-    expect(joint.ruleTop - joint.lastBottom).toBeLessThanOrEqual(60);
-  });
+  // REMOVED 2026-09-25 — 'the journey rail runs unbroken into Our Portfolio's
+  // rule'. The red year-list rail it joined to Portfolio's rule went with the
+  // folds redesign (Cappella_Website_Journey_Folds.pptx), and so did the two
+  // connector stubs.
 
   test('the operators grid has no empty cells and readable logos', async ({ page }) => {
     await gotoMobileHome(page);

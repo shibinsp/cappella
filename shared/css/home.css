@@ -533,3 +533,222 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
 #cap-menu-btn:hover {
   transform: translate(var(--capMx, 0px), var(--capMy, 0px)) scale(1.08);
 }
+
+/* ===== OUR JOURNEY — PINNED FOLDS =====
+   Built to the client's Cappella_Website_Journey_Folds.pptx (2026-09-25):
+   one fold per phase, swapped as the reader scrolls the pinned track that
+   _setupJourneyPinned mounts. Every length is authored in the deck's
+   1920x1080 pixels and multiplied by --u, which scales that canvas to fit
+   the viewport, so the composition holds its proportions at any size.
+   Portrait / near-square viewports (tablets) restack into one column. */
+#cap-journey .cap-jf {
+  --u: min(100vw / 1920, 100vh / 1080);
+  --u: min(100vw / 1920, 100svh / 1080);
+  --jf-red: rgb(209, 32, 47);
+  --jf-ink: #141414;
+  --jf-muted: #aea9a4;
+  --jf-rail: 432;
+  position: sticky; top: 0;
+  height: 100vh; height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  background: #f1eeea;
+  font-family: Montserrat, sans-serif;
+  color: var(--jf-ink);
+}
+:where(#cap-journey .cap-jf) :where(p, h2, h3, figure) { margin: 0; }
+
+/* ----- left rail: title, fold label, brand, the line and its three dots */
+#cap-journey .cap-jf-rail {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: calc(var(--jf-rail) * var(--u));
+}
+#cap-journey .cap-jf-heading {
+  position: absolute; left: calc(95 * var(--u)); top: calc(92 * var(--u));
+  font-size: calc(54 * var(--u)); font-weight: 800; line-height: 1.1;
+  text-transform: uppercase; letter-spacing: -0.005em;
+}
+#cap-journey .cap-jf-fold-label,
+#cap-journey .cap-jf-brand {
+  position: absolute; left: calc(98 * var(--u));
+  font-weight: 700; text-transform: uppercase; color: var(--jf-muted);
+}
+#cap-journey .cap-jf-fold-label {
+  top: calc(318 * var(--u)); font-size: calc(22 * var(--u)); letter-spacing: 0.05em;
+}
+#cap-journey .cap-jf-brand {
+  bottom: calc(62 * var(--u)); font-size: calc(18 * var(--u)); letter-spacing: 0.06em;
+}
+#cap-journey .cap-jf-line {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 2px;
+  background: #dcd8d3; box-shadow: 1px 0 0 #fff;
+}
+/* Deck places the dots at 171 / 540 / 910 of 1080. They are the fold
+   controls too: 44px hit area, the red disc drawn by ::before. */
+#cap-journey .cap-jf-dot {
+  position: absolute; right: 1px; width: 44px; height: 44px;
+  transform: translate(50%, -50%);
+  padding: 0; border: 0; background: none; cursor: pointer;
+}
+#cap-journey .cap-jf-dot[data-i="0"] { top: 15.83%; }
+#cap-journey .cap-jf-dot[data-i="1"] { top: 50%; }
+#cap-journey .cap-jf-dot[data-i="2"] { top: 84.26%; }
+#cap-journey .cap-jf-dot::before {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: max(12px, calc(22 * var(--u))); aspect-ratio: 1;
+  border-radius: 50%; background: var(--jf-red);
+  transform: translate(-50%, -50%);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+#cap-journey .cap-jf-dot.is-on::before {
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 0 0 max(4px, calc(7 * var(--u))) rgba(209, 32, 47, 0.16);
+}
+#cap-journey .cap-jf-dot:focus-visible { outline: 2px solid var(--jf-red); outline-offset: 2px; border-radius: 50%; }
+
+/* ----- the folds: stacked, one visible at a time */
+#cap-journey .cap-jf-folds {
+  position: absolute; top: 0; bottom: 0; right: 0;
+  left: calc(var(--jf-rail) * var(--u));
+}
+#cap-journey .cap-jf-fold {
+  position: absolute; inset: 0;
+  box-sizing: border-box;
+  padding: calc(100 * var(--u)) calc(105 * var(--u)) 0 calc(123 * var(--u));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(540 * var(--u));
+  grid-template-areas:
+    "head  title"
+    "stats media"
+    "card  card";
+  grid-template-rows: auto auto auto;
+  column-gap: calc(70 * var(--u));
+  align-content: start;
+  visibility: hidden; opacity: 0;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+#cap-journey .cap-jf-fold.is-on {
+  visibility: visible; opacity: 1;
+  transition: opacity 0.5s ease 0.15s, visibility 0s;
+}
+
+#cap-journey .cap-jf-head { grid-area: head; }
+#cap-journey .cap-jf-phase {
+  font-size: calc(36 * var(--u)); font-weight: 700; line-height: 1.2;
+}
+#cap-journey .cap-jf-years {
+  margin-top: calc(6 * var(--u));
+  font-size: calc(62 * var(--u)); font-weight: 400; line-height: 1.1;
+  color: var(--jf-red); letter-spacing: -0.01em;
+}
+#cap-journey .cap-jf-title {
+  grid-area: title; justify-self: end; align-self: start;
+  margin-top: calc(-4 * var(--u));
+  font-size: calc(50 * var(--u)); font-weight: 800; line-height: 1.15;
+  text-align: right; white-space: nowrap;
+}
+
+#cap-journey .cap-jf-stats {
+  grid-area: stats;
+  margin-top: calc(62 * var(--u));
+  display: grid;
+  grid-template-columns: calc(360 * var(--u)) max-content;
+  row-gap: calc(46 * var(--u));
+  align-content: start;
+}
+#cap-journey .cap-jf-num {
+  font-size: calc(58 * var(--u)); font-weight: 800; line-height: 1;
+  letter-spacing: -0.01em; white-space: nowrap;
+}
+#cap-journey .cap-jf-label {
+  margin-top: calc(12 * var(--u));
+  font-size: calc(20 * var(--u)); font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--jf-muted);
+}
+#cap-journey .cap-jf-stat--lead .cap-jf-num { font-size: calc(92 * var(--u)); }
+#cap-journey .cap-jf-stat--lead .cap-jf-label {
+  margin-top: calc(18 * var(--u));
+  font-size: calc(25 * var(--u)); color: var(--jf-ink); letter-spacing: 0.02em;
+}
+
+#cap-journey .cap-jf-media {
+  grid-area: media; align-self: start;
+  margin-top: calc(18 * var(--u));
+  aspect-ratio: 540 / 367;
+  border-radius: calc(60 * var(--u));
+  overflow: hidden;
+  background: #e1dedb;
+  box-shadow: 0 calc(6 * var(--u)) calc(12 * var(--u)) rgba(40, 30, 20, 0.14);
+}
+#cap-journey .cap-jf-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+#cap-journey .cap-jf-card {
+  grid-area: card;
+  margin-top: calc(46 * var(--u));
+  padding: calc(50 * var(--u)) calc(58 * var(--u)) calc(48 * var(--u));
+  background: #fff;
+  border-radius: calc(44 * var(--u));
+  box-shadow: 0 calc(4 * var(--u)) calc(10 * var(--u)) rgba(40, 30, 20, 0.12);
+}
+#cap-journey .cap-jf-eyebrow {
+  font-size: calc(24 * var(--u)); font-weight: 700; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--jf-red);
+}
+#cap-journey .cap-jf-card-title {
+  margin-top: calc(22 * var(--u));
+  font-size: calc(32 * var(--u)); font-weight: 700; line-height: 1.2;
+}
+#cap-journey .cap-jf-card-body {
+  margin-top: calc(14 * var(--u));
+  font-size: calc(26 * var(--u)); font-weight: 400; line-height: 1.4; color: #2a2a2a;
+}
+
+/* Content rises in behind the fade, top to bottom. */
+@media (prefers-reduced-motion: no-preference) {
+  #cap-journey .cap-jf-fold > * {
+    transform: translateY(calc(28 * var(--u)));
+    transition: transform 0.35s ease;
+  }
+  #cap-journey .cap-jf-fold.is-on > * {
+    transform: none;
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+  }
+  #cap-journey .cap-jf-fold.is-on > .cap-jf-title { transition-delay: 0.2s; }
+  #cap-journey .cap-jf-fold.is-on > .cap-jf-stats { transition-delay: 0.25s; }
+  #cap-journey .cap-jf-fold.is-on > .cap-jf-media { transition-delay: 0.3s; }
+  #cap-journey .cap-jf-fold.is-on > .cap-jf-card { transition-delay: 0.38s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #cap-journey .cap-jf-fold,
+  #cap-journey .cap-jf-fold.is-on,
+  #cap-journey .cap-jf-dot::before { transition: none; }
+}
+
+/* Portrait and near-square viewports (tablets): a 16:9 slide scaled to the
+   width would leave most of the screen empty, so the fold restacks into one
+   column against a taller reference canvas, with a narrower rail. */
+@media (max-aspect-ratio: 5/4) {
+  #cap-journey .cap-jf {
+    --u: min(100vw / 1100, 100vh / 1560);
+    --u: min(100vw / 1100, 100svh / 1560);
+    --jf-rail: 260;
+  }
+  #cap-journey .cap-jf-heading { left: calc(44 * var(--u)); font-size: calc(36 * var(--u)); }
+  #cap-journey .cap-jf-fold-label,
+  #cap-journey .cap-jf-brand { left: calc(46 * var(--u)); }
+  #cap-journey .cap-jf-fold {
+    padding: calc(100 * var(--u)) calc(64 * var(--u)) 0 calc(80 * var(--u));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "head" "title" "media" "stats" "card";
+  }
+  #cap-journey .cap-jf-title {
+    justify-self: start; text-align: left; white-space: normal;
+    margin-top: calc(34 * var(--u));
+  }
+  #cap-journey .cap-jf-media { margin-top: calc(34 * var(--u)); aspect-ratio: 2 / 1; }
+  #cap-journey .cap-jf-stats {
+    margin-top: calc(48 * var(--u));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #cap-journey .cap-jf-num { font-size: calc(48 * var(--u)); }
+}
