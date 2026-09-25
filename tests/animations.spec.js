@@ -246,7 +246,7 @@ test.describe('homepage preloader', () => {
 test.describe('pinned journey', () => {
   const HOME = '/index.html';
 
-  test('pin sticks and phases progress with scroll', async ({ page }, testInfo) => {
+  test('pin sticks and folds progress with scroll', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'scrub asserted at desktop scale');
     testInfo.setTimeout(90000);
     const errors = attachErrorCapture(page);
@@ -262,84 +262,47 @@ test.describe('pinned journey', () => {
     });
     expect(geom.total).toBeGreaterThan(1000); // real scrub room
 
+    // Client 2026-09-25 (Cappella_Website_Journey_Folds.pptx): one fold per
+    // third of the track, the rail's fold label and dot following along.
+    const TITLES = ['The Foundation', 'Building the Ecosystem', 'Scaling the Asset Class'];
     for (let i = 0; i < 3; i++) {
       const y = geom.top + ((i + 0.5) / 3) * geom.total;
       await page.evaluate((y) => window.scrollTo(0, y), y);
-      // Lerp smoothing (0.09/frame) needs time to settle
       await expect
         .poll(
-          () => page.evaluate((i) => +document.querySelectorAll('.cap-j-phase')[i].style.opacity, i),
+          () => page.evaluate((i) => +getComputedStyle(document.querySelectorAll('.cap-jf-fold')[i]).opacity, i),
           { timeout: 8000 }
         )
-        .toBeGreaterThan(0.9);
-      // The pin must be filling the viewport
-      const pin = await page.evaluate(() => {
+        .toBeGreaterThan(0.99);
+      const st = await page.evaluate((i) => {
         const r = document.querySelector('.cap-j-pin').getBoundingClientRect();
-        return { top: Math.round(r.top), h: Math.round(r.height) };
-      });
-      expect(pin.top).toBe(0);
-      expect(pin.h).toBe(await page.evaluate(() => window.innerHeight));
-
-      // Building sits ON the horizon: its visual base (PNG alpha base, carried
-      // as data-base) must land on the sky horizon at 87.2% of stage height
-      const base = await page.evaluate((i) => {
-        const ph = document.querySelectorAll('.cap-j-phase')[i];
-        const b = ph.querySelector('.cap-j-building');
-        const stage = document.querySelector('.cap-j-stage');
-        const br = b.getBoundingClientRect();
-        const sr = stage.getBoundingClientRect();
-        const sky = document.querySelector('.cap-j-sky');
-        const t = getComputedStyle(sky).transform;
-        const m = t === 'none' ? { f: 0 } : new DOMMatrixReadOnly(t);
+        const fold = document.querySelectorAll('.cap-jf-fold')[i];
+        const card = fold.querySelector('.cap-jf-card').getBoundingClientRect();
         return {
-          visualBase: br.top + br.height * parseFloat(b.dataset.base),
-          horizon: sr.top + sr.height * 0.872,
-          scale: sr.height / 820,
-          skyShift: m.f
+          top: Math.round(r.top), h: Math.round(r.height),
+          on: [...document.querySelectorAll('.cap-jf-fold')].map((f) => f.classList.contains('is-on')),
+          dot: [...document.querySelectorAll('.cap-jf-dot')].findIndex((d) => d.classList.contains('is-on')),
+          label: document.querySelector('.cap-jf-fold-label').textContent,
+          title: fold.querySelector('.cap-jf-title').textContent,
+          cardInside: card.bottom <= r.bottom && card.right <= r.right
         };
       }, i);
-      expect(Math.abs(base.visualBase - base.horizon)).toBeLessThan(12 * base.scale);
-      // Raised sea level: sky translated up -75 stage px (scaled to screen px
-      // for the pin-level sky) on Growth/Expansion. Loose tolerance — the
-      // scroll lerp may still be settling.
-      const stageScale = await page.evaluate(() =>
-        document.querySelector('.cap-j-stage').getBoundingClientRect().width / 1600);
-      expect(Math.abs(base.skyShift - (i === 0 ? 0 : -75 * stageScale))).toBeLessThan(8);
+      // The pin must be filling the viewport
+      expect(st.top).toBe(0);
+      expect(st.h).toBe(await page.evaluate(() => window.innerHeight));
+      expect(st.on).toEqual([0, 1, 2].map((k) => k === i));
+      expect(st.dot).toBe(i);
+      expect(st.label).toBe('Fold ' + (i + 1));
+      expect(st.title).toBe(TITLES[i]);
+      expect(st.cardInside, 'the highlight card fits inside the pin').toBe(true);
     }
 
-    // The white curve's exit point lines up with the red hairline that starts
-    // at the section boundary below, so the two read as one continuous line.
-    // Checked at the default (width-limited) viewport AND a short
-    // (height-limited) one, where the stage shrinks and centers.
-    const measureJoin = () => page.evaluate(() => {
-      const host = document.getElementById('cap-journey');
-      const hostBottom = window.scrollY + host.getBoundingClientRect().bottom;
-      const path = document.querySelectorAll('.cap-j-phase')[2].querySelector('.cap-j-path');
-      const end = path.getPointAtLength(path.getTotalLength());
-      const stage = document.querySelector('.cap-j-stage');
-      const sr = stage.getBoundingClientRect();
-      const curveX = sr.left + end.x * (sr.width / 1600);
-      let redX = null;
-      for (const el of document.querySelectorAll('#cap-scaler svg')) {
-        const r = el.getBoundingClientRect();
-        const pageTop = window.scrollY + r.top;
-        const st = el.getAttribute('style') || '';
-        if (r.width <= 4 && r.height > 80 && st.includes('209, 32, 47') && Math.abs(pageTop - hostBottom) < 10) {
-          redX = r.left + r.width / 2;
-          break;
-        }
-      }
-      return { curveX, redX };
-    });
-    const join = await measureJoin();
-    expect(join.redX).not.toBeNull();
-    expect(Math.abs(join.curveX - join.redX)).toBeLessThan(4);
-
-    await page.setViewportSize({ width: 1440, height: 640 });
-    await page.waitForTimeout(600);
-    const joinShort = await measureJoin();
-    expect(joinShort.redX).not.toBeNull();
-    expect(Math.abs(joinShort.curveX - joinShort.redX)).toBeLessThan(4);
+    // The rail dots are controls: clicking the first scrolls back to fold 1.
+    await page.locator('.cap-jf-dot').first().click();
+    await expect
+      .poll(() => page.evaluate(() => document.querySelectorAll('.cap-jf-fold')[0].classList.contains('is-on')),
+        { timeout: 8000 })
+      .toBe(true);
 
     // Old journey band content must be hidden
     const hidden = await page.evaluate(
@@ -347,6 +310,66 @@ test.describe('pinned journey', () => {
     );
     expect(hidden).toBeGreaterThan(5);
     expectNoPageErrors(errors);
+  });
+
+  test.describe('wheel stepping', () => {
+  // The synthetic stream below is paced by in-page timers, which a fully
+  // loaded 4-worker run can starve past the 240ms gesture gap — splitting one
+  // fling into two. Real input is immune (the handler times gestures by the
+  // event's own timeStamp), so a retry here absorbs machine load only.
+  test.describe.configure({ retries: 2 });
+  test('a hard fling moves exactly one fold, and leaves at the ends', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'wheel stepping asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.waitForTimeout(1500);
+
+    const top = await page.evaluate(() =>
+      window.scrollY + document.getElementById('cap-journey').getBoundingClientRect().top);
+    await page.evaluate((y) => window.scrollTo(0, y), top - 700);
+    await page.waitForTimeout(800);
+
+    // Client 2026-09-25: "sometime it is scrolling fast". A spun wheel plus a
+    // trackpad-style inertia tail, dispatched in-page at 16ms so the stream is
+    // one continuous gesture (Playwright's mouse.wheel spaces events too far
+    // apart to read as one).
+    const fling = (dir) => page.evaluate((dir) => new Promise((res) => {
+      const deltas = [...Array(30).fill(120), ...Array.from({ length: 60 }, (_, i) => 60 * Math.pow(0.93, i))];
+      let i = 0;
+      const fire = () => {
+        if (i >= deltas.length) return setTimeout(res, 1400);
+        const t = document.elementFromPoint(innerWidth / 2, innerHeight / 2) || document.body;
+        t.dispatchEvent(new WheelEvent('wheel', { deltaY: dir * deltas[i++], bubbles: true, cancelable: true }));
+        setTimeout(fire, 16);
+      };
+      fire();
+    }), dir);
+    const state = () => page.evaluate(() => {
+      const h = document.getElementById('cap-journey').getBoundingClientRect();
+      return {
+        fold: [...document.querySelectorAll('.cap-jf-fold')].findIndex((f) => f.classList.contains('is-on')),
+        pinned: h.top <= 1 && h.bottom >= innerHeight - 1
+      };
+    });
+
+    // Arriving at speed lands on the first fold rather than coasting past it…
+    await fling(1);
+    expect(await state()).toEqual({ fold: 0, pinned: true });
+    // …each fling after that is one fold…
+    await fling(1);
+    expect(await state()).toEqual({ fold: 1, pinned: true });
+    await fling(1);
+    expect(await state()).toEqual({ fold: 2, pinned: true });
+    // …and one more leaves the section instead of trapping the page.
+    await fling(1);
+    expect((await state()).pinned).toBe(false);
+    // Back up from below lands on the last fold.
+    await fling(-1);
+    expect(await state()).toEqual({ fold: 2, pinned: true });
+    expectNoPageErrors(errors);
+  });
   });
 
   // REMOVED 2026-07-28 — 'portrait phones get the pinned scene fitted to the

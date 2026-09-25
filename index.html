@@ -430,32 +430,31 @@ const CAP_EDGE = [
     alt: 'Hartland International School, Dubai' }
 ];
 
-// Our Journey. `di` is the dot index the marker attaches to in the desktop
-// pinned scene; the mobile timeline ignores it and renders in array order.
-// `img` is the desktop scene's building cutout; `photo`/`photoAlt` are the
-// mobile phase photography — separate keys on purpose, the desktop path reads
-// only `img` and the cutouts have no background to sit on in a photo band.
+// Our Journey — one fold per phase, per the client's
+// Cappella_Website_Journey_Folds.pptx (2026-09-25). The desktop pin
+// (_setupJourneyPinned) and #cap-mobile's timeline both render these records.
+// `stats` lead with the two headline figures (drawn large with dark labels);
+// the rest are drawn smaller with muted labels, in array order. `photo` fills
+// the deck's image placeholder for that fold.
 const CAP_JOURNEY = [
-  { word: ['Foundation', 'Phase'], img: 'foundation.png', dots: [0, 1, 2],
+  { fold: 1, phase: 'Foundation Phase', years: '2016–2018', title: 'The Foundation',
     photo: './components/assets/campus/st-andrews-suchitra.jpg',
-    photoAlt: 'St. Andrews, Suchitra — Hyderabad', markers: [
-    { di: 0, year: '2016', assets: 'Assets', note: 'Pioneered Sale and Leaseback Model', countTo: 6 },
-    { di: 1, year: '2017', assets: '1 Asset', note: '', countTo: 0 },
-    { di: 2, year: '2018', assets: '1 Asset', note: '', countTo: 0 }
-  ] },
-  { word: ['Growth', 'Phase'], img: 'growth.png', dots: [0, 2],
+    photoAlt: 'St. Andrews, Suchitra — Hyderabad',
+    stats: [['8', 'Assets'], ['7', 'Geographies'], ['~5,800', 'Students'], ['~0.5Mn SFT', 'BUA']],
+    card: { eyebrow: 'Established Edu-Infra', title: 'Pioneered Sale &amp; Leaseback',
+      body: 'Built an integrated PropCo + OpCo + ManCo model.' } },
+  { fold: 2, phase: 'Growth Phase', years: '2019–2023', title: 'Building the Ecosystem',
     photo: './components/assets/campus/juset-hostel-bangalore.jpg',
-    photoAlt: 'JU-SET Hostel — Bangalore', markers: [
-    { di: 0, year: '2019', assets: 'Assets Acquired, 1 Asset Exited', note: 'Onboarded Institutional Investors', countTo: 3 },
-    { di: 2, year: '2021', assets: 'Assets', note: '', countTo: 2 }
-  ] },
-  { word: ['Expansion', 'Phase'], img: 'expansion.png', dots: [0, 1, 2],
-    photo: './components/assets/campus/nlcs-dubai.jpg',
-    photoAlt: 'North London Collegiate School — Dubai', markers: [
-    { di: 0, year: '2023', assets: '1 Asset', note: 'Portfolio Exit to Institutional Investors and HNIs<br>Capital re-round up Secured', countTo: 0 },
-    { di: 1, year: '2024', assets: '1 Asset', note: '', countTo: 0 },
-    { di: 2, year: '2025', assets: 'Assets', note: 'Expansion to Dubai', countTo: 3 }
-  ] }
+    photoAlt: 'JU-SET Hostel — Bangalore',
+    stats: [['9', 'Assets'], ['4', 'Geographies'], ['~12,000', 'Students'], ['1,500', 'Student Beds'], ['~1.8Mn SFT', 'BUA']],
+    card: { eyebrow: 'Integrated Education Ecosystem', title: 'Institutional capital',
+      body: 'Land → Development → Repositioning → Expansion' } },
+  { fold: 3, phase: 'Expansion Phase', years: '2023–2026', title: 'Scaling the Asset Class',
+    photo: './components/assets/skolen/skolen-2-acre.jpg',
+    photoAlt: 'SKOLEN — purpose-built greenfield school',
+    stats: [['16', 'Assets'], ['7', 'Geographies'], ['~21,500', 'Students'], ['1,500', 'Student Beds'], ['~3.3Mn SFT', 'BUA']],
+    card: { eyebrow: 'Education as a Scalable Asset Class', title: 'SKOLEN',
+      body: 'Purpose-built greenfield school asset' } }
 ];
 
 // Operators — the logo sprites already crop-mapped in components/fig-assets.css.
@@ -2348,156 +2347,60 @@ class Component extends DCLogic {
   }
 
   _setupJourneyPinned() {
-    // The pinned 3-phase journey (client-supplied design). Lives at BODY
+    // The pinned journey: three full-viewport folds (Foundation / Growth /
+    // Expansion) from the client's Cappella_Website_Journey_Folds.pptx
+    // (2026-09-25), replacing the sky/building/curve scene. Lives at BODY
     // level: the scaler's transform breaks position:sticky, and
     // #cap-viewport's overflow:hidden would hijack the sticky container —
     // body/html have visible overflow, so the pin sticks to the window
     // scroll. Positioned absolutely over the band gap that
     // _setupJourneyBand opened (page-level coordinates via the viewport's
-    // document offset).
+    // document offset). Styling lives in shared/css/home.css (.cap-jf-*).
     const vp = document.getElementById('cap-viewport');
     if (!vp || document.getElementById('cap-journey') || !this._journeyBandDone) return;
 
-    const RED = 'rgb(209,32,47)';
-    const A = './components/assets/journey/';
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const n = CAP_JOURNEY.length;
 
-    // Portrait phones get a recomposed vertical scene — width-scaling the
-    // 1600x820 landscape canvas onto a phone leaves a ~200px strip lost in
-    // an empty viewport. The mode is fixed per build; crossing the
-    // breakpoint on resize tears the section down and rebuilds it.
-    const PORTRAIT = window.innerWidth < Math.min(720, capVH() * 0.85);
-    // Client 2026-07-24: the portrait canvas HEIGHT adapts to the device
-    // aspect so the pinned scene fills the phone with no letterbox (the fixed
-    // 800x1500 canvas is squatter than a phone, so it used to letterbox ~113px
-    // and read small). Authored portrait Y-coords live in a 1500-tall
-    // reference and are mapped up by PF; X and font-px are unchanged.
-    const _vpw = ((document.getElementById('cap-viewport') || {}).clientWidth) || window.innerWidth;
-    const PCH = PORTRAIT ? Math.max(1500, Math.min(1950, Math.round(800 * capVH() / _vpw))) : 1500;
-    const PF = PORTRAIT ? PCH / 1500 : 1;
-    this._jPCH = PCH; // remembered so a portrait resize can rebuild if it drifts
-    const _sy = (n) => +(n * PF).toFixed(1);
-    // Scale only the Y numbers of an SVG path body (x,y interleaved after each C)
-    const _scaleBodyY = (body) => { let i = 0; return body.split(' ').map((t) => (t === 'C' ? t : (i++ % 2 === 1 ? _sy(parseFloat(t)).toString() : t))).join(' '); };
+    const stat = (s, i) =>
+      '<div class="cap-jf-stat' + (i < 2 ? ' cap-jf-stat--lead' : '') + '">' +
+        '<div class="cap-jf-num">' + s[0] + '</div>' +
+        '<div class="cap-jf-label">' + s[1] + '</div>' +
+      '</div>';
 
-    const CW = PORTRAIT ? 800 : 1600;   // canvas design width
-    const CH = PORTRAIT ? PCH : 820;    // canvas design height (portrait: device-aspect)
-    const HY = PORTRAIT ? _sy(1150) : 715;   // sky-horizon y in canvas coords
-    // Path head x + body (the M start is composed dynamically in setTail so
-    // the curve always reaches the pin's top edge — on viewports taller than
-    // the canvas aspect the stage letterboxes and a static start would hang
-    // visibly mid-sky)
-    const HEAD_X = PORTRAIT ? 640 : 812;
-    const BASE_BODY = PORTRAIT
-      ? _scaleBodyY('C 690 80 700 195 540 300 C 380 405 300 565 360 700 C 425 850 285 965 210 1050 C 150 1110 130 1175 110 1230')
-      : 'C 806 27 818 130 776 210 C 734 290 646 393 560 470 C 474 547 313 608 260 670';
-    const BASE_PATH = 'M ' + HEAD_X + ' -10 ' + BASE_BODY;
-    const TAIL = PORTRAIT
-      ? { c1x: 158, c1y: _sy(1310), minMid: _sy(1350) }
-      : { c1x: 207, c1y: 732, minMid: 760 };
-    // Dot positions; reveal fractions are recomputed per layout (the dynamic
-    // head/tail change the path length), preserving the hand-tuned offsets
-    const DOTS = PORTRAIT
-      ? [['0.25', 540, _sy(300)], ['0.50', 360, _sy(700)], ['0.70', 110, _sy(1230)]]
-      : [['0.25', 776, 210], ['0.53', 560, 470], ['0.76', 260, 670]];
-    const TH_ADJ = PORTRAIT ? [0.06, 0.06, -0.067] : [0.06, 0.055, -0.019];
-    const TH_LIVE = DOTS.map((d) => parseFloat(d[0]));
-    const MPOS = PORTRAIT
-      ? [[90, _sy(240), 420], [410, _sy(640), 370], [230, _sy(1170), 440]]
-      : [[806, 180, 0], [596, 442, 0], [296, 642, 0]];
-    // Client 2026-07-24: larger portrait type (the mobile scene read small).
-    const MF = PORTRAIT ? { y: 52, a: 33, n: 22 } : { y: 42, a: 30, n: 17 };
-    // Natural PNG geometry: [width, height, visual-base row, visual-top row]
-    const NAT = {
-      'foundation.png': [806, 353, 338, 11],
-      'growth.png': [979, 472, 378, 21],
-      'expansion.png': [899, 599, 444, 133]
-    };
-    const BDIM = PORTRAIT
-      ? [[760, -30], [760, -30], [760, -30]]
-      : [[900, -10], [1040, -20], [940, -70]];
-    const PNAT = [NAT['foundation.png'], NAT['growth.png'], NAT['expansion.png']];
-
-    const css = document.createElement('style');
-    css.id = 'cap-journey-css';
-    css.textContent =
-      '#cap-journey .cap-j-marker { white-space: nowrap; font-family: Montserrat, sans-serif; }' +
-      '#cap-journey .cap-j-rail { cursor: pointer; }';
-    document.head.appendChild(css);
+    // Only the first fold's photo is fetched up front; the others carry
+    // data-src and are promoted the first time their fold becomes active.
+    const fold = (p, i) =>
+      '<article class="cap-j-phase cap-jf-fold' + (i === 0 ? ' is-on' : '') + '" data-i="' + i + '" aria-label="' + p.phase + ', ' + p.years + '">' +
+        '<header class="cap-jf-head">' +
+          '<p class="cap-jf-phase">' + p.phase + '</p>' +
+          '<p class="cap-jf-years">' + p.years + '</p>' +
+        '</header>' +
+        '<h3 class="cap-jf-title">' + p.title + '</h3>' +
+        '<div class="cap-jf-stats">' + p.stats.map(stat).join('') + '</div>' +
+        '<figure class="cap-jf-media"><img ' + (i === 0 ? 'src' : 'data-src') + '="' + p.photo + '" alt="' + p.photoAlt + '" decoding="async"></figure>' +
+        '<div class="cap-jf-card">' +
+          '<p class="cap-jf-eyebrow">' + p.card.eyebrow + '</p>' +
+          '<p class="cap-jf-card-title">' + p.card.title + '</p>' +
+          '<p class="cap-jf-card-body">' + p.card.body + '</p>' +
+        '</div>' +
+      '</article>';
 
     const host = document.createElement('div');
     host.id = 'cap-journey';
     host.style.cssText = 'position:absolute; left:0; width:100%; z-index:40;';
-
-    // The building's visual base row / PNG height (the images carry different
-    // amounts of transparent padding) anchors each building on the horizon:
-    // bottom offset and transform-origin both derive from it, so the zoom
-    // scales about the base and it stays planted.
-    const phaseHtml = (i, img, markers, wordA, wordB, dotIdx) => {
-      const nat = NAT[img], bw = BDIM[i][0], bright = BDIM[i][1];
-      const bs = bw / nat[0];
-      const basePct = nat[2] / nat[1];
-      const bottom = (CH - HY) - (nat[1] - nat[2]) * bs;
-      const wordStyle = PORTRAIT
-        ? 'right:24px;bottom:44px;font-size:82px;'
-        : 'right:40px;bottom:26px;font-size:112px;';
-      return '<div class="cap-j-phase" data-i="' + i + '" style="position:absolute;inset:0;opacity:0;will-change:opacity;">' +
-        '<img class="cap-j-building" src="' + A + img + '" alt="" data-base="' + basePct.toFixed(4) + '" style="position:absolute;right:' + bright + 'px;bottom:' + bottom.toFixed(1) + 'px;width:' + bw + 'px;height:auto;transform-origin:70% ' + (basePct * 100).toFixed(1) + '%;filter:drop-shadow(0 24px 40px rgba(40,55,70,.28));">' +
-        '<svg class="cap-j-svg" viewBox="0 0 ' + CW + ' ' + CH + '" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;">' +
-          '<path class="cap-j-path" d="' + BASE_PATH + '" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" style="filter:drop-shadow(0 2px 6px rgba(80,100,120,.25));"></path>' +
-          dotIdx.map((di) => {
-            const d = DOTS[di];
-            return '<circle class="cap-j-dot" data-di="' + di + '" cx="' + d[1] + '" cy="' + d[2] + '" r="9" fill="#fff" stroke="#c9d3dc" stroke-width="2"></circle>';
-          }).join('') +
-        '</svg>' +
-        markers +
-        '<div class="cap-j-word" style="position:absolute;' + wordStyle + 'font-family:Montserrat,sans-serif;line-height:1;color:#fff;letter-spacing:-.01em;text-shadow:0 4px 24px rgba(50,65,80,.22);"><span style="font-weight:800;">' + wordA + '</span> <span style="font-weight:300;">' + wordB + '</span></div>' +
-      '</div>';
-    };
-
-    const marker = (di, year, assets, note, countTo) => {
-      const pos = MPOS[di];
-      const wrap = PORTRAIT ? 'white-space:normal;max-width:' + pos[2] + 'px;' : '';
-      return '<div class="cap-j-marker" data-di="' + di + '" style="position:absolute;left:' + pos[0] + 'px;top:' + pos[1] + 'px;' + wrap + '">' +
-        '<div style="font-size:' + MF.y + 'px;font-weight:700;color:' + RED + ';line-height:1;">' + year + '</div>' +
-        '<div style="font-size:' + MF.a + 'px;font-weight:400;color:#2b2b2b;margin-top:6px;">' + (countTo ? '<span class="cap-j-count" data-to="' + countTo + '">' + countTo + '</span> ' : '') + assets + '</div>' +
-        (note ? '<div style="font-size:' + MF.n + 'px;font-weight:600;color:#1a1a1a;margin-top:8px;line-height:1.35;">' + note + '</div>' : '') +
-      '</div>';
-    };
-
     host.innerHTML =
-      // height: svh (the SMALL viewport height, toolbar shown) so the pin
-      // never exceeds the visible area on iOS. Plain vh first as the
-      // fallback for engines without svh — later declaration wins where
-      // supported.
-      '<div class="cap-j-pin" style="position:sticky;top:0;height:100vh;height:100svh;width:100%;overflow:hidden;background:linear-gradient(180deg,#b9cbdc 0%,#c9d3dc 55%,#dfe1e1 72%,#d7d5d2 100%);">' +
-        // Full-bleed backdrop at pin level: on viewports wider than the
-        // 1600:820 design ratio the stage letterboxes horizontally, so the
-        // sky/sea must fill the pin, not the stage. The sky img is sized and
-        // positioned by layout() so its horizon row tracks the stage's
-        // design horizon (y 715); the sea gradient (matched to sky.png's
-        // bottom row) continues below it.
-        '<div class="cap-j-backdrop" style="position:absolute;inset:0;pointer-events:none;">' +
-          '<div style="position:absolute;left:0;right:0;bottom:0;height:50%;background:linear-gradient(90deg, rgb(172,174,178), rgb(160,160,163) 45%, rgb(200,192,188));"></div>' +
-          '<img class="cap-j-sky" src="' + A + 'sky.png" alt="" style="position:absolute;left:0;top:0;user-select:none;">' +
-          '<div class="cap-j-tint" style="position:absolute;inset:0;opacity:0;mix-blend-mode:soft-light;background:linear-gradient(180deg, rgba(255,190,130,0) 0%, rgba(255,168,116,0.55) 52%, rgba(247,140,104,0.42) 100%);"></div>' +
+      '<section class="cap-j-pin cap-jf" aria-label="Our Journey">' +
+        '<div class="cap-jf-rail">' +
+          '<h2 class="cap-jf-heading">Our<br>Journey</h2>' +
+          '<p class="cap-jf-fold-label" aria-live="polite">Fold 1</p>' +
+          '<p class="cap-jf-brand">Cappella</p>' +
+          '<div class="cap-jf-line" aria-hidden="true"></div>' +
+          CAP_JOURNEY.map((p, i) =>
+            '<button class="cap-j-rail cap-jf-dot' + (i === 0 ? ' is-on' : '') + '" type="button" data-i="' + i + '" aria-label="' + p.phase + '"></button>').join('') +
         '</div>' +
-        '<div class="cap-j-stage" style="position:absolute;left:50%;top:50%;width:' + CW + 'px;height:' + CH + 'px;transform:translate(-50%,-50%);transform-origin:center center;">' +
-          '<div style="position:absolute;' + (PORTRAIT ? 'left:40px;top:76px;font-size:66px;' : 'left:120px;top:78px;font-size:64px;') + 'font-family:Montserrat,sans-serif;font-weight:700;color:#ffffff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(70,90,110,.18);z-index:6;">Our Journey</div>' +
-          // Phases/markers come from CAP_JOURNEY (shared with #cap-mobile's
-          // vertical timeline). Array order is foundation/growth/expansion,
-          // which is what BDIM and PNAT are indexed by.
-          CAP_JOURNEY.map((p, pi) => phaseHtml(pi, p.img,
-            p.markers.map(m => marker(m.di, m.year, m.assets, m.note, m.countTo)).join(''),
-            p.word[0], p.word[1], p.dots)).join('') +
-        '</div>' +
-        '<div style="position:absolute;inset:0;pointer-events:none;z-index:6;background:radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 52%, rgba(18,26,36,0.20) 100%);"></div>' +
-        '<div class="cap-j-railbox" style="position:absolute;right:26px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:8;">' +
-          '<div class="cap-j-rail" data-i="0" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
-          '<div class="cap-j-rail" data-i="1" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
-          '<div class="cap-j-rail" data-i="2" style="width:9px;height:9px;border-radius:50%;background:#fff;opacity:.4;transition:opacity .3s,transform .3s;"></div>' +
-        '</div>' +
-      '</div>';
+        '<div class="cap-jf-folds">' + CAP_JOURNEY.map(fold).join('') + '</div>' +
+      '</section>';
     document.body.appendChild(host);
 
     // Baked faded-red vertical (svg width 1581, 53% opacity) dangles from
@@ -2512,433 +2415,154 @@ class Component extends DCLogic {
       });
     })();
 
-    const pin = host.querySelector('.cap-j-pin');
-    const stage = host.querySelector('.cap-j-stage');
-    const phases = Array.from(host.querySelectorAll('.cap-j-phase'));
-    const rails = Array.from(host.querySelectorAll('.cap-j-rail'));
-    const skyTints = Array.from(host.querySelectorAll('.cap-j-tint'));
-    const skyImg = host.querySelector('.cap-j-sky');
-    // Raised sea level on Growth/Expansion: sky translates up so the horizon
-    // moves from 87% to ~78% of the stage (client request 2026-07-17).
-    // Stage-design px; scaled to screen px when applied (pin-level sky).
-    const HORIZON_SHIFT = [0, -75, -75];
-    let stageScale = 1;
-    // Buildings hold their reference (1440x900) pixel size when the viewport
-    // squeezes the stage below it — the window crops the excess instead of
-    // the building shrinking (client note 2026-07-17: "don't change the
-    // size, just cut the extra overlay")
-    const REF_SCALE = 0.894;
-    let sizeK = 1;
+    const phases = Array.from(host.querySelectorAll('.cap-jf-fold'));
+    const rails = Array.from(host.querySelectorAll('.cap-jf-dot'));
+    const foldLabel = host.querySelector('.cap-jf-fold-label');
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
-    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-    const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
-
-    // curve dash init
-    phases.forEach((ph) => {
-      const path = ph.querySelector('.cap-j-path');
-      const len = path.getTotalLength();
-      path.dataset.len = len;
-      path.style.strokeDasharray = len;
-      path.style.strokeDashoffset = len;
-    });
-
-    // extras: pulse rings, glow tip, shimmer, ground shadow, word sweep
-    const NS = 'http://www.w3.org/2000/svg';
-    phases.forEach((ph) => {
-      const svg = ph.querySelector('.cap-j-svg');
-      const dots = Array.from(ph.querySelectorAll('.cap-j-dot'));
-      ph._rings = dots.map((d) => {
-        const ring = document.createElementNS(NS, 'circle');
-        ring.setAttribute('cx', d.getAttribute('cx'));
-        ring.setAttribute('cy', d.getAttribute('cy'));
-        ring.setAttribute('r', '9');
-        ring.setAttribute('fill', 'none');
-        ring.setAttribute('stroke', '#ffffff');
-        ring.setAttribute('stroke-width', '2.5');
-        ring.style.opacity = '0';
-        svg.insertBefore(ring, d);
-        return ring;
-      });
-      const tip = document.createElementNS(NS, 'circle');
-      tip.setAttribute('r', '6');
-      tip.setAttribute('fill', '#ffffff');
-      tip.style.filter = 'drop-shadow(0 0 7px rgba(255,255,255,.95)) drop-shadow(0 0 16px rgba(255,255,255,.55))';
-      tip.style.opacity = '0';
-      svg.appendChild(tip);
-      const sh = document.createElement('div');
-      sh.style.cssText = 'position:absolute;border-radius:50%;background:radial-gradient(ellipse at center, rgba(28,38,50,.42) 0%, rgba(28,38,50,.15) 46%, rgba(28,38,50,0) 72%);filter:blur(7px);pointer-events:none;z-index:0;opacity:0;transform-origin:center bottom;';
-      ph.insertBefore(sh, ph.firstChild);
-      const shim = document.createElementNS(NS, 'circle');
-      shim.setAttribute('r', '5');
-      shim.setAttribute('fill', '#ffffff');
-      shim.style.filter = 'drop-shadow(0 0 6px rgba(255,255,255,.9))';
-      shim.style.opacity = '0';
-      svg.appendChild(shim);
-
-      ph._tip = tip;
-      ph._shimmer = shim;
-      ph._path = ph.querySelector('.cap-j-path');
-      ph._len = parseFloat(ph._path.dataset.len);
-      ph._dots = dots;
-      ph._markers = Array.from(ph.querySelectorAll('.cap-j-marker'));
-      ph._counts = Array.from(ph.querySelectorAll('.cap-j-count'));
-      ph._building = ph.querySelector('.cap-j-building');
-      ph._shadow = sh;
-      ph._svg = svg;
-      ph._word = ph.querySelector('.cap-j-word');
-      ph._wordSpans = ph._word ? Array.from(ph._word.querySelectorAll('span')) : [];
-      if (!reduce) {
-        ph._wordSpans.forEach((sp) => {
-          sp.style.backgroundImage = 'linear-gradient(105deg,#fff 0%,#fff 42%,rgba(255,255,255,.32) 50%,#fff 58%,#fff 100%)';
-          sp.style.backgroundSize = '260% 100%';
-          sp.style.backgroundPositionX = '150%';
-          sp.style.webkitBackgroundClip = 'text';
-          sp.style.backgroundClip = 'text';
-          sp.style.webkitTextFillColor = 'transparent';
-        });
-      }
-      const positionShadow = () => {
-        const b = ph._building;
-        if (!b || !sh || !b.offsetWidth) return;
-        const w = b.offsetWidth, h = b.offsetHeight;
-        const cx = b.offsetLeft + w * 0.5;
-        const baseY = b.offsetTop + h * parseFloat(b.dataset.base || '0.9');
-        const sw = w * 0.8, shh = 46;
-        sh.dataset.baseTop = (baseY - shh / 2);
-        sh.style.width = sw + 'px';
-        sh.style.height = shh + 'px';
-        sh.style.left = (cx - sw / 2) + 'px';
-        sh.style.top = (baseY - shh / 2) + 'px';
-      };
-      ph._positionShadow = positionShadow;
-      if (ph._building) {
-        if (ph._building.complete) positionShadow();
-        ph._building.addEventListener('load', positionShadow);
-      }
-    });
-
-    // The curve's tail must exit the section at the exact x of the baked red
-    // hairline that opens the next section (frame x 177.6), so the two read
-    // as one continuous line. That x depends on the stage scale/centering
-    // (height-limited viewports shift the stage), so the final segment is
-    // recomputed per layout.
-    const RED_X_FRAME = 177.6;
-    const setTail = (scale, w, h) => {
-      const frameScale = vp.clientWidth / 1440;
-      const stageLeft = (w - CW * scale) / 2;
-      const xExit = (RED_X_FRAME * frameScale - stageLeft) / scale;
-      // stage-local y of the pin's bottom edge, +12 overshoot past the clip
-      const yExit = (h + CH * scale) / (2 * scale) + 12;
-      // …and of the pin's TOP edge: on viewports taller than the canvas
-      // aspect the stage letterboxes, so the curve extends straight up from
-      // its design start to the section's top edge instead of hanging mid-sky
-      const yHead = Math.min(-10, -(h - CH * scale) / (2 * scale) - 12);
-      const d = 'M ' + HEAD_X + ' ' + yHead.toFixed(1) +
-        (yHead < -10 ? ' L ' + HEAD_X + ' -10 ' : ' ') + BASE_BODY +
-        ' C ' + TAIL.c1x + ' ' + TAIL.c1y + ' ' +
-        xExit.toFixed(1) + ' ' + Math.max(TAIL.minMid, yExit - 90).toFixed(1) + ' ' +
-        xExit.toFixed(1) + ' ' + yExit.toFixed(1);
-      phases.forEach((ph) => {
-        if (!ph._path) return;
-        ph._path.setAttribute('d', d);
-        const len = ph._path.getTotalLength();
-        ph._len = len;
-        ph._path.dataset.len = len;
-        ph._path.style.strokeDasharray = len;
-      });
-      // The head/tail lengths vary with the viewport, so the dots' arc
-      // fractions move — recompute them (y-bisection; the path is monotonic
-      // in y) and reapply the hand-tuned reveal offsets
-      const p0 = phases[0] && phases[0]._path;
-      if (p0) {
-        const total = p0.getTotalLength();
-        DOTS.forEach((dot, di) => {
-          let lo = 0, hi = total;
-          for (let k = 0; k < 40; k++) {
-            const mid = (lo + hi) / 2;
-            if (p0.getPointAtLength(mid).y < dot[2]) lo = mid; else hi = mid;
-          }
-          TH_LIVE[di] = Math.min(0.95, Math.max(0.02, lo / total + TH_ADJ[di]));
-        });
-      }
-    };
 
     // geometry: host over the band gap (page coordinates — the host is a
-    // body child); stage scaled to the pin
+    // body child). GAP_CLOSE: the baked frame leaves a 15px white strip
+    // between the Edge image's bottom (y3125) and the band top (y3140) — the
+    // section starts at the image edge instead (client request 2026-07-17).
     const layout = () => {
       const s = vp.clientWidth / 1440;
       const vpPageTop = vp.getBoundingClientRect().top + window.scrollY;
-      // GAP_CLOSE: the baked frame leaves a 15px white strip between the
-      // Edge image's bottom (y3125) and the band top (y3140) — the sky
-      // starts at the image edge instead (client request 2026-07-17). Added
-      // to the height so the host's BOTTOM edge (red-hairline join) stays.
       const GAP_CLOSE = 15;
       host.style.top = Math.round(vpPageTop + (this._jBandTop - GAP_CLOSE) * s) + 'px';
       host.style.height = Math.round(this._jVH * capVH() + GAP_CLOSE * s) + 'px';
-      const w = pin.clientWidth, h = pin.clientHeight;
-      const scale = Math.min(w / CW, h / CH);
-      stage.style.transform = 'translate(-50%,-50%) scale(' + scale + ')';
-      stageScale = scale;
-      // Buildings anchor to the WINDOW's right edge (not the canvas edge —
-      // on wide/short viewports the centered canvas would leave them
-      // floating mid-frame) and hold their reference px size when the stage
-      // squeezes below it, the window cropping the excess. Growth is clamped
-      // so a facade never reaches the marker column (canvas x 850).
-      if (!PORTRAIT) {
-        const xRight = CW / 2 + w / (2 * scale); // window right edge, canvas coords
-        sizeK = Math.max(1, REF_SCALE / scale);
-        const srect = stage.getBoundingClientRect();
-        const sc2 = srect.width / CW;
-        phases.forEach((ph, i) => {
-          const b = ph._building || ph.querySelector('.cap-j-building');
-          if (!b) return;
-          // Marker boxes in canvas coords, measured once (positions and
-          // fonts are canvas-fixed; re-measured on webfont load)
-          if (!ph._mBoxes && ph._markers && ph._markers.length && sc2 > 0) {
-            ph._mBoxes = ph._markers.map((m) => {
-              const r = m.getBoundingClientRect();
-              return { right: (r.right - srect.left) / sc2, bottom: (r.bottom - srect.top) / sc2 };
-            });
-          }
-          // The building may grow only while every time node + text stays
-          // clear of it: per marker, EITHER the facade starts right of the
-          // text (kH) OR its roofline stays below the text (kV)
-          const nat = PNAT[i];
-          let kSafe = Infinity;
-          (ph._mBoxes || []).forEach((mb) => {
-            const kH = (xRight + BDIM[i][1] - (mb.right + 14)) / BDIM[i][0];
-            const kV = ((HY - (mb.bottom + 24)) * nat[0]) / ((nat[2] - nat[3]) * BDIM[i][0]);
-            kSafe = Math.min(kSafe, Math.max(kH, kV));
-          });
-          const k = Math.max(1, Math.min(sizeK, kSafe));
-          const bs = (BDIM[i][0] * k) / nat[0];
-          b.style.width = (BDIM[i][0] * k).toFixed(1) + 'px';
-          b.style.right = (CW - xRight + BDIM[i][1]).toFixed(1) + 'px';
-          b.style.bottom = ((CH - HY) - (nat[1] - nat[2]) * bs).toFixed(1) + 'px';
-          if (ph._positionShadow) ph._positionShadow();
-        });
-      }
-      setTail(scale, w, h);
-      // Full-bleed sky: scale so it spans the pin's width AND reaches the
-      // pin's top edge, with its horizon row (698/807 of the image) pinned
-      // to the stage's design horizon
-      if (skyImg) {
-        const yH = (h - CH * scale) / 2 + HY * scale;
-        const ss = Math.max(w / 1543, yH / 698);
-        skyImg.style.width = (1543 * ss).toFixed(1) + 'px';
-        skyImg.style.height = (807 * ss).toFixed(1) + 'px';
-        skyImg.style.left = ((w - 1543 * ss) / 2).toFixed(1) + 'px';
-        skyImg.style.top = (yH - 698 * ss).toFixed(1) + 'px';
-      }
     };
 
-    let mx = 0, my = 0;
-    let curG = 0, targetG = 0;
-    let inView = true;
-    const smooth = 0.09;
-
-    const onScroll = () => {
-      const rect = host.getBoundingClientRect();
-      // Must match the height layout() gave the host, or the scrub
-      // denominator disagrees with the track and progress jumps.
-      const vh = capVH();
-      const total = host.offsetHeight - vh;
-      targetG = total > 0 ? clamp(-rect.top / total, 0, 1) : 0;
-      inView = rect.bottom > -300 && rect.top < vh + 300;
-    };
-
-    const update = (g) => {
-      const t = g * 3;
-      const now = performance.now();
-      let active = 0, best = -1;
-      let shiftNum = 0, shiftDen = 0;
-      phases.forEach((ph, i) => {
-        const local = t - i;
-        const inLeft = clamp((local + 0.22) / 0.40, 0, 1);
-        const outRight = clamp((1.22 - local) / 0.40, 0, 1);
-        const op = Math.min(inLeft, outRight);
-        ph.style.opacity = op.toFixed(3);
-        ph.style.pointerEvents = op > 0.5 ? 'auto' : 'none';
-        if (op > best) { best = op; active = i; }
-        shiftNum += op * HORIZON_SHIFT[i];
-        shiftDen += op;
-
-        const lc = clamp(local, 0, 1);
-        const zoomP = clamp(local / 0.6, 0, 1);
-        const zEase = reduce ? zoomP : easeOutBack(zoomP);
-        const s = 1.14 - 0.14 * zEase;
-        // No vertical motion: the base must stay planted on the horizon
-        // (client note 2026-07-17: "objects are literally floating").
-        // The phase drift and cursor parallax run horizontally only.
-        const drift = reduce ? 0 : (lc - 0.5) * -34;
-        const pbx = reduce ? 0 : mx * -16;
-        const b = ph._building;
-        if (b) b.style.transform = 'translate(' + (pbx + drift).toFixed(1) + 'px, 0px) scale(' + s.toFixed(3) + ')';
-        if (ph._svg) ph._svg.style.transform = reduce ? '' : 'translate(' + (mx * 8).toFixed(1) + 'px, ' + (my * 5).toFixed(1) + 'px)';
-
-        const sh = ph._shadow;
-        if (sh) {
-          const baseTop = parseFloat(sh.dataset.baseTop || '0');
-          sh.style.top = baseTop.toFixed(1) + 'px';
-          sh.style.transform = 'translateX(' + (pbx + drift).toFixed(1) + 'px) scaleX(' + s.toFixed(3) + ') scaleY(' + (0.8 + 0.2 * zoomP).toFixed(3) + ')';
-          sh.style.opacity = (op * 0.55).toFixed(3);
-        }
-
-        const drawT = clamp(local / 0.72, 0, 1);
-        const path = ph._path, len = ph._len;
-        path.style.strokeDashoffset = (len * (1 - drawT)).toFixed(1);
-
-        const tip = ph._tip;
-        if (tip) {
-          if (drawT > 0.002 && drawT < 0.997 && op > 0.05) {
-            const pt = path.getPointAtLength(len * drawT);
-            tip.setAttribute('cx', pt.x.toFixed(1));
-            tip.setAttribute('cy', pt.y.toFixed(1));
-            const fade = clamp(drawT / 0.05, 0, 1) * clamp((1 - drawT) / 0.08, 0, 1);
-            tip.style.opacity = (fade * op).toFixed(3);
-          } else {
-            tip.style.opacity = '0';
-          }
-        }
-
-        ph._dots.forEach((d, di) => {
-          const th = TH_LIVE[+d.dataset.di];
-          const rev = clamp((drawT - (th - 0.04)) / 0.06, 0, 1);
-          d.style.opacity = rev.toFixed(3);
-          const ring = ph._rings[di];
-          if (drawT >= th && op > 0.2) {
-            if (!d._landed) d._landed = now;
-          } else if (drawT < th - 0.03) {
-            d._landed = null;
-            if (ring) ring.style.opacity = '0';
-          }
-          if (d._landed && ring) {
-            const e = (now - d._landed) / 640;
-            if (e < 1) {
-              ring.setAttribute('r', (9 + e * 22).toFixed(1));
-              ring.setAttribute('stroke-width', (2.5 * (1 - e) + 0.4).toFixed(2));
-              ring.style.opacity = ((1 - e) * 0.55 * op).toFixed(3);
-            } else {
-              ring.style.opacity = '0';
-            }
-            const de = (now - d._landed) / 320;
-            const ds = de < 1 ? 1 + 0.55 * (1 - de) * Math.sin(Math.min(de, 1) * Math.PI) : 1;
-            d.setAttribute('r', (9 * ds).toFixed(2));
-          } else if (d) {
-            d.setAttribute('r', '9');
-          }
-        });
-
-        ph._markers.forEach((m) => {
-          const th = TH_LIVE[+m.dataset.di];
-          const r = clamp((drawT - (th - 0.06)) / 0.10, 0, 1);
-          const e = easeOut(r);
-          m.style.opacity = e.toFixed(3);
-          m.style.transform = 'translateY(' + ((1 - e) * 16).toFixed(1) + 'px)';
-        });
-        ph._counts.forEach((c) => {
-          const mk = c.closest('.cap-j-marker');
-          const th = TH_LIVE[+mk.dataset.di];
-          if (drawT >= th - 0.02 && op > 0.3) {
-            if (!c._counting && !c._done) c._counting = now;
-          } else if (op < 0.1) {
-            c._counting = null; c._done = false;
-          }
-          if (c._counting) {
-            const to = parseInt(c.dataset.to, 10);
-            const e = clamp((now - c._counting) / 720, 0, 1);
-            c.textContent = Math.round(to * easeOut(e));
-            if (e >= 1) { c._done = true; c._counting = null; }
-          }
-        });
-
-        if (ph._word) {
-          const wp = easeOut(clamp((local - 0.02) / 0.38, 0, 1));
-          ph._word.style.clipPath = reduce ? 'none' : 'inset(0 ' + ((1 - wp) * 100).toFixed(1) + '% 0 0)';
-          if (!reduce) {
-            if (wp >= 0.99 && op > 0.6) {
-              if (!ph._sweepStart) ph._sweepStart = now;
-            } else if (op < 0.2) { ph._sweepStart = null; }
-            if (ph._sweepStart) {
-              const e = (now - ph._sweepStart) / 950;
-              const posx = e < 1 ? (150 - e * 210) : -60;
-              ph._wordSpans.forEach((sp) => { sp.style.backgroundPositionX = posx.toFixed(0) + '%'; });
-            }
-          }
-        }
-
-        const shim = ph._shimmer;
-        if (shim) {
-          if (!reduce && drawT >= 0.995 && op > 0.35) {
-            const sp = (now % 1500) / 1500;
-            const pt = path.getPointAtLength(len * sp);
-            shim.setAttribute('cx', pt.x.toFixed(1));
-            shim.setAttribute('cy', pt.y.toFixed(1));
-            shim.style.opacity = (Math.sin(sp * Math.PI) * 0.6 * op).toFixed(3);
-          } else {
-            shim.style.opacity = '0';
-          }
-        }
+    let active = -1;
+    const setActive = (i) => {
+      if (i === active) return;
+      active = i;
+      const img = phases[i].querySelector('img[data-src]');
+      if (img) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+      phases.forEach((ph, k) => {
+        ph.classList.toggle('is-on', k === i);
+        ph.setAttribute('aria-hidden', String(k !== i));
       });
-
-      // Opacity-weighted horizon shift — slides smoothly through crossfades,
-      // holds its last value outside the band (den ~ 0 there). The shift is
-      // in stage-design px; the sky is a pin-level (screen px) element now.
-      if (skyImg && shiftDen > 0.05) {
-        skyImg.style.transform = 'translateY(' + ((shiftNum / shiftDen) * stageScale).toFixed(1) + 'px)';
-      }
-
-      skyTints.forEach((tn) => { tn.style.opacity = (clamp(g, 0, 1) * 0.85).toFixed(3); });
-      rails.forEach((rl, i) => {
-        const on = i === active;
-        rl.style.opacity = on ? '1' : '0.4';
-        rl.style.transform = on ? 'scale(1.5)' : 'scale(1)';
+      rails.forEach((rl, k) => {
+        rl.classList.toggle('is-on', k === i);
+        if (k === i) rl.setAttribute('aria-current', 'step');
+        else rl.removeAttribute('aria-current');
       });
+      if (foldLabel) foldLabel.textContent = 'Fold ' + CAP_JOURNEY[i].fold;
     };
 
-    const tick = () => {
-      // Off-screen: skip ALL journey work (lerp + per-frame path math) —
-      // the page runs several rAF systems and this one is the heaviest.
-      if (inView) {
-        curG += (targetG - curG) * (reduce ? 1 : smooth);
-        if (Math.abs(targetG - curG) < 0.00006) curG = targetG;
-        update(curG);
+    // Fold i's resting point is the MIDDLE of its band, so a rounding error
+    // or a smooth-scroll settle can never tip into a neighbour.
+    const foldY = (i) => {
+      const total = host.offsetHeight - capVH();
+      return window.scrollY + host.getBoundingClientRect().top + ((i + 0.5) / n) * total;
+    };
+
+    // ----- one fold per gesture -----
+    // Free scrolling let a hard flick, or a trackpad's inertia tail, carry the
+    // page through two folds at once (client 2026-09-25: "sometime it is
+    // scrolling fast"). While the pin fills the viewport every wheel gesture
+    // is exactly one move, eased by Lenis: arriving lands on the near end's
+    // fold, each gesture steps one fold, and a gesture past either end eases
+    // out to that edge of the section, where the page takes over again. The
+    // rest of a gesture (a spun wheel, trackpad inertia) is swallowed. Input
+    // that is not a wheel (scrollbar, keys, touch) settles onto the nearest
+    // fold once it stops.
+    const STEP_MS = 850;   // the eased scroll to the next fold
+    // Wheel silence that ends one gesture. Trackpad inertia and a spun wheel
+    // never pause this long; a busy main thread can batch events past 160ms.
+    const QUIET_MS = 240;
+    let stepping = false, lastWheel = 0, gestureUsed = false, wasIn = false, idleT = 0, lastY = window.scrollY;
+    const pinEngaged = () => {
+      const r = host.getBoundingClientRect();
+      return r.top <= 1 && r.bottom >= capVH() - 1;
+    };
+    const scrollToY = (y, ms) => {
+      stepping = true;
+      const done = () => { stepping = false; };
+      if (this._lenis) {
+        this._lenis.scrollTo(y, { duration: ms / 1000, lock: true, force: true, onComplete: done });
       } else {
-        curG = targetG; // arrive settled when scrolled back into view
+        window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
       }
-      this._jRaf = requestAnimationFrame(tick);
+      // onComplete is not guaranteed (native path, an interrupted tween)
+      setTimeout(done, ms + 50);
+    };
+    const go = (i, ms) => scrollToY(foldY(clamp(i, 0, n - 1)), ms);
+    // Just past the pin's top or bottom edge, so the pin releases.
+    const exitY = (dir) => {
+      const top = window.scrollY + host.getBoundingClientRect().top;
+      return dir < 0 ? top - 2 : top + host.offsetHeight - capVH() + 2;
+    };
+    const onWheel = (e) => {
+      if (reduce || e.ctrlKey || !pinEngaged()) return;
+      e.preventDefault();
+      e.stopImmediatePropagation(); // keep Lenis from also scrolling this delta
+      // e.timeStamp is when the input happened, not when this handler got to
+      // it — a janky frame that delivers a burst late must not read as a pause.
+      const now = e.timeStamp || performance.now();
+      const dir = Math.sign(e.deltaY);
+      if (now - lastWheel > QUIET_MS) gestureUsed = false;
+      lastWheel = now;
+      if (!dir) return;
+      if (!wasIn) {
+        // The wheel reached the pin before its scroll event did.
+        wasIn = true;
+        gestureUsed = true;
+        go(dir > 0 ? 0 : n - 1, 600);
+        return;
+      }
+      if (stepping || gestureUsed) return;
+      gestureUsed = true;
+      const target = active + dir;
+      if (target < 0 || target >= n) scrollToY(exitY(dir), 600);
+      else go(target, STEP_MS);
+    };
+    // capture on window runs ahead of Lenis's own window wheel listener
+    window.addEventListener('wheel', onWheel, { passive: false, capture: true });
+
+    // Progress through the track picks the fold: fold i owns [i/n, (i+1)/n).
+    const onScroll = () => {
+      const total = host.offsetHeight - capVH();
+      const g = total > 0 ? clamp(-host.getBoundingClientRect().top / total, 0, 1) : 0;
+      setActive(Math.min(n - 1, Math.floor(g * n)));
+      if (reduce) return;
+      const inPin = pinEngaged();
+      // Coasting in on a wheel glide whose events all landed before the
+      // section arrived — catch it on the near end's fold. Wheel-driven only:
+      // a jump (anchor link, restored position, scrollbar) is left where it
+      // lands and settled by the idle snap below.
+      const wheelDriven = performance.now() - lastWheel < 1500;
+      if (inPin && !wasIn && !stepping && wheelDriven) { gestureUsed = true; go(g < 0.5 ? 0 : n - 1, 600); }
+      // A long frame (a busy main thread) can let a wheel-driven glide jump
+      // the whole track between two scroll events, never landing inside it —
+      // bring it back to the near end's fold. Wheel-driven only, so dragging
+      // the scrollbar past the section is left alone.
+      const y = window.scrollY;
+      const startY = y + host.getBoundingClientRect().top;
+      const endY = startY + total;
+      if (!inPin && !wasIn && !stepping && wheelDriven &&
+          ((lastY < startY && y > endY) || (lastY > endY && y < startY))) {
+        gestureUsed = true;
+        go(lastY < startY ? 0 : n - 1, 600);
+      }
+      lastY = y;
+      wasIn = inPin;
+      clearTimeout(idleT);
+      if (inPin && !stepping) {
+        // Wheel input is already stepped, so only a scroll with no recent
+        // wheel behind it is settled here.
+        idleT = setTimeout(() => {
+          if (stepping || !pinEngaged() || performance.now() - lastWheel < 1000) return;
+          if (Math.abs(window.scrollY - foldY(active)) > 4) go(active, 500);
+        }, 180);
+      }
     };
 
     rails.forEach((rl) => rl.addEventListener('click', () => {
-      const i = parseInt(rl.dataset.i, 10);
-      const total = host.offsetHeight - capVH();
-      const y = window.scrollY + host.getBoundingClientRect().top + ((i + 0.5) / 3) * total;
-      window.scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' });
+      go(parseInt(rl.dataset.i, 10), STEP_MS);
     }));
 
-    if (!reduce) {
-      pin.addEventListener('mousemove', (e) => {
-        const r = pin.getBoundingClientRect();
-        mx = clamp(((e.clientX - r.left) / r.width - 0.5) * 2, -1, 1);
-        my = clamp(((e.clientY - r.top) / r.height - 0.5) * 2, -1, 1);
-      });
-      pin.addEventListener('mouseleave', () => { mx = 0; my = 0; });
-    }
-
     const onResize = () => {
-      const nowPortrait = window.innerWidth < Math.min(720, capVH() * 0.85);
-      // Crossing the portrait breakpoint (rotation) rebuilds with the other
-      // composition; a portrait resize that would drift the device-aspect
-      // canvas height > 4% also rebuilds (path/markers are baked with PCH).
-      const pchNow = nowPortrait ? Math.max(1500, Math.min(1950, Math.round(800 * capVH() / (vp.clientWidth || window.innerWidth)))) : 1500;
-      if (nowPortrait !== PORTRAIT || (nowPortrait && Math.abs(pchNow - (this._jPCH || pchNow)) / pchNow > 0.04)) {
-        this._jCleanup();
-        host.remove();
-        const oldCss = document.getElementById('cap-journey-css');
-        if (oldCss) oldCss.remove();
-        this._setupJourneyPinned();
-        return;
-      }
       if (this._jComputeDelta) {
         const nd = this._jComputeDelta();
         if (nd !== this._jDelta) {
@@ -2953,22 +2577,15 @@ class Component extends DCLogic {
     };
 
     layout();
+    setActive(0);
     onScroll();
-    update(targetG);
-    // Marker boxes measured before Montserrat lands are narrow — remeasure
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        phases.forEach((ph) => { ph._mBoxes = null; });
-        layout();
-      });
-    }
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize);
-    this._jRaf = requestAnimationFrame(tick);
     this._jCleanup = () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
-      if (this._jRaf) cancelAnimationFrame(this._jRaf);
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      clearTimeout(idleT);
     };
   }
 
@@ -5149,25 +4766,30 @@ class Component extends DCLogic {
       // time their phase runs, which keeps ~500KB off the initial load.
       // REDUCED never builds a stage and so never promotes anything — its
       // photos must all be real src or two phases render broken images.
-      // Client 2026-08-09 (p25): "Image to be used is same as in the horizontal
-      // version" — each phase now shows the desktop scene's own illustration
-      // (CAP_JOURNEY.img, journey/foundation|growth|expansion.png) instead of
-      // the campus photograph in .photo. The .photo/.photoAlt fields stay on
-      // the constant; nothing else reads them, but they are the fallback if the
-      // client wants the photographs back.
-      const JIMG = './components/assets/journey/';
+      // Client 2026-09-25 (Cappella_Website_Journey_Folds.pptx): each phase is
+      // a fold — photo, phase + years, headline, stats, highlight card — the
+      // same records and order as the desktop pin, with the photo moved to the
+      // top so the dots/arrows keep sitting on it. Card/stat copy carries
+      // authored entities (&amp;), so it is not escaped.
       const phases = CAP_JOURNEY.map((p, i) =>
         '<div class="cm-j-phase" data-i="' + i + '">' +
-          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + JIMG + p.img + '"' +
-            ' alt="' + esc(p.word.join(' ')) + ' illustration" loading="lazy" decoding="async">' +
-          '<p class="cm-tl-phase">' + esc(p.word.join(' ')) + '</p>' +
-          '<ul class="cm-tl">' + p.markers.map(m =>
-            '<li class="cm-tl-item">' +
-              '<div class="cm-tl-year">' + esc(m.year) + '</div>' +
-              '<div class="cm-tl-assets">' + (m.countTo ? esc(m.countTo) + ' ' : '') + esc(m.assets) + '</div>' +
-              // note carries an authored <br> in one record, so it is not escaped
-              (m.note ? '<div class="cm-tl-note">' + m.note + '</div>' : '') +
-            '</li>').join('') + '</ul>' +
+          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.photo + '"' +
+            ' alt="' + esc(p.photoAlt) + '" loading="lazy" decoding="async">' +
+          '<div class="cm-jf-head">' +
+            '<p class="cm-jf-phase">' + esc(p.phase) + '</p>' +
+            '<p class="cm-jf-years">' + esc(p.years) + '</p>' +
+          '</div>' +
+          '<p class="cm-jf-title">' + esc(p.title) + '</p>' +
+          '<div class="cm-jf-stats">' + p.stats.map((s, k) =>
+            '<div class="cm-jf-stat' + (k < 2 ? ' cm-jf-stat--lead' : '') + '">' +
+              '<div class="cm-jf-num">' + s[0] + '</div>' +
+              '<div class="cm-jf-label">' + s[1] + '</div>' +
+            '</div>').join('') + '</div>' +
+          '<div class="cm-jf-card">' +
+            '<p class="cm-jf-eyebrow">' + p.card.eyebrow + '</p>' +
+            '<p class="cm-jf-card-title">' + p.card.title + '</p>' +
+            '<p class="cm-jf-card-body">' + p.card.body + '</p>' +
+          '</div>' +
         '</div>').join('');
 
       if (REDUCED) {
@@ -5178,7 +4800,7 @@ class Component extends DCLogic {
             '<div class="cm-j-stage">' +
               '<div class="cm-j-dots" role="tablist" aria-label="Journey phases">' +
                 CAP_JOURNEY.map((p, i) =>
-                  '<span class="cm-j-dot" role="tab" aria-label="' + esc(p.word.join(' ')) + '"' +
+                  '<span class="cm-j-dot" role="tab" aria-label="' + esc(p.phase) + '"' +
                     (i === 0 ? ' aria-selected="true"' : '') + '></span>').join('') +
               '</div>' +
               // Client 2026-08-09 (p25): prev/next arrows. They do NOT replace
