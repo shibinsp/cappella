@@ -652,12 +652,20 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   grid-area: stats;
   margin-top: calc(62 * var(--u));
   display: grid;
-  grid-template-columns: calc(360 * var(--u)) max-content;
+  grid-template-columns: max-content max-content;
+  column-gap: calc(80 * var(--u));
   row-gap: calc(46 * var(--u));
   align-content: start;
+  /* a container, so the figures below can size against the column they sit in */
+  container-type: inline-size;
 }
+/* The longest row (fold 1's "~5,800" + "~0.5Mn SFT") is ~10.2em plus the
+   80u gap. On the deck's 16:9 that fits at 58u with air before the photo; on
+   squarer screens (4:3 laptops) the column is narrower, so the figure shrinks
+   to fit rather than running under the photo. */
 #cap-journey .cap-jf-num {
-  font-size: calc(58 * var(--u)); font-weight: 800; line-height: 1;
+  font-size: min(calc(58 * var(--u)), calc((100cqi - 80 * var(--u)) / 10.8));
+  font-weight: 800; line-height: 1;
   letter-spacing: -0.01em; white-space: nowrap;
 }
 #cap-journey .cap-jf-label {
