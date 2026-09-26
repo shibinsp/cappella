@@ -616,11 +616,15 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   box-sizing: border-box;
   padding: calc(100 * var(--u)) calc(105 * var(--u)) 0 calc(123 * var(--u));
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(540 * var(--u));
+  /* The empty third column (0 wide, plus one column gap) insets the title
+     and photo from the right edge so they clear the menu button (client
+     2026-09-26: "move these to the left slightly"); the card still spans the
+     full width underneath. */
+  grid-template-columns: minmax(0, 1fr) calc(540 * var(--u)) 0;
   grid-template-areas:
-    "head  title"
-    "stats media"
-    "card  card";
+    "head  title title-inset"
+    "stats media media-inset"
+    "card  card  card";
   grid-template-rows: auto auto auto;
   column-gap: calc(70 * var(--u));
   align-content: start;
