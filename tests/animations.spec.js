@@ -370,6 +370,62 @@ test.describe('pinned journey', () => {
     expect(await state()).toEqual({ fold: 2, pinned: true });
     expectNoPageErrors(errors);
   });
+
+  test('touchpad: a swipe inside the last swipe\'s inertia still moves on', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'wheel stepping asserted at desktop scale');
+    testInfo.setTimeout(90000);
+    const errors = attachErrorCapture(page);
+    await page.goto(HOME, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#cap-journey', { timeout: 20000 });
+    await page.waitForTimeout(1500);
+
+    const park = (sixth) => page.evaluate((sixth) => {
+      const host = document.getElementById('cap-journey');
+      window.scrollTo(0, window.scrollY + host.getBoundingClientRect().top + (host.offsetHeight - innerHeight) * sixth / 6);
+    }, sixth);
+    const fold = () => page.evaluate(() =>
+      [...document.querySelectorAll('.cap-jf-fold')].findIndex((f) => f.classList.contains('is-on')));
+    // Client 2026-09-26 (laptop touchpad): "feels stuck". A touchpad swipe
+    // accelerates, holds, then trails ~1.5s of fading inertia; a second swipe
+    // cuts that tail short. Replayed on rAF from a timeline, so late frames
+    // batch events instead of stretching the gaps between them.
+    const swipes = (starts) => page.evaluate((starts) => new Promise((res) => {
+      const one = [2, 4, 7, 11, 16, 22, 28, 34, 38, 40, 44, 37, 42, 39, 45, 36, 41, 40,
+        ...Array.from({ length: 95 }, (_, k) => 40 * Math.pow(0.955, k))];
+      const events = [];
+      starts.forEach((t0, si) => {
+        const until = starts[si + 1] ?? Infinity;
+        one.forEach((d, k) => { const t = t0 + k * 16; if (t < until) events.push([t, d]); });
+      });
+      const t0 = performance.now();
+      let i = 0;
+      const tick = () => {
+        const el = performance.now() - t0;
+        while (i < events.length && events[i][0] <= el) {
+          const t = document.elementFromPoint(innerWidth / 2, innerHeight / 2) || document.body;
+          t.dispatchEvent(new WheelEvent('wheel', { deltaY: events[i][1], bubbles: true, cancelable: true }));
+          i++;
+        }
+        if (i < events.length) requestAnimationFrame(tick); else setTimeout(res, 1300);
+      };
+      tick();
+    }), starts);
+
+    // One swipe, jitter and inertia included, is one fold…
+    await park(1);
+    await page.waitForTimeout(1200);
+    await swipes([0]);
+    expect(await fold()).toBe(1);
+    // …and a second swipe made during the first one's inertia is a second
+    // fold, whether it lands mid-animation or in the inertia tail.
+    for (const second of [450, 900]) {
+      await park(1);
+      await page.waitForTimeout(1200);
+      await swipes([0, second]);
+      expect(await fold(), 'second swipe at ' + second + 'ms').toBe(2);
+    }
+    expectNoPageErrors(errors);
+  });
   });
 
   // REMOVED 2026-07-28 — 'portrait phones get the pinned scene fitted to the

@@ -2467,18 +2467,52 @@ class Component extends DCLogic {
     // rest of a gesture (a spun wheel, trackpad inertia) is swallowed. Input
     // that is not a wheel (scrollbar, keys, touch) settles onto the nearest
     // fold once it stops.
-    const STEP_MS = 850;   // the eased scroll to the next fold
-    // Wheel silence that ends one gesture. Trackpad inertia and a spun wheel
-    // never pause this long; a busy main thread can batch events past 160ms.
+    //
+    // Telling a new gesture from the tail of the last one (client 2026-09-26,
+    // laptop touchpad: "feels stuck"). Inertia keeps a touchpad's wheel stream
+    // going for a second or more after the fingers lift, so waiting for
+    // silence alone swallowed a second swipe made inside that tail. A gesture
+    // is therefore new when (a) the stream pauses, (b) it reverses, or (c) its
+    // speed RISES again after having visibly decayed — inertia only ever
+    // fades, a fresh swipe accelerates. The decay requirement is what stops a
+    // swipe's own acceleration phase from reading as a second gesture. A new
+    // gesture that lands while a fold is still easing in is queued and runs
+    // the moment it arrives, so a quick double swipe is two folds, not one.
+    const STEP_MS = 700;   // the eased scroll to the next fold
+    // Wheel silence that ends one gesture. A busy main thread can batch events
+    // past 160ms, so this sits above that.
     const QUIET_MS = 240;
     let stepping = false, lastWheel = 0, gestureUsed = false, wasIn = false, idleT = 0, lastY = window.scrollY;
+    let lastDir = 0, peak = 0, decayed = false, queued = 0, stepToken = 0;
+    const recent = [];     // |deltaY| of the last few wheel events
     const pinEngaged = () => {
       const r = host.getBoundingClientRect();
       return r.top <= 1 && r.bottom >= capVH() - 1;
     };
+    const go = (i, ms) => scrollToY(foldY(clamp(i, 0, n - 1)), ms);
+    // Just past the pin's top or bottom edge, so the pin releases.
+    const exitY = (dir) => {
+      const top = window.scrollY + host.getBoundingClientRect().top;
+      return dir < 0 ? top - 2 : top + host.offsetHeight - capVH() + 2;
+    };
+    const step = (dir) => {
+      const target = active + dir;
+      if (target < 0 || target >= n) scrollToY(exitY(dir), 600);
+      else go(target, STEP_MS);
+    };
     const scrollToY = (y, ms) => {
       stepping = true;
-      const done = () => { stepping = false; };
+      const token = ++stepToken;
+      const done = () => {
+        if (token !== stepToken || !stepping) return; // onComplete and the timer both land here
+        stepping = false;
+        const d = queued;
+        queued = 0;
+        // Next frame, not here: this runs inside Lenis's onComplete, and Lenis
+        // tidies its tween state after that callback returns — a scrollTo
+        // started in it is cancelled on the spot.
+        if (d) requestAnimationFrame(() => { if (!stepping && pinEngaged()) step(d); });
+      };
       if (this._lenis) {
         this._lenis.scrollTo(y, { duration: ms / 1000, lock: true, force: true, onComplete: done });
       } else {
@@ -2487,12 +2521,7 @@ class Component extends DCLogic {
       // onComplete is not guaranteed (native path, an interrupted tween)
       setTimeout(done, ms + 50);
     };
-    const go = (i, ms) => scrollToY(foldY(clamp(i, 0, n - 1)), ms);
-    // Just past the pin's top or bottom edge, so the pin releases.
-    const exitY = (dir) => {
-      const top = window.scrollY + host.getBoundingClientRect().top;
-      return dir < 0 ? top - 2 : top + host.offsetHeight - capVH() + 2;
-    };
+    const mean = (a) => a.reduce((t, v) => t + v, 0) / (a.length || 1);
     const onWheel = (e) => {
       if (reduce || e.ctrlKey || !pinEngaged()) return;
       e.preventDefault();
@@ -2501,9 +2530,31 @@ class Component extends DCLogic {
       // it — a janky frame that delivers a burst late must not read as a pause.
       const now = e.timeStamp || performance.now();
       const dir = Math.sign(e.deltaY);
-      if (now - lastWheel > QUIET_MS) gestureUsed = false;
+      // deltaMode 1 = lines (some mice): scale to pixels so the speed
+      // comparison below means the same thing for every device
+      const mag = Math.abs(e.deltaY) * (e.deltaMode === 1 ? 16 : 1);
+      const paused = now - lastWheel > QUIET_MS;
       lastWheel = now;
       if (!dir) return;
+
+      if (paused) recent.length = 0;
+      recent.push(mag);
+      if (recent.length > 8) recent.shift();
+      let fresh = paused || dir !== lastDir;
+      if (!fresh && decayed && recent.length >= 6) {
+        const before = mean(recent.slice(-6, -3)), after = mean(recent.slice(-3));
+        fresh = after > before * 1.4 && after > 4;
+      }
+      lastDir = dir;
+      if (fresh) {
+        gestureUsed = false;
+        peak = mag;
+        decayed = false;
+      } else {
+        peak = Math.max(peak, mag);
+        if (mag < peak * 0.5) decayed = true;
+      }
+
       if (!wasIn) {
         // The wheel reached the pin before its scroll event did.
         wasIn = true;
@@ -2511,11 +2562,10 @@ class Component extends DCLogic {
         go(dir > 0 ? 0 : n - 1, 600);
         return;
       }
-      if (stepping || gestureUsed) return;
+      if (gestureUsed) return;
       gestureUsed = true;
-      const target = active + dir;
-      if (target < 0 || target >= n) scrollToY(exitY(dir), 600);
-      else go(target, STEP_MS);
+      if (stepping) { queued = dir; return; }
+      step(dir);
     };
     // capture on window runs ahead of Lenis's own window wheel listener
     window.addEventListener('wheel', onWheel, { passive: false, capture: true });
