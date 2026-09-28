@@ -441,7 +441,10 @@ const CAP_EDGE = [
 // accessible name; it is no longer drawn.
 const CAP_JOURNEY = [
   { fold: 1, phase: 'Foundation Phase', years: '2016–2018', title: 'The Foundation',
-    img: './components/assets/journey/foundation.png',
+    // foundation.png stops mid-wing at its right edge; -full is the same
+    // artwork completed by mirroring it about the entrance (x644), the chimney
+    // kept (client 2026-09-28: "i need this full building picture").
+    img: './components/assets/journey/foundation-full.png',
     stats: [['8', 'Assets'], ['7', 'Geographies'], ['~5,800', 'Students'], ['~0.5Mn SFT', 'BUA']],
     card: { eyebrow: 'Established Edu-Infra', title: 'Pioneered Sale &amp; Leaseback',
       body: 'Built an integrated PropCo + OpCo + ManCo model.' } },

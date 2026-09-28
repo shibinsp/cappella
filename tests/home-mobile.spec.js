@@ -286,7 +286,7 @@ test.describe('mobile home', () => {
         radius: parseFloat(c.borderRadius), fit: c.objectFit };
     });
     // client 2026-09-28: the pre-fold building cutouts, unframed and uncropped
-    expect(img.src).toContain('/journey/foundation.png');
+    expect(img.src).toContain('/journey/foundation-full.png');
     expect(img.radius, 'no box around the cutout').toBe(0);
     expect(img.fit).toBe('contain');
     expect(img.h, 'the image must not collapse to a sliver').toBeGreaterThanOrEqual(110);
