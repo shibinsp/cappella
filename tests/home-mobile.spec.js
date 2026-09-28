@@ -440,13 +440,16 @@ test.describe('mobile home', () => {
 
     // The phase fills the pin. Centring ~400px of content in a 100svh stage
     // left visible dead space above the photo and below the last record; the
-    // photo now flexes to take up the slack.
+    // image takes up the slack. Every phase shares ONE image height (client
+    // 2026-09-28: the building must not ride up and down between phases), set
+    // by the tallest phase's copy — so it is that phase which fills the pin,
+    // and a shorter one ends a little higher. Measure the least slack.
     const slack = await page.evaluate(() => {
       const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
       const ph = document.querySelector('#cap-mobile .cm-j-phase.is-on').getBoundingClientRect();
-      const last = document.querySelector('#cap-mobile .cm-j-phase.is-on .cm-jf-card')
-        .getBoundingClientRect();
-      return { above: ph.top - s.top, below: s.bottom - last.bottom };
+      const lows = [...document.querySelectorAll('#cap-mobile .cm-j-phase .cm-jf-card')]
+        .map((c) => s.bottom - c.getBoundingClientRect().bottom);
+      return { above: ph.top - s.top, below: Math.min(...lows) };
     });
     expect(slack.above, 'dead space above the phase').toBeLessThanOrEqual(30);
     expect(slack.below, 'dead space below the highlight card').toBeLessThanOrEqual(40);

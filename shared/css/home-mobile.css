@@ -387,6 +387,16 @@
   border-radius: 0;
   filter: drop-shadow(0 10px 14px rgba(40, 55, 70, 0.22));
 }
+/* In the stage every phase's image gets the SAME height: what the tallest
+   phase's copy (--cm-j-copy-h, measured by _setupMobileJourney) leaves, less
+   the card's 18px bottom margin. Otherwise each image took its own phase's
+   slack and the building rode up and down between phases (client 2026-09-28).
+   The cutouts are trimmed to the building, so object-position's bottom is the
+   building's foot. */
+#cap-mobile .cm-j-stage .cm-j-phase .cm-journey-img {
+  flex: 0 0 auto;
+  height: max(110px, calc(100% - var(--cm-j-copy-h, 0px) - 18px));
+}
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible
    at once — the outgoing one clears first, then the incoming rises in. */

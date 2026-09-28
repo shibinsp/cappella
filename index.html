@@ -5042,6 +5042,31 @@ class Component extends DCLogic {
       stage.style.setProperty('--cm-j-art-h', h + 'px');
     };
 
+    // One image height for every phase (client 2026-09-28: the building moved
+    // up and down between phases). Left to flex, each image took whatever its
+    // own phase's copy left over, so a shorter card meant a taller box and a
+    // lower building. Publish the TALLEST phase's copy instead and size every
+    // image off it (home-mobile.css), so all three share one box and one foot.
+    // The copy is measured from the image's foot to the card's, which does not
+    // depend on the image's own height.
+    let copyH = -1;
+    const syncCopy = () => {
+      const h = Math.ceil(Math.max(...phases.map((ph) => {
+        const img = ph.querySelector('.cm-journey-img');
+        const last = ph.lastElementChild;
+        if (!img || !last || last === img) return 0;
+        return last.getBoundingClientRect().bottom - img.getBoundingClientRect().bottom;
+      })));
+      if (h === copyH) return;
+      copyH = h;
+      stage.style.setProperty('--cm-j-copy-h', h + 'px');
+      artH = -1;
+      syncArt();
+    };
+    syncCopy();
+    if ('ResizeObserver' in window) new ResizeObserver(syncCopy).observe(stage);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncCopy);
+
     setActive(0);
 
     // Client 2026-08-09 (p25): prev/next arrows over the same scroll model.
