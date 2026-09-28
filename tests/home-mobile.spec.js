@@ -127,7 +127,7 @@ test.describe('mobile home', () => {
     await expect(rows.last()).toContainText('Proven, long-term investor value');
 
     // CAP_JOURNEY — the three folds from Cappella_Website_Journey_Folds.pptx.
-    await expect(page.locator('#cap-mobile .cm-jf-phase')).toHaveCount(3);
+    await expect(page.locator('#cap-mobile .cm-jf-years')).toHaveCount(3);
     await expect(page.locator('#cap-mobile .cm-jf-card')).toHaveCount(3);
     await expect(page.locator('#cap-mobile .cm-j-phase').first()).toContainText('2016\u20132018');
 
@@ -256,33 +256,40 @@ test.describe('mobile home', () => {
     expect(bg).toBe('rgb(241, 238, 234)');
   });
 
-  test('each Journey fold carries the deck\'s photo, figures and highlight card', async ({ page }) => {
+  test('each Journey fold carries its building, figures and highlight card', async ({ page }) => {
     await gotoMobileHome(page);
 
     const folds = await page.evaluate(() =>
       [...document.querySelectorAll('#cap-mobile .cm-j-phase')].map((ph) => ({
-        phase: ph.querySelector('.cm-jf-phase').textContent,
+        phase: ph.querySelectorAll('.cm-jf-phase').length,
         years: ph.querySelector('.cm-jf-years').textContent,
         title: ph.querySelector('.cm-jf-title').textContent,
         stats: ph.querySelectorAll('.cm-jf-stat').length,
-        lead: ph.querySelectorAll('.cm-jf-stat--lead').length,
+        // client 2026-09-28: one figure size and one label colour per fold
+        numSizes: new Set([...ph.querySelectorAll('.cm-jf-num')].map((n) => getComputedStyle(n).fontSize)).size,
+        labelColors: new Set([...ph.querySelectorAll('.cm-jf-label')].map((n) => getComputedStyle(n).color)).size,
         eyebrowColor: getComputedStyle(ph.querySelector('.cm-jf-eyebrow')).color,
         card: ph.querySelector('.cm-jf-card-title').textContent
       })));
-    expect(folds.map((f) => f.phase)).toEqual(['Foundation Phase', 'Growth Phase', 'Expansion Phase']);
+    expect(folds.every((f) => f.phase === 0), 'the phase name is no longer drawn').toBe(true);
     expect(folds.map((f) => f.years)).toEqual(['2016\u20132018', '2019\u20132023', '2023\u20132026']);
     expect(folds.map((f) => f.title)).toEqual(['The Foundation', 'Building the Ecosystem', 'Scaling the Asset Class']);
     expect(folds.map((f) => f.stats)).toEqual([4, 5, 5]);
-    expect(folds.every((f) => f.lead === 2), 'Assets + Geographies lead every fold').toBe(true);
+    expect(folds.every((f) => f.numSizes === 1 && f.labelColors === 1), 'uniform figures and labels').toBe(true);
     expect(folds.every((f) => f.eyebrowColor === 'rgb(209, 32, 47)')).toBe(true);
     expect(folds.map((f) => f.card)).toEqual(['Pioneered Sale & Leaseback', 'Institutional capital', 'SKOLEN']);
 
     const img = await page.evaluate(() => {
       const i = document.querySelector('#cap-mobile .cm-journey-img');
-      return { h: i.getBoundingClientRect().height, radius: parseFloat(getComputedStyle(i).borderRadius) };
+      const c = getComputedStyle(i);
+      return { h: i.getBoundingClientRect().height, src: i.getAttribute('src'),
+        radius: parseFloat(c.borderRadius), fit: c.objectFit };
     });
-    expect(img.radius, 'the photo keeps rounded corners').toBeGreaterThan(0);
-    expect(img.h, 'the photo must not collapse to a sliver').toBeGreaterThanOrEqual(110);
+    // client 2026-09-28: the pre-fold building cutouts, unframed and uncropped
+    expect(img.src).toContain('/journey/foundation-full.png');
+    expect(img.radius, 'no box around the cutout').toBe(0);
+    expect(img.fit).toBe('contain');
+    expect(img.h, 'the image must not collapse to a sliver').toBeGreaterThanOrEqual(110);
   });
 
   test('Our Journey arrows step phases without replacing the scroll model', async ({ page }) => {
@@ -433,13 +440,16 @@ test.describe('mobile home', () => {
 
     // The phase fills the pin. Centring ~400px of content in a 100svh stage
     // left visible dead space above the photo and below the last record; the
-    // photo now flexes to take up the slack.
+    // image takes up the slack. Every phase shares ONE image height (client
+    // 2026-09-28: the building must not ride up and down between phases), set
+    // by the tallest phase's copy — so it is that phase which fills the pin,
+    // and a shorter one ends a little higher. Measure the least slack.
     const slack = await page.evaluate(() => {
       const s = document.querySelector('#cap-mobile .cm-j-stage').getBoundingClientRect();
       const ph = document.querySelector('#cap-mobile .cm-j-phase.is-on').getBoundingClientRect();
-      const last = document.querySelector('#cap-mobile .cm-j-phase.is-on .cm-jf-card')
-        .getBoundingClientRect();
-      return { above: ph.top - s.top, below: s.bottom - last.bottom };
+      const lows = [...document.querySelectorAll('#cap-mobile .cm-j-phase .cm-jf-card')]
+        .map((c) => s.bottom - c.getBoundingClientRect().bottom);
+      return { above: ph.top - s.top, below: Math.min(...lows) };
     });
     expect(slack.above, 'dead space above the phase').toBeLessThanOrEqual(30);
     expect(slack.below, 'dead space below the highlight card').toBeLessThanOrEqual(40);
@@ -462,7 +472,8 @@ test.describe('mobile home', () => {
 
     expect(shots).toHaveLength(3);
     expect(shots.every((s) => s.has), 'every phase needs a photo').toBe(true);
-    expect(shots.every((s) => s.alt && s.alt.length > 3)).toBe(true);
+    // Illustrative cutouts, not photographs of a named campus — decorative.
+    expect(shots.every((s) => s.alt === '')).toBe(true);
 
     // The point of the change: three DIFFERENT photos. A copy-paste slip would
     // otherwise satisfy every other assertion here.

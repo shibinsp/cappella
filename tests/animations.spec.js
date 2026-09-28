@@ -282,7 +282,9 @@ test.describe('pinned journey', () => {
           top: Math.round(r.top), h: Math.round(r.height),
           on: [...document.querySelectorAll('.cap-jf-fold')].map((f) => f.classList.contains('is-on')),
           dot: [...document.querySelectorAll('.cap-jf-dot')].findIndex((d) => d.classList.contains('is-on')),
-          label: document.querySelector('.cap-jf-fold-label').textContent,
+          // client 2026-09-28: the "Fold N" / "Cappella" rail labels and the
+          // phase name are gone from every fold
+          labels: document.querySelectorAll('.cap-jf-fold-label, .cap-jf-brand, .cap-jf-phase').length,
           title: fold.querySelector('.cap-jf-title').textContent,
           cardInside: card.bottom <= r.bottom && card.right <= r.right
         };
@@ -292,7 +294,7 @@ test.describe('pinned journey', () => {
       expect(st.h).toBe(await page.evaluate(() => window.innerHeight));
       expect(st.on).toEqual([0, 1, 2].map((k) => k === i));
       expect(st.dot).toBe(i);
-      expect(st.label).toBe('Fold ' + (i + 1));
+      expect(st.labels).toBe(0);
       expect(st.title).toBe(TITLES[i]);
       expect(st.cardInside, 'the highlight card fits inside the pin').toBe(true);
     }
