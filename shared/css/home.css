@@ -546,7 +546,6 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   --u: min(100vw / 1920, 100svh / 1080);
   --jf-red: rgb(209, 32, 47);
   --jf-ink: #141414;
-  --jf-muted: #aea9a4;
   --jf-rail: 432;
   position: sticky; top: 0;
   height: 100vh; height: 100svh;
@@ -558,7 +557,8 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
 }
 :where(#cap-journey .cap-jf) :where(p, h2, h3, figure) { margin: 0; }
 
-/* ----- left rail: title, fold label, brand, the line and its three dots */
+/* ----- left rail: title, the line and its three dots. The deck's "Fold N"
+   label and "Cappella" footer were removed (client 2026-09-28). */
 #cap-journey .cap-jf-rail {
   position: absolute; left: 0; top: 0; bottom: 0;
   width: calc(var(--jf-rail) * var(--u));
@@ -567,17 +567,6 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   position: absolute; left: calc(95 * var(--u)); top: calc(92 * var(--u));
   font-size: calc(54 * var(--u)); font-weight: 800; line-height: 1.1;
   text-transform: uppercase; letter-spacing: -0.005em;
-}
-#cap-journey .cap-jf-fold-label,
-#cap-journey .cap-jf-brand {
-  position: absolute; left: calc(98 * var(--u));
-  font-weight: 700; text-transform: uppercase; color: var(--jf-muted);
-}
-#cap-journey .cap-jf-fold-label {
-  top: calc(318 * var(--u)); font-size: calc(22 * var(--u)); letter-spacing: 0.05em;
-}
-#cap-journey .cap-jf-brand {
-  bottom: calc(62 * var(--u)); font-size: calc(18 * var(--u)); letter-spacing: 0.06em;
 }
 #cap-journey .cap-jf-line {
   position: absolute; right: 0; top: 0; bottom: 0; width: 2px;
@@ -636,19 +625,21 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   transition: opacity 0.5s ease 0.15s, visibility 0s;
 }
 
+/* Type follows the homepage's own scale (client 2026-09-28: "reduce the font
+   sizes in alignment with the rest of the website ... font style and sizes
+   and colours to be uniform"). At 1440 (--u = 0.75) the years and headline
+   are the 30px/600 subheads the frame uses ("Operator-aligned structures"),
+   every figure is one size and weight, every label one size and colour, and
+   the card copy is the 24px subhead over 20px description. Red is kept only
+   where the rest of the site uses it — the subhead accent. */
 #cap-journey .cap-jf-head { grid-area: head; }
-#cap-journey .cap-jf-phase {
-  font-size: calc(36 * var(--u)); font-weight: 700; line-height: 1.2;
-}
 #cap-journey .cap-jf-years {
-  margin-top: calc(6 * var(--u));
-  font-size: calc(62 * var(--u)); font-weight: 400; line-height: 1.1;
-  color: var(--jf-red); letter-spacing: -0.01em;
+  font-size: calc(40 * var(--u)); font-weight: 600; line-height: 1.2;
+  color: var(--jf-red);
 }
 #cap-journey .cap-jf-title {
   grid-area: title; justify-self: end; align-self: start;
-  margin-top: calc(-4 * var(--u));
-  font-size: calc(50 * var(--u)); font-weight: 800; line-height: 1.15;
+  font-size: calc(40 * var(--u)); font-weight: 600; line-height: 1.2;
   text-align: right; white-space: nowrap;
 }
 
@@ -664,35 +655,33 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   container-type: inline-size;
 }
 /* The longest row (fold 1's "~5,800" + "~0.5Mn SFT") is ~10.2em plus the
-   80u gap. On the deck's 16:9 that fits at 58u with air before the photo; on
+   80u gap. On the deck's 16:9 that fits at 54u with air before the image; on
    squarer screens (4:3 laptops) the column is narrower, so the figure shrinks
-   to fit rather than running under the photo. */
+   to fit rather than running under the image. */
 #cap-journey .cap-jf-num {
-  font-size: min(calc(58 * var(--u)), calc((100cqi - 80 * var(--u)) / 10.8));
-  font-weight: 800; line-height: 1;
-  letter-spacing: -0.01em; white-space: nowrap;
+  font-size: min(calc(54 * var(--u)), calc((100cqi - 80 * var(--u)) / 10.8));
+  font-weight: 600; line-height: 1;
+  white-space: nowrap;
 }
 #cap-journey .cap-jf-label {
   margin-top: calc(12 * var(--u));
-  font-size: calc(20 * var(--u)); font-weight: 700; letter-spacing: 0.04em;
-  text-transform: uppercase; color: var(--jf-muted);
-}
-#cap-journey .cap-jf-stat--lead .cap-jf-num { font-size: calc(92 * var(--u)); }
-#cap-journey .cap-jf-stat--lead .cap-jf-label {
-  margin-top: calc(18 * var(--u));
-  font-size: calc(25 * var(--u)); color: var(--jf-ink); letter-spacing: 0.02em;
+  font-size: calc(18 * var(--u)); font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--jf-ink);
 }
 
+/* The pre-fold journey's building cutouts (journey/*.png, transparent),
+   standing on the section's ground with no frame (client 2026-09-28: "no box
+   needed") — contained and planted on the box's foot, never cropped. */
 #cap-journey .cap-jf-media {
   grid-area: media; align-self: start;
   margin-top: calc(18 * var(--u));
   aspect-ratio: 540 / 367;
-  border-radius: calc(60 * var(--u));
-  overflow: hidden;
-  background: #e1dedb;
-  box-shadow: 0 calc(6 * var(--u)) calc(12 * var(--u)) rgba(40, 30, 20, 0.14);
 }
-#cap-journey .cap-jf-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#cap-journey .cap-jf-media img {
+  display: block; width: 100%; height: 100%;
+  object-fit: contain; object-position: center bottom;
+  filter: drop-shadow(0 calc(16 * var(--u)) calc(24 * var(--u)) rgba(40, 55, 70, 0.22));
+}
 
 #cap-journey .cap-jf-card {
   grid-area: card;
@@ -703,16 +692,16 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   box-shadow: 0 calc(4 * var(--u)) calc(10 * var(--u)) rgba(40, 30, 20, 0.12);
 }
 #cap-journey .cap-jf-eyebrow {
-  font-size: calc(24 * var(--u)); font-weight: 700; letter-spacing: 0.03em;
+  font-size: calc(18 * var(--u)); font-weight: 600; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--jf-red);
 }
 #cap-journey .cap-jf-card-title {
-  margin-top: calc(22 * var(--u));
-  font-size: calc(32 * var(--u)); font-weight: 700; line-height: 1.2;
+  margin-top: calc(18 * var(--u));
+  font-size: calc(32 * var(--u)); font-weight: 600; line-height: 1.2;
 }
 #cap-journey .cap-jf-card-body {
-  margin-top: calc(14 * var(--u));
-  font-size: calc(26 * var(--u)); font-weight: 400; line-height: 1.4; color: #2a2a2a;
+  margin-top: calc(12 * var(--u));
+  font-size: calc(26 * var(--u)); font-weight: 400; line-height: 1.4;
 }
 
 /* Content rises in behind the fade, top to bottom. */
@@ -746,8 +735,6 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
     --jf-rail: 260;
   }
   #cap-journey .cap-jf-heading { left: calc(44 * var(--u)); font-size: calc(36 * var(--u)); }
-  #cap-journey .cap-jf-fold-label,
-  #cap-journey .cap-jf-brand { left: calc(46 * var(--u)); }
   #cap-journey .cap-jf-fold {
     padding: calc(100 * var(--u)) calc(64 * var(--u)) 0 calc(80 * var(--u));
     grid-template-columns: minmax(0, 1fr);

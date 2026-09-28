@@ -375,16 +375,17 @@
    full. This is a deliberate departure from the export's fixed 2.73:1 band —
    that ratio cannot fill a viewport-height pin. It keeps a floor so a short
    screen never squeezes it to a sliver. */
-/* The fold's photograph (Cappella_Website_Journey_Folds.pptx, 2026-09-25),
-   cropped to fill whatever height the fold's copy leaves, rounded like the
-   desktop image card. min-height keeps a short screen from squeezing it to a
+/* The fold's building cutout (journey/*.png, transparent), unframed like the
+   desktop pin (client 2026-09-28: "no box needed"). It takes whatever height
+   the fold's copy leaves, contained and planted on its foot so the building
+   is never cropped. min-height keeps a short screen from squeezing it to a
    sliver. */
 #cap-mobile .cm-j-phase .cm-journey-img {
   flex: 1 1 auto; min-height: 110px; aspect-ratio: auto;
   margin: 0 0 16px; width: 100%;
-  object-fit: cover; object-position: center;
-  border-radius: 18px;
-  background: #e1dedb;
+  object-fit: contain; object-position: center bottom;
+  border-radius: 0;
+  filter: drop-shadow(0 10px 14px rgba(40, 55, 70, 0.22));
 }
 /* Staggered, not a straight cross-fade. The phases sit exactly on top of one
    another, so overlapping fades double-expose the text and both are legible
@@ -469,32 +470,26 @@
 #cap-mobile .cm-j-static .cm-j-phase { position: static; opacity: 1; visibility: visible; transform: none; }
 #cap-mobile .cm-j-static { margin-top: 26px; }
 
-/* Fold copy, the deck's hierarchy at phone size: phase + red years, the
-   headline, two lead stats with dark labels, the rest smaller with muted
-   labels, then the white highlight card. */
+/* Fold copy at phone size: red years, the headline, the stats — one figure
+   size, one label size and colour (client 2026-09-28: "font style and sizes
+   and colours to be uniform") — then the white highlight card. */
 #cap-mobile .cm-jf-head p,
 #cap-mobile .cm-jf-title,
 #cap-mobile .cm-jf-card p { margin: 0; }
-#cap-mobile .cm-jf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-#cap-mobile .cm-jf-phase { font-size: 15px; font-weight: 700; color: var(--cap-ink); }
-#cap-mobile .cm-jf-years { font-size: 22px; font-weight: 400; color: var(--cap-red); line-height: 1.1; }
-#cap-mobile .cm-jf-title { margin-top: 6px; font-size: 20px; font-weight: 800; line-height: 1.2; color: var(--cap-ink); }
+#cap-mobile .cm-jf-years { font-size: 18px; font-weight: 600; color: var(--cap-red); line-height: 1.2; }
+#cap-mobile .cm-jf-title { margin-top: 4px; font-size: 18px; font-weight: 600; line-height: 1.2; color: var(--cap-ink); }
 #cap-mobile .cm-jf-stats {
   margin-top: 14px;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px 10px;
 }
-#cap-mobile .cm-jf-stat--lead { grid-column: span 1; }
-#cap-mobile .cm-jf-stat--lead + .cm-jf-stat--lead { grid-column: span 2; }
-/* Small figures may wrap ("~3.3Mn / SFT") — a third of a 320px screen is
-   narrower than the longest one; the lead figures are short and stay put. */
-#cap-mobile .cm-jf-num { font-size: 17px; font-weight: 800; line-height: 1.05; color: var(--cap-ink); overflow-wrap: anywhere; }
-#cap-mobile .cm-jf-stat--lead .cm-jf-num { font-size: 30px; }
+/* Figures may wrap ("~3.3Mn / SFT") — a third of a 320px screen is narrower
+   than the longest one. */
+#cap-mobile .cm-jf-num { font-size: 18px; font-weight: 600; line-height: 1.05; color: var(--cap-ink); overflow-wrap: anywhere; }
 #cap-mobile .cm-jf-label {
-  margin-top: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; color: #9d9893;
+  margin-top: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--cap-ink);
 }
-#cap-mobile .cm-jf-stat--lead .cm-jf-label { font-size: 11px; color: var(--cap-ink); }
 #cap-mobile .cm-jf-card {
   margin: 16px 0 18px;
   padding: 14px 16px;
@@ -502,11 +497,11 @@
   box-shadow: 0 2px 8px rgba(40, 30, 20, 0.10);
 }
 #cap-mobile .cm-jf-eyebrow {
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--cap-red);
 }
-#cap-mobile .cm-jf-card-title { margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--cap-ink); }
-#cap-mobile .cm-jf-card-body { margin-top: 4px; font-size: 12.5px; line-height: 1.45; color: var(--cap-body); }
+#cap-mobile .cm-jf-card-title { margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--cap-ink); }
+#cap-mobile .cm-jf-card-body { margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--cap-ink); }
 
 /* ==========================================================================
    5. OUR PORTFOLIO — city rail + tile grid

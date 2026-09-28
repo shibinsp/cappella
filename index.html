@@ -164,7 +164,7 @@
     <hr class="cm-rule">
     <p class="cm-sub">Building education infrastructure that creates lasting impact for generations.</p>
     <!-- The photo is per-phase and lives inside each .cm-j-phase; see
-         CAP_JOURNEY.photo and _setupMobileHome's timeline render. -->
+         CAP_JOURNEY.img and _setupMobileHome's timeline render. -->
     <div data-cm-timeline></div>
   </section>
 
@@ -433,25 +433,25 @@ const CAP_EDGE = [
 // Our Journey — one fold per phase, per the client's
 // Cappella_Website_Journey_Folds.pptx (2026-09-25). The desktop pin
 // (_setupJourneyPinned) and #cap-mobile's timeline both render these records.
-// `stats` lead with the two headline figures (drawn large with dark labels);
-// the rest are drawn smaller with muted labels, in array order. `photo` fills
-// the deck's image placeholder for that fold.
+// `stats` all draw at one size and colour, in array order (client 2026-09-28:
+// "font style and sizes and colours to be uniform"). `img` is the fold's
+// visual — the transparent building cutouts the journey carried before the
+// folds, shown unframed (client 2026-09-28: "use the images that the journey
+// section had earlier. no box needed"). `phase` survives only as the
+// accessible name; it is no longer drawn.
 const CAP_JOURNEY = [
   { fold: 1, phase: 'Foundation Phase', years: '2016–2018', title: 'The Foundation',
-    photo: './components/assets/campus/st-andrews-suchitra.jpg',
-    photoAlt: 'St. Andrews, Suchitra — Hyderabad',
+    img: './components/assets/journey/foundation.png',
     stats: [['8', 'Assets'], ['7', 'Geographies'], ['~5,800', 'Students'], ['~0.5Mn SFT', 'BUA']],
     card: { eyebrow: 'Established Edu-Infra', title: 'Pioneered Sale &amp; Leaseback',
       body: 'Built an integrated PropCo + OpCo + ManCo model.' } },
   { fold: 2, phase: 'Growth Phase', years: '2019–2023', title: 'Building the Ecosystem',
-    photo: './components/assets/campus/juset-hostel-bangalore.jpg',
-    photoAlt: 'JU-SET Hostel — Bangalore',
+    img: './components/assets/journey/growth.png',
     stats: [['9', 'Assets'], ['4', 'Geographies'], ['~12,000', 'Students'], ['1,500', 'Student Beds'], ['~1.8Mn SFT', 'BUA']],
     card: { eyebrow: 'Integrated Education Ecosystem', title: 'Institutional capital',
       body: 'Land → Development → Repositioning → Expansion' } },
   { fold: 3, phase: 'Expansion Phase', years: '2023–2026', title: 'Scaling the Asset Class',
-    photo: './components/assets/skolen/skolen-2-acre.jpg',
-    photoAlt: 'SKOLEN — purpose-built greenfield school',
+    img: './components/assets/journey/expansion.png',
     stats: [['16', 'Assets'], ['7', 'Geographies'], ['~21,500', 'Students'], ['1,500', 'Student Beds'], ['~3.3Mn SFT', 'BUA']],
     card: { eyebrow: 'Education as a Scalable Asset Class', title: 'SKOLEN',
       body: 'Purpose-built greenfield school asset' } }
@@ -2362,23 +2362,22 @@ class Component extends DCLogic {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const n = CAP_JOURNEY.length;
 
-    const stat = (s, i) =>
-      '<div class="cap-jf-stat' + (i < 2 ? ' cap-jf-stat--lead' : '') + '">' +
+    const stat = (s) =>
+      '<div class="cap-jf-stat">' +
         '<div class="cap-jf-num">' + s[0] + '</div>' +
         '<div class="cap-jf-label">' + s[1] + '</div>' +
       '</div>';
 
-    // Only the first fold's photo is fetched up front; the others carry
+    // Only the first fold's image is fetched up front; the others carry
     // data-src and are promoted the first time their fold becomes active.
     const fold = (p, i) =>
       '<article class="cap-j-phase cap-jf-fold' + (i === 0 ? ' is-on' : '') + '" data-i="' + i + '" aria-label="' + p.phase + ', ' + p.years + '">' +
         '<header class="cap-jf-head">' +
-          '<p class="cap-jf-phase">' + p.phase + '</p>' +
           '<p class="cap-jf-years">' + p.years + '</p>' +
         '</header>' +
         '<h3 class="cap-jf-title">' + p.title + '</h3>' +
         '<div class="cap-jf-stats">' + p.stats.map(stat).join('') + '</div>' +
-        '<figure class="cap-jf-media"><img ' + (i === 0 ? 'src' : 'data-src') + '="' + p.photo + '" alt="' + p.photoAlt + '" decoding="async"></figure>' +
+        '<figure class="cap-jf-media"><img ' + (i === 0 ? 'src' : 'data-src') + '="' + p.img + '" alt="" decoding="async"></figure>' +
         '<div class="cap-jf-card">' +
           '<p class="cap-jf-eyebrow">' + p.card.eyebrow + '</p>' +
           '<p class="cap-jf-card-title">' + p.card.title + '</p>' +
@@ -2393,8 +2392,6 @@ class Component extends DCLogic {
       '<section class="cap-j-pin cap-jf" aria-label="Our Journey">' +
         '<div class="cap-jf-rail">' +
           '<h2 class="cap-jf-heading">Our<br>Journey</h2>' +
-          '<p class="cap-jf-fold-label" aria-live="polite">Fold 1</p>' +
-          '<p class="cap-jf-brand">Cappella</p>' +
           '<div class="cap-jf-line" aria-hidden="true"></div>' +
           CAP_JOURNEY.map((p, i) =>
             '<button class="cap-j-rail cap-jf-dot' + (i === 0 ? ' is-on' : '') + '" type="button" data-i="' + i + '" aria-label="' + p.phase + '"></button>').join('') +
@@ -2417,7 +2414,6 @@ class Component extends DCLogic {
 
     const phases = Array.from(host.querySelectorAll('.cap-jf-fold'));
     const rails = Array.from(host.querySelectorAll('.cap-jf-dot'));
-    const foldLabel = host.querySelector('.cap-jf-fold-label');
     const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
 
     // geometry: host over the band gap (page coordinates — the host is a
@@ -2447,7 +2443,6 @@ class Component extends DCLogic {
         if (k === i) rl.setAttribute('aria-current', 'step');
         else rl.removeAttribute('aria-current');
       });
-      if (foldLabel) foldLabel.textContent = 'Fold ' + CAP_JOURNEY[i].fold;
     };
 
     // Fold i's resting point is the MIDDLE of its band, so a rounding error
@@ -4817,21 +4812,20 @@ class Component extends DCLogic {
       // REDUCED never builds a stage and so never promotes anything — its
       // photos must all be real src or two phases render broken images.
       // Client 2026-09-25 (Cappella_Website_Journey_Folds.pptx): each phase is
-      // a fold — photo, phase + years, headline, stats, highlight card — the
-      // same records and order as the desktop pin, with the photo moved to the
+      // a fold — building cutout, years, headline, stats, highlight card — the
+      // same records and order as the desktop pin, with the image moved to the
       // top so the dots/arrows keep sitting on it. Card/stat copy carries
       // authored entities (&amp;), so it is not escaped.
       const phases = CAP_JOURNEY.map((p, i) =>
         '<div class="cm-j-phase" data-i="' + i + '">' +
-          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.photo + '"' +
-            ' alt="' + esc(p.photoAlt) + '" loading="lazy" decoding="async">' +
+          '<img class="cm-journey-img" ' + (REDUCED || i === 0 ? 'src' : 'data-src') + '="' + p.img + '"' +
+            ' alt="" loading="lazy" decoding="async">' +
           '<div class="cm-jf-head">' +
-            '<p class="cm-jf-phase">' + esc(p.phase) + '</p>' +
             '<p class="cm-jf-years">' + esc(p.years) + '</p>' +
           '</div>' +
           '<p class="cm-jf-title">' + esc(p.title) + '</p>' +
-          '<div class="cm-jf-stats">' + p.stats.map((s, k) =>
-            '<div class="cm-jf-stat' + (k < 2 ? ' cm-jf-stat--lead' : '') + '">' +
+          '<div class="cm-jf-stats">' + p.stats.map((s) =>
+            '<div class="cm-jf-stat">' +
               '<div class="cm-jf-num">' + s[0] + '</div>' +
               '<div class="cm-jf-label">' + s[1] + '</div>' +
             '</div>').join('') + '</div>' +
