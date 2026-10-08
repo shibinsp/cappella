@@ -734,34 +734,39 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
   max-width: calc(440 * var(--u));
 }
 
-/* Foundation, tuned to the reference: a bigger building cropped by the right
-   edge and standing on the same ground line as the card's foot, a tighter
-   figure row, and the card title on one line. */
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media {
-  right: calc(-222 * var(--u)); top: calc(596 * var(--u));
-  width: calc(1224 * var(--u)); height: calc(322 * var(--u));
+/* Foundation, pixel-matched to the reference (WhatsApp Image 2026-10-05): the
+   building, its disc, the arc and the ground shadow are the reference's own
+   pixels, cropped to the bottom-right corner and planted in the corner of the
+   fold (580x420 of the 1280x720 frame = 870x630 of the 1920x1080 canvas). */
+@media (min-aspect-ratio: 5/4) {
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media {
+    right: 0; top: auto; bottom: 0;
+    width: calc(870 * var(--u)); height: calc(630 * var(--u));
+  }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::before {
+    inset: 0; width: auto; aspect-ratio: auto; border-radius: 0;
+    background: url('../../components/assets/journey/foundation-ref.jpg') center / 100% 100% no-repeat;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%);
+    mask-image: linear-gradient(to right, transparent 0, #000 7%);
+  }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::after { display: none; }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media img { visibility: hidden; filter: none; }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-title { margin-top: calc(16 * var(--u)); font-size: calc(75 * var(--u)); }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-title::after { margin-top: calc(28 * var(--u)); }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-stats { z-index: 5; --jf-pad: 68; margin-top: calc(63 * var(--u)); }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-num { font-size: calc(60 * var(--u)); }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card {
+    width: calc(800 * var(--u));
+    padding: calc(52 * var(--u)) calc(44 * var(--u)) calc(42 * var(--u));
+  }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card-title {
+    margin-top: calc(24 * var(--u)); font-size: calc(36 * var(--u)); max-width: none;
+  }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card-body {
+    font-size: calc(25 * var(--u)); line-height: 1.5; max-width: calc(560 * var(--u));
+  }
+  #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card::after { margin-top: calc(34 * var(--u)); }
 }
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::before {
-  right: auto; left: calc(425 * var(--u)); top: calc(-78 * var(--u));
-  width: calc(450 * var(--u));
-}
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::after {
-  right: calc(-173 * var(--u)); top: calc(-126 * var(--u));
-}
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media img {
-  -webkit-mask-image: linear-gradient(to right, transparent 12%, #000 35%);
-  mask-image: linear-gradient(to right, transparent 12%, #000 35%);
-}
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-stats { --jf-pad: 70; }
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-num { font-size: calc(62 * var(--u)); }
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card {
-  width: calc(800 * var(--u));
-  padding: calc(40 * var(--u)) calc(44 * var(--u)) calc(36 * var(--u));
-}
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card-title {
-  margin-top: calc(18 * var(--u)); font-size: calc(36 * var(--u)); max-width: none;
-}
-#cap-journey .cap-jf-fold[data-i="0"] .cap-jf-card::after { margin-top: calc(28 * var(--u)); }
 
 /* Content rises in behind the fade, top to bottom. */
 @media (prefers-reduced-motion: no-preference) {
