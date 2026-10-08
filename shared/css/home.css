@@ -740,14 +740,14 @@ html { scrollbar-width: thin; scrollbar-color: rgb(209, 32, 47) rgb(244, 244, 24
    fold (580x420 of the 1280x720 frame = 870x630 of the 1920x1080 canvas). */
 @media (min-aspect-ratio: 5/4) {
   #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media {
-    right: 0; top: auto; bottom: 0;
+    right: calc(36 * var(--u)); top: auto; bottom: 0;
     width: calc(870 * var(--u)); height: calc(630 * var(--u));
   }
   #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::before {
     inset: 0; width: auto; aspect-ratio: auto; border-radius: 0;
     background: url('../../components/assets/journey/foundation-ref.jpg') center / 100% 100% no-repeat;
-    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%);
-    mask-image: linear-gradient(to right, transparent 0, #000 7%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 96%, transparent);
+    mask-image: linear-gradient(to right, transparent 0, #000 7%, #000 96%, transparent);
   }
   #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media::after { display: none; }
   #cap-journey .cap-jf-fold[data-i="0"] .cap-jf-media img { visibility: hidden; filter: none; }
