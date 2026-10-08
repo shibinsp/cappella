@@ -2379,7 +2379,7 @@ class Component extends DCLogic {
           '<p class="cap-jf-years">' + p.years + '</p>' +
         '</header>' +
         '<h3 class="cap-jf-title">' + p.title + '</h3>' +
-        '<div class="cap-jf-stats">' + p.stats.map(stat).join('') + '</div>' +
+        '<div class="cap-jf-stats" data-n="' + p.stats.length + '">' + p.stats.map(stat).join('') + '</div>' +
         '<figure class="cap-jf-media"><img ' + (i === 0 ? 'src' : 'data-src') + '="' + p.img + '" alt="" decoding="async"></figure>' +
         '<div class="cap-jf-card">' +
           '<p class="cap-jf-eyebrow">' + p.card.eyebrow + '</p>' +
@@ -2394,7 +2394,7 @@ class Component extends DCLogic {
     host.innerHTML =
       '<section class="cap-j-pin cap-jf" aria-label="Our Journey">' +
         '<div class="cap-jf-rail">' +
-          '<h2 class="cap-jf-heading">Our<br>Journey</h2>' +
+          '<h2 class="cap-jf-heading">Our<br><strong>Journey</strong></h2>' +
           '<div class="cap-jf-line" aria-hidden="true"></div>' +
           CAP_JOURNEY.map((p, i) =>
             '<button class="cap-j-rail cap-jf-dot' + (i === 0 ? ' is-on' : '') + '" type="button" data-i="' + i + '" aria-label="' + p.phase + '"></button>').join('') +
