@@ -393,7 +393,14 @@
   </div>
 </footer>
 
-<script src="shared/js/projects.js"></script>
+<script src="shared/js/cms.js"></script>
+<script>
+(window.cappellaCMS ? window.cappellaCMS.hydrateProjects() : Promise.resolve()).then(function () {
+  var s = document.createElement('script');
+  s.src = 'shared/js/projects.js';
+  document.body.appendChild(s);
+});
+</script>
 
 </body>
 </html>

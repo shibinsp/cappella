@@ -208,7 +208,9 @@
   </div>
 </div>
 
+<script src="shared/js/cms.js"></script>
 <script>
+(window.cappellaCMS ? window.cappellaCMS.hydrateTeam() : Promise.resolve()).then(function () {
   /* 3D tilt. Writes pointer position into --tx/--ty (-1..1) and --mx/--my
      (percentages for the sheen); all the motion itself lives in CSS.
      Reads are batched into rAF so a fast pointer can't thrash layout. */
@@ -359,6 +361,7 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
   })();
+});
 </script>
 
 </body>
