@@ -36,6 +36,8 @@ http.createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     if (p === '/') p = '/index.html';
+    // CMS pages: /p/<slug> is served by page.html (mirrors the vercel.json rewrite).
+    if (/^\/p\/[^/]+\/?$/.test(p)) p = '/page.html';
     const file = resolve(join(root, p));
     if (file !== root && !file.startsWith(root + sep)) {
       res.writeHead(403);

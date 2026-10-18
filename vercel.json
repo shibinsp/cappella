@@ -3,6 +3,9 @@
   "buildCommand": null,
   "installCommand": null,
   "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/p/:slug", "destination": "/page.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

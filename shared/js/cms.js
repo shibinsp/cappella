@@ -14,15 +14,26 @@
   var ENDPOINT = 'https://' + PROJECT + '.apicdn.sanity.io/' + API_VERSION + '/data/query/' + DATASET;
   var TIMEOUT_MS = 3000;
 
-  function query(groq) {
+  // Resolves { result } on success (result may be null: "no such document"), or
+  // null when the request itself failed — callers that must tell those apart
+  // (page.html) use request(); the rest use query().
+  function request(groq, params, timeoutMs) {
     if (!window.fetch) return Promise.resolve(null);
     var ctl = window.AbortController ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
-    return fetch(ENDPOINT + '?query=' + encodeURIComponent(groq), ctl ? { signal: ctl.signal } : {})
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, timeoutMs || TIMEOUT_MS);
+    var url = ENDPOINT + '?query=' + encodeURIComponent(groq);
+    Object.keys(params || {}).forEach(function (k) {
+      url += '&%24' + k + '=' + encodeURIComponent(JSON.stringify(params[k]));
+    });
+    return fetch(url, ctl ? { signal: ctl.signal } : {})
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { return j && j.result != null ? j.result : null; })
+      .then(function (j) { return j && 'result' in j ? { result: j.result } : null; })
       .catch(function () { return null; })
       .then(function (res) { clearTimeout(timer); return res; });
+  }
+
+  function query(groq) {
+    return request(groq).then(function (r) { return r && r.result != null ? r.result : null; });
   }
 
   function esc(s) {
@@ -114,5 +125,142 @@
       });
   }
 
-  window.cappellaCMS = { hydrateTeam: hydrateTeam, hydrateProjects: hydrateProjects, hydrateContact: hydrateContact };
+  /* ---------- Pages (page.html, served at /p/<slug>) ---------- */
+  // http(s), mailto, or a path on this site. Anything else (javascript:, data:)
+  // is dropped, so an editor can never ship a script URL.
+  function safeHref(u) { return /^(https?:\/\/|mailto:|\/(?!\/))/i.test(u || '') ? u : ''; }
+  function isExternal(u) { return /^https?:\/\//i.test(u) && u.indexOf(location.origin) !== 0; }
+  function linkAttrs(u) { return ' href="' + esc(u) + '"' + (isExternal(u) ? ' target="_blank" rel="noopener noreferrer"' : ''); }
+
+  function spans(block) {
+    var defs = {};
+    (block.markDefs || []).forEach(function (d) { defs[d._key] = d; });
+    return (block.children || []).map(function (c) {
+      var t = esc(c.text).replace(/\n/g, '<br>');
+      (c.marks || []).forEach(function (m) {
+        if (m === 'strong') t = '<strong>' + t + '</strong>';
+        else if (m === 'em') t = '<em>' + t + '</em>';
+        else if (defs[m] && safeHref(defs[m].href)) t = '<a' + linkAttrs(defs[m].href) + '>' + t + '</a>';
+      });
+      return t;
+    }).join('');
+  }
+
+  function richText(blocks) {
+    var out = [], open = null;
+    function close() { if (open) { out.push('</' + open + '>'); open = null; } }
+    (blocks || []).forEach(function (b) {
+      if (b._type !== 'block') return;
+      if (b.listItem) {
+        var tag = b.listItem === 'number' ? 'ol' : 'ul';
+        if (open !== tag) { close(); out.push('<' + tag + '>'); open = tag; }
+        out.push('<li>' + spans(b) + '</li>');
+        return;
+      }
+      close();
+      var h = spans(b);
+      if (!h) return;
+      out.push(b.style === 'h3' ? '<h3>' + h + '</h3>' : b.style === 'blockquote' ? '<blockquote>' + h + '</blockquote>' : '<p>' + h + '</p>');
+    });
+    close();
+    return out.join('');
+  }
+
+  function section(inner, label) {
+    return '<section class="section"' + (label ? ' aria-label="' + esc(label) + '"' : '') + '><div class="container">' + inner + '</div></section>';
+  }
+  function sectionTitle(t) { return t ? '<h2 class="section-title">' + esc(t) + '</h2>' : ''; }
+
+  var BLOCKS = {
+    heroBlock: function (b, first) {
+      return '<section class="page-hero"><div class="container"><h1 class="hero-title">' + esc(b.heading) + '</h1>' +
+        (b.intro ? '<p class="hero-intro body-copy">' + esc(b.intro).replace(/\n/g, '<br>') + '</p>' : '') + '</div></section>';
+    },
+    textBlock: function (b) {
+      var body = richText(b.body);
+      return body || b.heading ? section(sectionTitle(b.heading) + '<div class="pb-prose">' + body + '</div>', b.heading) : '';
+    },
+    imageBlock: function (b) {
+      if (!b.url) return '';
+      return section('<figure class="pb-image' + (b.size === 'wide' ? ' pb-image--wide' : '') + '"><img src="' +
+        esc(sized(b.url, b.size === 'wide' ? 1800 : 1200)) + '" alt="' + esc(b.alt || '') + '" loading="lazy">' +
+        (b.caption ? '<figcaption>' + esc(b.caption) + '</figcaption>' : '') + '</figure>');
+    },
+    galleryBlock: function (b) {
+      var imgs = (b.images || []).filter(function (i) { return i && i.url; });
+      if (!imgs.length) return '';
+      return section(sectionTitle(b.heading) + '<div class="pb-gallery">' + imgs.map(function (i) {
+        return '<img src="' + esc(sized(i.url, 900)) + '" alt="' + esc(i.alt || '') + '" loading="lazy">';
+      }).join('') + '</div>', b.heading);
+    },
+    cardsBlock: function (b) {
+      var cards = (b.cards || []).filter(function (c) { return c && c.title; });
+      if (!cards.length) return '';
+      return section(sectionTitle(b.heading) + '<div class="pb-cards">' + cards.map(function (c) {
+        var href = safeHref(c.link);
+        var inner = (c.url ? '<img src="' + esc(sized(c.url, 900)) + '" alt="' + esc(c.alt || '') + '" loading="lazy">' : '') +
+          '<div class="pb-card__body"><h3 class="pb-card__title">' + esc(c.title) + '</h3>' +
+          (c.text ? '<p class="pb-card__text">' + esc(c.text).replace(/\n/g, '<br>') + '</p>' : '') + '</div>';
+        return href ? '<a class="pb-card"' + linkAttrs(href) + '>' + inner + '</a>' : '<div class="pb-card">' + inner + '</div>';
+      }).join('') + '</div>', b.heading);
+    },
+    buttonBlock: function (b) {
+      var href = safeHref(b.url);
+      return href && b.label ? section('<a class="pb-btn"' + linkAttrs(href) + '>' + esc(b.label) + '</a>') : '';
+    }
+  };
+
+  function slugFromLocation() {
+    var m = location.pathname.match(/^\/p\/([^\/]+)\/?$/);
+    var s = m ? decodeURIComponent(m[1]) : new URLSearchParams(location.search).get('slug');
+    return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s || '') ? s : '';
+  }
+
+  function setMeta(name, content) {
+    var el = document.head.querySelector('meta[name="' + name + '"]');
+    if (!el) { el = document.createElement('meta'); el.name = name; document.head.appendChild(el); }
+    el.content = content;
+  }
+
+  function showMessage(root, heading, intro, noindex) {
+    root.innerHTML = '<section class="page-hero"><div class="container"><h1 class="hero-title">' + esc(heading) +
+      '</h1><p class="hero-intro body-copy">' + esc(intro) + '</p></div></section>' +
+      section('<a class="pb-btn" href="index.html">Back to home</a>');
+    document.title = heading + ' — Cappella';
+    if (noindex) setMeta('robots', 'noindex');
+  }
+
+  var PAGE_QUERY = '*[_type=="page" && slug.current==$slug][0]{title,description,blocks[]{_type,_key,' +
+    '_type=="heroBlock" => {heading,intro},' +
+    '_type=="textBlock" => {heading,body},' +
+    '_type=="imageBlock" => {alt,caption,size,"url":image.asset->url},' +
+    '_type=="galleryBlock" => {heading,"images":images[]{alt,"url":asset->url}},' +
+    '_type=="cardsBlock" => {heading,"cards":cards[]{title,text,link,alt,"url":image.asset->url}},' +
+    '_type=="buttonBlock" => {label,url}}}';
+
+  function hydratePage() {
+    var root = document.getElementById('page-root');
+    if (!root) return Promise.resolve();
+    var slug = slugFromLocation();
+    if (!slug) { showMessage(root, 'Page not found', 'We could not find the page you were looking for.', true); return Promise.resolve(); }
+    // One retry: a dropped request must not read as "this page is broken".
+    return request(PAGE_QUERY, { slug: slug }, 8000).then(function (res) {
+      return res || new Promise(function (r) { setTimeout(r, 800); }).then(function () { return request(PAGE_QUERY, { slug: slug }, 8000); });
+    }).then(function (res) {
+      if (!res) return showMessage(root, 'This page could not be loaded', 'Please check your connection and refresh.', false);
+      var page = res.result;
+      if (!page) return showMessage(root, 'Page not found', 'We could not find the page you were looking for.', true);
+      var blocks = page.blocks || [];
+      var html = '';
+      if (!blocks.length || blocks[0]._type !== 'heroBlock') {
+        html += BLOCKS.heroBlock({ heading: page.title });
+      }
+      blocks.forEach(function (b) { if (BLOCKS[b._type]) html += BLOCKS[b._type](b); });
+      root.innerHTML = html;
+      document.title = page.title + ' — Cappella';
+      if (page.description) setMeta('description', page.description);
+    });
+  }
+
+  window.cappellaCMS = { hydrateTeam: hydrateTeam, hydrateProjects: hydrateProjects, hydrateContact: hydrateContact, hydratePage: hydratePage };
 })();
