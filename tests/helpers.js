@@ -39,6 +39,12 @@ function attachErrorCapture(page) {
     }
   });
   page.on('requestfailed', (req) => {
+    // Team and Projects photos come from the Sanity CDN. Navigating away while
+    // one is still downloading makes the browser abort it (ERR_ABORTED) — that
+    // is the browser cancelling, not a failure. A real failure (404, network
+    // error) still fails the test: 4xx/5xx are caught by the response handler
+    // above, and any other errorText falls through to here.
+    if (req.url().startsWith('https://cdn.sanity.io/') && req.failure()?.errorText === 'net::ERR_ABORTED') return;
     if (!isIgnored(req.url())) {
       errors.push(`requestfailed: ${req.url()} (${req.failure()?.errorText})`);
     }

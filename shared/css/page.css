@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Cappella — CMS pages (page.html)
+   [SECTION]  Blocks rendered by shared/js/cms.js hydratePage()
+   [PURPOSE]  Layout for the six editor blocks. Everything else (header,
+              footer, .page-hero, .section, .section-title, .body-copy) comes
+              from shell.css so CMS pages match the hand-built ones.
+   No data-reveal here: the reveal engine indexes elements once at load, and
+   these are added afterwards, so they would never leave their hidden state.
+   ========================================================================== */
+
+#page-root { min-height: 40vh; }
+
+/* ---------- Text ---------- */
+.pb-prose { max-width: 760px; }
+.pb-prose > * + * { margin-top: 1.1em; }
+.pb-prose p,
+.pb-prose li { font-size: var(--cap-type-desc); font-weight: 300; line-height: 1.55; }
+.pb-prose h3 { font-size: var(--cap-type-subhead); font-weight: 600; line-height: 1.25; margin-top: 1.8em; }
+.pb-prose ul,
+.pb-prose ol { padding-left: 1.3em; }
+.pb-prose li + li { margin-top: 0.4em; }
+.pb-prose strong { font-weight: 600; }
+.pb-prose a { color: var(--cap-red); text-decoration: underline; text-underline-offset: 3px; }
+.pb-prose a:hover { color: var(--cap-red-hover); }
+.pb-prose blockquote {
+  border-left: 3px solid var(--cap-red);
+  padding-left: 1.2em;
+  font-size: var(--cap-type-subhead);
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+/* ---------- Image ---------- */
+.pb-image { margin: 0; max-width: 960px; }
+.pb-image--wide { max-width: none; }
+.pb-image img { display: block; width: 100%; height: auto; }
+.pb-image figcaption { margin-top: 12px; font-size: 14px; font-weight: 400; opacity: 0.7; }
+
+/* ---------- Gallery ---------- */
+.pb-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: clamp(12px, 1.6vw, 24px);
+}
+.pb-gallery img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+
+/* ---------- Cards ---------- */
+.pb-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: clamp(16px, 2vw, 28px);
+}
+.pb-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cap-hairline);
+  color: inherit;
+  text-decoration: none;
+  background: var(--cap-white);
+}
+a.pb-card { transition: border-color 0.25s, transform 0.25s var(--cap-ease-expo); }
+a.pb-card:hover { border-color: var(--cap-red); transform: translateY(-3px); }
+.pb-card img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.pb-card__body { padding: clamp(18px, 2vw, 28px); }
+.pb-card__title { font-size: var(--cap-type-subhead); font-weight: 600; line-height: 1.25; }
+.pb-card__text { margin-top: 0.6em; font-size: 16px; font-weight: 300; line-height: 1.55; }
+
+/* ---------- Button ---------- */
+.pb-btn {
+  display: inline-block;
+  padding: 16px 32px;
+  background: var(--cap-red);
+  color: var(--cap-white);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: background 0.25s;
+}
+.pb-btn:hover { background: var(--cap-red-hover); }
+.pb-btn:focus-visible { outline: 2px solid var(--cap-black); outline-offset: 3px; }
+
+/* Consecutive content sections keep a steady rhythm without the hairline
+   that .section + .section would draw between unrelated blocks. */
+#page-root .section { border-top: none; padding-top: clamp(24px, 3vw, 40px); padding-bottom: clamp(24px, 3vw, 40px); }
+#page-root .section:last-child { padding-bottom: clamp(56px, 7vw, 112px); }
+
+/* shell.css resets list-style; restore markers for editor-written lists, and
+   give a section heading room above the content it introduces. */
+.pb-prose ul { list-style: disc; }
+.pb-prose ol { list-style: decimal; }
+#page-root .section-title + * { margin-top: clamp(16px, 2vw, 28px); }
+/* A full-width portrait photo would otherwise fill several screens. */
+.pb-image--wide img { max-height: 80vh; object-fit: cover; }

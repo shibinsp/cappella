@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Pages made in the CMS live at /p/<slug> (rewritten to this file), so every
+     relative URL below must resolve from the site root, not from /p/. -->
+<base href="/">
+<title>Cappella</title>
+<link rel="icon" type="image/x-icon" href="./favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/css/shell.css">
+<link rel="stylesheet" href="shared/css/footer.css">
+<link rel="stylesheet" href="shared/css/page.css">
+<script>document.documentElement.className += ' js';</script>
+<script src="components/vendor/gsap.min.js" defer></script>
+<script src="components/vendor/lenis.min.js" defer></script>
+<script src="components/vendor/split-type.min.js" defer></script>
+<script src="shared/site.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="site-logo">
+      <span class="site-logo-word">Cappella</span>
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav" hidden>Menu</button>
+    <nav id="site-nav" class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="about-us.html">About Us</a></li>
+        <li><a href="projects.html">Projects</a></li>
+        <li><a href="skolen.html">SKOLEN</a></li>
+        <li><a href="team.html">Team</a></li>
+        <li><a href="contact-us.html">Contact Us</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<div class="menu-backdrop" aria-hidden="true"></div>
+
+<main id="main">
+  <div id="page-root">
+    <noscript><section class="page-hero"><div class="container"><p class="hero-intro body-copy">This page needs JavaScript to load its content.</p></div></section></noscript>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container" data-reveal="footer">
+    <div class="footer-brand">
+      <img class="footer-mark" src="components/assets/c9d8f12cf6e90c99.png" alt="Cappella" width="387" height="356">
+      <div class="footer-initiative">
+        <p class="footer-initiative-lbl cap-footer-item">An Initiative by</p>
+        <div class="footer-initiative-logos cap-footer-item">
+          <div class="fig-logo fig-logo--jv" role="img" aria-label="JV Ventures"></div>
+          <div class="fig-logo fig-logo--alta" role="img" aria-label="Alta Capital"></div>
+          <div class="fig-logo fig-logo--hillhouse" role="img" aria-label="Hillhouse Capital"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="footer-block">
+        <nav class="footer-nav" aria-label="Footer">
+          <ul>
+            <li class="cap-footer-item"><a class="footer-link" href="about-us.html">About Us</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="projects.html">Projects</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="skolen.html">SKOLEN</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="team.html">Team</a></li>
+            <li class="cap-footer-item"><a class="footer-link" href="contact-us.html">Contact Us</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-block">
+        <p class="footer-heading cap-footer-item">Connect With Us</p>
+        <a class="footer-link footer-linkedin cap-footer-item" href="https://www.linkedin.com/company/cappella-edu-infra/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <div class="footer-block">
+        <a class="footer-link cap-footer-item" href="mailto:partner@cappella.in">partner@cappella.in</a>
+        <address class="footer-address cap-footer-item">
+          Suite 303, Niharika Jubilee One,<br>
+          Jubilee Hills, Road No. 1,<br>
+          Hyderabad, Telangana 500033
+        </address>
+      </div>
+      <div class="footer-block">
+        <p class="footer-subscribe-lbl cap-footer-item">Stay in Touch</p>
+        <form class="footer-email cap-footer-item" data-footer-email>
+          <input type="email" name="email" placeholder="Your Email Id" aria-label="Your email address" required>
+          <button type="submit" aria-label="Submit email">
+            <svg viewBox="0 0 17 12" fill="none" aria-hidden="true"><path d="M0 6h15M11 1l4 5-4 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <p class="footer-designed cap-footer-item">
+          <span>Designed by</span>
+          <span class="fig-logo fig-logo--limitless" role="img" aria-label="Limitless"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="shared/js/cms.js"></script>
+<script>if (window.cappellaCMS) window.cappellaCMS.hydratePage();</script>
+
+</body>
+</html>
